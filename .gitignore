@@ -3,3 +3,6 @@ api/.env
 
 ui/node_modules
 ui/.env
+
+.env
+node_modules

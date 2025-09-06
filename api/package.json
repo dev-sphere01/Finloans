@@ -1,4 +1,10 @@
 {
+  "name": "api",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "nodemon app.js"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.0",
