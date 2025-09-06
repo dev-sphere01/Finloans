@@ -1,0 +1,304 @@
+{
+    "salarySlips": [
+        {
+            "period": "MARCH 2025",
+            "salaryDetails": {
+                "actualPayableDays": 31.0,
+                "totalWorkingDays": 31.0,
+                "lossOfPayDays": 0.0,
+                "daysPayable": 31
+            },
+            "earnings": {
+                "basic": 28000.0,
+                "hra": 8400.0,
+                "specialAllowance": 1800.0,
+                "mobileBillAllowance": 300.0,
+                "leaveEncashment": 0.0,
+                "total": 38500.0
+            },
+            "deductions": {
+                "pfEmployee": 1800.0,
+                "assetPurchase": 0.0,
+                "total": 1800.0
+            },
+            "netSalary": {
+                "amount": 36700.0,
+                "inWords": "Thirty Six Thousand Seven Hundred Rupees only"
+            },
+            "leaveDetails": [
+                {
+                    "type": "Circumstantial Leave",
+                    "opening": 6,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 6
+                },
+                {
+                    "type": "Comp Offs",
+                    "opening": 0,
+                    "accrued": 1,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 1
+                },
+                {
+                    "type": "Floater Leave",
+                    "opening": 0,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 0
+                },
+                {
+                    "type": "Leave Without Pay",
+                    "opening": "Infinite",
+                    "accrued": "-",
+                    "credit": "-",
+                    "availed": 0,
+                    "expired": "-",
+                    "closing": "Infinite"
+                },
+                {
+                    "type": "Paternity Leave",
+                    "opening": 10,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 10
+                },
+                {
+                    "type": "Sanctioned leave",
+                    "opening": 2,
+                    "accrued": 1,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 3
+                },
+                {
+                    "type": "Transfer Leave",
+                    "opening": 0,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 0
+                },
+                {
+                    "type": "Voting Day Leave",
+                    "opening": 0,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 0
+                }
+            ]
+        },
+        {
+            "period": "APRIL 2025",
+            "salaryDetails": {
+                "actualPayableDays": 30.0,
+                "totalWorkingDays": 30.0,
+                "lossOfPayDays": 0.0,
+                "daysPayable": 30
+            },
+            "earnings": {
+                "basic": 28000.0,
+                "hra": 8400.0,
+                "specialAllowance": 1800.0,
+                "mobileBillAllowance": 300.0,
+                "leaveEncashment": 2000.0,
+                "total": 40500.0
+            },
+            "deductions": {
+                "pfEmployee": 1500.0,
+                "assetPurchase": 5000.0,
+                "total": 6800.0
+            },
+            "netSalary": {
+                "amount": 33700.0,
+                "inWords": "Thirty Three Thousand Seven Hundred Rupees only"
+            },
+            "leaveDetails": [
+                {
+                    "type": "Circumstantial Leave",
+                    "opening": 6,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 1,
+                    "expired": 0,
+                    "closing": 5
+                },
+                {
+                    "type": "Comp Offs",
+                    "opening": 1,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 1,
+                    "expired": 0,
+                    "closing": 0
+                },
+                {
+                    "type": "Floater Leave",
+                    "opening": 0,
+                    "accrued": 1,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 1
+                },
+                {
+                    "type": "Leave Without Pay",
+                    "opening": "Infinite",
+                    "accrued": "-",
+                    "credit": "-",
+                    "availed": 0,
+                    "expired": "-",
+                    "closing": "Infinite"
+                },
+                {
+                    "type": "Paternity Leave",
+                    "opening": 10,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 10
+                },
+                {
+                    "type": "Sanctioned leave",
+                    "opening": 3,
+                    "accrued": 1,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 4
+                },
+                {
+                    "type": "Transfer Leave",
+                    "opening": 0,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 0
+                },
+                {
+                    "type": "Voting Day Leave",
+                    "opening": 0,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 0
+                }
+            ]
+        },
+        {
+            "period": "MAY 2025",
+            "salaryDetails": {
+                "actualPayableDays": 31.0,
+                "totalWorkingDays": 31.0,
+                "lossOfPayDays": 0.0,
+                "daysPayable": 31
+            },
+            "earnings": {
+                "basic": 28000.0,
+                "hra": 8400.0,
+                "specialAllowance": 1800.0,
+                "mobileBillAllowance": 300.0,
+                "leaveEncashment": 5093.32,
+                "total": 43593.32
+            },
+            "deductions": {
+                "pfEmployee": 1800.0,
+                "assetPurchase": 30641.0,
+                "total": 32441.0
+            },
+            "netSalary": {
+                "amount": 11152.0,
+                "inWords": "Eleven Thousand One Hundred and Fifty Two Rupees only"
+            },
+            "leaveDetails": [
+                {
+                    "type": "Circumstantial Leave",
+                    "opening": 5,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 5
+                },
+                {
+                    "type": "Comp Offs",
+                    "opening": 0,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 0
+                },
+                {
+                    "type": "Floater Leave",
+                    "opening": 1,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 1
+                },
+                {
+                    "type": "Leave Without Pay",
+                    "opening": "Infinite",
+                    "accrued": "-",
+                    "credit": "-",
+                    "availed": 0,
+                    "expired": "-",
+                    "closing": "Infinite"
+                },
+                {
+                    "type": "Paternity Leave",
+                    "opening": 10,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 10
+                },
+                {
+                    "type": "Sanctioned leave",
+                    "opening": 4,
+                    "accrued": 2,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 6
+                },
+                {
+                    "type": "Transfer Leave",
+                    "opening": 0,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 0
+                },
+                {
+                    "type": "Voting Day Leave",
+                    "opening": 0,
+                    "accrued": 0,
+                    "credit": 0,
+                    "availed": 0,
+                    "expired": 0,
+                    "closing": 0
+                }
+            ]
+        }
+    ]
+}
