@@ -1,26 +1,7 @@
 import React from "react";
 // menu item icons imports
-import { FaUserCheck, FaHandHoldingUsd } from "react-icons/fa";
 import {
-  Users,
-  UserPlus,
-  Upload,
-  Building,
-  Laptop,
-  Calculator,
-  BarChart3,
-  FileText,
-  DollarSign,
-  TrendingUp,
-  MapPin,
-  History,
-  CalendarPlus,
-  CalendarDays,
-  CreditCard,
-  FileSearch,
-  GraduationCap,
-  BriefcaseBusiness,
-  ReceiptIndianRupee
+  Users
 } from "lucide-react";
 
 const allMenuItems = [
@@ -39,7 +20,7 @@ const allMenuItems = [
   // Demo Pages
   { id: "demo", name: "Demo Pages (Dev)", type: "heading", roleId: [1] },
   { id: "excel-upload", name: "Excel Import Demo", icon: <FileSpreadsheet size={18} />, type: "item", roleId: [1] },
-  { id: "emp-data-map", name: "Employee Data Mapping", icon: <User size={18} />, type: "item", roleId: [1] },
+  { id: "emp-data-map", name: "Employee Data Mapping", icon: <Users size={18} />, type: "item", roleId: [1] },
 
 ];
 
