@@ -1,6 +1,7 @@
 import React from "react";
 // menu item icons imports
 import {
+  FileSpreadsheet,
   Users
 } from "lucide-react";
 
@@ -19,7 +20,7 @@ const allMenuItems = [
 
   // Demo Pages
   { id: "demo", name: "Demo Pages (Dev)", type: "heading", roleId: [1] },
-  { id: "excel-upload", name: "Excel Import Demo", icon: <FileSpreadsheet size={18} />, type: "item", roleId: [1] },
+  { id: "excel-upload", name: "Excel Import Demo", icon: <FileSpreadsheet    size={18} />, type: "item", roleId: [1] },
   { id: "emp-data-map", name: "Employee Data Mapping", icon: <Users size={18} />, type: "item", roleId: [1] },
 
 ];

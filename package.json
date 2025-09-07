@@ -3,7 +3,8 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "fin": "concurrently -n \"API,UI\" -c \"blue.bold,magenta.bold\" \"npm run dev --prefix api\" \"npm run dev --prefix ui\""
+    "fin": "concurrently -n \"API,UI\" -c \"blue.bold,magenta.bold\" \"npm run dev --prefix api\" \"npm run dev --prefix ui\"",
+    "i": "npm install && npm install --prefix api && npm install --prefix ui"
   },
   "dependencies": {
     "concurrently": "^9.2.1"

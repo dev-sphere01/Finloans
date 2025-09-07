@@ -1,11 +1,10 @@
-"use client";
 import React, { useEffect } from "react";
-import useEmpDataStore from '@/store/empDataStore';
-import useAuthStore from '@/store/authStore';
-import getBaseFileURL from '@/utils/getBaseFileUrl';
-import { SquarePen, Save, X, Edit3 } from 'lucide-react';
+import useEmpDataStore from "@/store/empDataStore";
+import useAuthStore from "@/store/authStore";
+import getBaseFileURL from "@/utils/getBaseFileUrl";
+import { SquarePen, Save, X, Edit3 } from "lucide-react";
 import { FiUser } from "react-icons/fi";
-import Employees from '@/services/Employees/employees';
+import Employees from "@/services/Employees/employees";
 function ProfilePage() {
   // Auth store
   const { user } = useAuthStore();
@@ -15,7 +14,7 @@ function ProfilePage() {
     fetchEmployeeById,
     forceCompleteRefresh,
     loading: empLoading,
-    error: empError
+    error: empError,
   } = useEmpDataStore();
   const baseFileURL = getBaseFileURL();
 
@@ -34,29 +33,37 @@ function ProfilePage() {
 
   // Debug: Log when currentEmployee changes
   useEffect(() => {
-    console.log('currentEmployee changed:', currentEmployee?.FirstName, currentEmployee?.LastName);
+    console.log(
+      "currentEmployee changed:",
+      currentEmployee?.FirstName,
+      currentEmployee?.LastName
+    );
   }, [currentEmployee]);
 
   // Map employee data for display
-  const employee = currentEmployee ? {
-    EmpID: currentEmployee.EmpID,
-    FirstName: currentEmployee.FirstName || '',
-    LastName: currentEmployee.LastName || '',
-    PersonalEmail: currentEmployee.PersonalEmail || '',
-    WorkEmail: currentEmployee.WorkEmail || '',
-    PhoneNumber: currentEmployee.PhoneNumber || '',
-    Address: currentEmployee.Address || '',
-    EmergencyContact: currentEmployee.EmergencyContact || '',
-    EmergencyContactNumber: currentEmployee.EmergencyContactNumber || '',
-    DateOfBirth: currentEmployee.DateOfBirth || '',
-    Gender: currentEmployee.Gender || '',
-    DateOfJoining: currentEmployee.DateOfJoining || '',
-    OBStatus: currentEmployee.OBStatus || false,
-    IsActive: currentEmployee.IsActive || false,
-    ProfilePicture: currentEmployee?.ProfilePicture ? `${baseFileURL}${currentEmployee.ProfilePicture}` : '',
-    Signature: currentEmployee.Signature || null,
-    RoleID: currentEmployee.RoleID || 0,
-  } : null;
+  const employee = currentEmployee
+    ? {
+        EmpID: currentEmployee.EmpID,
+        FirstName: currentEmployee.FirstName || "",
+        LastName: currentEmployee.LastName || "",
+        PersonalEmail: currentEmployee.PersonalEmail || "",
+        WorkEmail: currentEmployee.WorkEmail || "",
+        PhoneNumber: currentEmployee.PhoneNumber || "",
+        Address: currentEmployee.Address || "",
+        EmergencyContact: currentEmployee.EmergencyContact || "",
+        EmergencyContactNumber: currentEmployee.EmergencyContactNumber || "",
+        DateOfBirth: currentEmployee.DateOfBirth || "",
+        Gender: currentEmployee.Gender || "",
+        DateOfJoining: currentEmployee.DateOfJoining || "",
+        OBStatus: currentEmployee.OBStatus || false,
+        IsActive: currentEmployee.IsActive || false,
+        ProfilePicture: currentEmployee?.ProfilePicture
+          ? `${baseFileURL}${currentEmployee.ProfilePicture}`
+          : "",
+        Signature: currentEmployee.Signature || null,
+        RoleID: currentEmployee.RoleID || 0,
+      }
+    : null;
 
   // Format dates
   const formatDate = (dateString) => {
@@ -72,7 +79,6 @@ function ProfilePage() {
     return new Date(dateString).toISOString().split("T")[0];
   };
 
-
   // Handle edit mode
   const handleEdit = () => {
     if (employee) {
@@ -84,16 +90,16 @@ function ProfilePage() {
   // Handle save
   const handleSave = async () => {
     if (!user?.empId || !currentEmployee) {
-      console.error('Missing employee ID or current employee data');
+      console.error("Missing employee ID or current employee data");
       return;
     }
 
     setIsSaving(true);
-    
+
     try {
-      console.log('Saving profile data:', editData);
-      console.log('Current employee before update:', currentEmployee);
-      
+      console.log("Saving profile data:", editData);
+      console.log("Current employee before update:", currentEmployee);
+
       // Call the profile update service
       const updatedEmployee = await Employees.updateEmployeeProfile(
         user.empId,
@@ -101,22 +107,24 @@ function ProfilePage() {
         currentEmployee
       );
 
-      console.log('Update response:', updatedEmployee);
+      console.log("Update response:", updatedEmployee);
       await forceCompleteRefresh(user.empId);
       if (updatedEmployee) {
-        console.log('Profile updated successfully, forcing complete refresh...');
-        
+        console.log(
+          "Profile updated successfully, forcing complete refresh..."
+        );
+
         // Use the most aggressive refresh method
         const refreshedData = await forceCompleteRefresh(user.empId);
-        console.log('Complete refresh finished:', refreshedData);
-        
+        console.log("Complete refresh finished:", refreshedData);
+
         // Update refresh key to force re-render
         setRefreshKey(Date.now());
         setIsEditing(false);
         setEditData({});
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error("Error updating profile:", error);
     } finally {
       setIsSaving(false);
     }
@@ -139,18 +147,18 @@ function ProfilePage() {
   // Handle profile picture upload
   const handleProfilePictureEdit = () => {
     // Create a file input element
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.style.display = 'none';
-    
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.style.display = "none";
+
     fileInput.onchange = async (event) => {
       const file = event.target.files[0];
       if (file && user?.empId) {
         await handleProfilePictureUpload(file);
       }
     };
-    
+
     // Trigger file selection
     document.body.appendChild(fileInput);
     fileInput.click();
@@ -160,46 +168,47 @@ function ProfilePage() {
   // Handle profile picture file upload
   const handleProfilePictureUpload = async (file) => {
     if (!user?.empId) {
-      console.error('Missing employee ID');
+      console.error("Missing employee ID");
       return;
     }
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file");
       return;
     }
 
     // Validate file size (e.g., max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      alert('File size must be less than 5MB');
+      alert("File size must be less than 5MB");
       return;
     }
 
     setIsUploadingPicture(true);
-    
+
     try {
-      console.log('Uploading profile picture:', file.name);
-      
+      console.log("Uploading profile picture:", file.name);
+
       // Upload the profile picture
-      const uploadResult = await Employees.uploadProfilePicture(user.empId, file);
-      
+      const uploadResult = await Employees.uploadProfilePicture(
+        user.empId,
+        file
+      );
+
       if (uploadResult) {
-        console.log('Profile picture uploaded successfully');
-        
+        console.log("Profile picture uploaded successfully");
+
         // Force refresh to get the updated profile picture
         await forceCompleteRefresh(user.empId);
         setRefreshKey(Date.now());
       }
     } catch (error) {
-      console.error('Error uploading profile picture:', error);
+      console.error("Error uploading profile picture:", error);
     } finally {
       setIsUploadingPicture(false);
     }
   };
-
-
 
   const currentData = isEditing ? editData : employee;
 
@@ -250,11 +259,19 @@ function ProfilePage() {
       </div>
     );
   }
-  console.log('Current data ProfilePicture:', currentData.ProfilePicture);
-  console.log('Current employee data:', currentEmployee?.FirstName, currentEmployee?.LastName, currentEmployee?._refreshed);
-  
+  console.log("Current data ProfilePicture:", currentData.ProfilePicture);
+  console.log(
+    "Current employee data:",
+    currentEmployee?.FirstName,
+    currentEmployee?.LastName,
+    currentEmployee?._refreshed
+  );
+
   return (
-    <div className="" key={`${currentEmployee?.EmpID || 'no-employee'}-${refreshKey}`}>
+    <div
+      className=""
+      key={`${currentEmployee?.EmpID || "no-employee"}-${refreshKey}`}
+    >
       <div className="">
         {/* Single Card Layout */}
         <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
@@ -273,11 +290,17 @@ function ProfilePage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <FiUser className="h-16 w-16 h-16 p-1 text-white/90"/> 
+                    <FiUser className="w-16 h-16 p-1 text-white/90" />
                   )}
                 </div>
                 {/* Hover Controls */}
-                <div className={`absolute inset-0 bg-black/50 rounded-full ${isUploadingPicture ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity flex items-center justify-center`}>
+                <div
+                  className={`absolute inset-0 bg-black/50 rounded-full ${
+                    isUploadingPicture
+                      ? "opacity-100"
+                      : "opacity-0 group-hover:opacity-100"
+                  } transition-opacity flex items-center justify-center`}
+                >
                   {isUploadingPicture ? (
                     <div className="text-white text-xs">Uploading...</div>
                   ) : (
@@ -285,9 +308,15 @@ function ProfilePage() {
                       onClick={handleProfilePictureEdit}
                       disabled={isUploadingPicture || isSaving}
                       className={`w-6 h-6 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors ${
-                        isUploadingPicture || isSaving ? 'cursor-not-allowed opacity-50' : ''
+                        isUploadingPicture || isSaving
+                          ? "cursor-not-allowed opacity-50"
+                          : ""
                       }`}
-                      title={currentData.ProfilePicture ? "Change Profile Picture" : "Upload Profile Picture"}
+                      title={
+                        currentData.ProfilePicture
+                          ? "Change Profile Picture"
+                          : "Upload Profile Picture"
+                      }
                     >
                       <Edit3 size={12} className="text-white" />
                     </button>
@@ -306,7 +335,7 @@ function ProfilePage() {
                           onChange={(e) =>
                             handleInputChange("FirstName", e.target.value)
                           }
-                          className="text-lg font-bold bg-white/10 text-white placeholder-white/70 border border-white/20 rounded px-2 py-1 text-lg w-32"
+                          className="text-lg font-bold bg-white/10 text-white placeholder-white/70 border border-white/20 rounded px-2 py-1 w-32"
                           placeholder="First Name"
                         />
                         <input
@@ -315,7 +344,7 @@ function ProfilePage() {
                           onChange={(e) =>
                             handleInputChange("LastName", e.target.value)
                           }
-                          className="text-lg font-bold bg-white/10 text-white placeholder-white/70 border border-white/20 rounded px-2 py-1 text-lg w-32"
+                          className="text-lg font-bold bg-white/10 text-white placeholder-white/70 border border-white/20 rounded px-2 py-1 w-32"
                           placeholder="Last Name"
                         />
                       </div>
@@ -327,10 +356,11 @@ function ProfilePage() {
                     <div className="flex items-center gap-4 text-slate-200 text-lg">
                       <span>Employee ID: {currentData.EmpID}</span>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${currentData.IsActive
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          currentData.IsActive
                             ? "bg-green-500 text-white"
                             : "bg-red-500 text-white"
-                          }`}
+                        }`}
                       >
                         {currentData.IsActive ? "Active" : "Inactive"}
                       </span>
@@ -345,9 +375,7 @@ function ProfilePage() {
                           onClick={handleSave}
                           disabled={isSaving}
                           className={`px-3 py-1.5 ${
-                            isSaving 
-                              ? 'cursor-not-allowed' 
-                              : ''
+                            isSaving ? "cursor-not-allowed" : ""
                           } hover:bg-green-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-1`}
                         >
                           {isSaving ? (
@@ -360,9 +388,7 @@ function ProfilePage() {
                           onClick={handleCancel}
                           disabled={isSaving}
                           className={`px-3 py-1.5 ${
-                            isSaving 
-                              ? 'cursor-not-allowed' 
-                              : ''
+                            isSaving ? "cursor-not-allowed" : ""
                           } hover:bg-red-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-1`}
                         >
                           <X />
@@ -373,9 +399,9 @@ function ProfilePage() {
                         onClick={handleEdit}
                         disabled={isSaving}
                         className={`p-2 ${
-                          isSaving 
-                            ? 'cursor-not-allowed opacity-50' 
-                            : 'hover:bg-gray-800'
+                          isSaving
+                            ? "cursor-not-allowed opacity-50"
+                            : "hover:bg-gray-800"
                         } text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1`}
                       >
                         <SquarePen />
@@ -455,8 +481,6 @@ function ProfilePage() {
                       </div>
                     )}
                   </div>
-
-
                 </div>
               </div>
 
@@ -544,20 +568,20 @@ function ProfilePage() {
                   Employment
                 </h3>
                 <div className="space-y-3 grid grid-cols-4 gap-x-4">
-                    {/* Join Date */}
+                  {/* Join Date */}
                   <div>
                     <div className="text-sm text-slate-500 mb-1">Join Date</div>
-                      <div className="text-lg text-slate-700">
-                        {formatDate(currentData.DateOfJoining)}
-                      </div>
+                    <div className="text-lg text-slate-700">
+                      {formatDate(currentData.DateOfJoining)}
+                    </div>
                   </div>
 
                   {/* Role Name */}
                   <div>
                     <div className="text-sm text-slate-500 mb-1">Role</div>
-                      <div className="text-lg text-slate-700">
-                        {currentData.RoleID === 1 ? "Admin" : "User"}
-                      </div>
+                    <div className="text-lg text-slate-700">
+                      {currentData.RoleID === 1 ? "Admin" : "User"}
+                    </div>
                   </div>
 
                   {/* Onboarding Status */}
@@ -565,15 +589,16 @@ function ProfilePage() {
                     <div className="text-sm  text-slate-500 mb-1">
                       Onboarding
                     </div>
-                    
-                      <span
-                        className={`text-sm px-2 py-1 rounded-full font-medium ${currentData.OBStatus
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                          }`}
-                      >
-                        {currentData.OBStatus ? "Completed" : "Pending"}
-                      </span>
+
+                    <span
+                      className={`text-sm px-2 py-1 rounded-full font-medium ${
+                        currentData.OBStatus
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {currentData.OBStatus ? "Completed" : "Pending"}
+                    </span>
                   </div>
 
                   {/* Status */}
@@ -581,10 +606,11 @@ function ProfilePage() {
                     <div className="text-sm text-slate-500 mb-1">Status</div>
 
                     <span
-                      className={`text-sm px-2 py-1 rounded-full font-medium ${currentData.IsActive
+                      className={`text-sm px-2 py-1 rounded-full font-medium ${
+                        currentData.IsActive
                           ? "bg-green-100 text-green-700"
                           : "bg-red-100 text-red-700"
-                        }`}
+                      }`}
                     >
                       {currentData.IsActive ? "Active" : "Inactive"}
                     </span>
@@ -641,7 +667,6 @@ function ProfilePage() {
                       </div>
                     )}
                   </div>
-
                 </div>
               </div>
             </div>
