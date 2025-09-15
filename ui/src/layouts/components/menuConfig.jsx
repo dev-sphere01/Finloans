@@ -1,7 +1,7 @@
 import React from "react";
 // menu item icons imports
 import {
-  Users
+  Users,FileSpreadsheet
 } from "lucide-react";
 
 const allMenuItems = [
