@@ -97,6 +97,28 @@ const useAuthStore = create((set, get) => ({
     
     // Start monitoring token expiration
     get().startTokenMonitoring();
+    
+    // Fetch user permissions after login
+    get().fetchUserPermissions();
+  },
+
+  // Fetch user permissions
+  fetchUserPermissions: async () => {
+    const { user } = get();
+    if (!user?.id) return;
+
+    try {
+      // Import permission service dynamically to avoid circular imports
+      const { fetchUserPermissions } = await import('@/services/permissionService');
+      const permissions = await fetchUserPermissions(user.id);
+      
+      // Update user data with permissions
+      const updatedUser = { ...user, rolePermissions: permissions };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      set({ user: updatedUser });
+    } catch (error) {
+      console.error('Failed to fetch user permissions:', error);
+    }
   },
 
   logout: () => {

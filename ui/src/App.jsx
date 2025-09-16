@@ -17,6 +17,12 @@ import ProfilePage from '@/pages/Profile/ProfilePage';
 import UserSettings from '@/pages/Profile/components/Settings';
 import ChangePassword from '@/pages/Profile/components/ChangePassword';
 
+// Administration pages
+import UserRoles from '@/pages/Administration/UserRoles';
+import RoleManagement from '@/pages/Administration/RoleManagement';
+import AuditLogs from '@/pages/Administration/AuditLogs';
+import Settings from '@/pages/Administration/Settings';
+
 // Not found page
 import NotFound from '@/pages/NotFound/NotFound';
 
@@ -110,6 +116,12 @@ function App() {
           {/* ----------------------------- */}
           <Route path="/dashboard/profile" element={<Profile />} />
 
+
+          {/* Administration routes */}
+          <Route path="/administration/user-roles" element={<UserRoles />} />
+          <Route path="/administration/role-management" element={<RoleManagement />} />
+          <Route path="/administration/audit-logs" element={<AuditLogs />} />
+          <Route path="/administration/settings" element={<Settings />} />
 
           {/* Demo pages */}
           <Route path="/dashboard/excel-upload" element={<ExcelUploadDemo />} />

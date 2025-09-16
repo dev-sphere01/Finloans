@@ -5,17 +5,11 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import { Outlet, useLocation } from "react-router-dom";
 import { getMenuConfig } from "./components/menuConfig";
-import useEmpDataStore from "@/store/empDataStore";
+import useAuthStore from "@/store/authStore";
 
 
 const InnerLayout = () => {
-  const {
-    currentEmployee,
-    fetchEmployeeById,
-    getEmployeeDisplayName,
-    loading,
-    error
-  } = useEmpDataStore();
+  const { user } = useAuthStore();
   // Initialize sidebar state based on screen size
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     // Check if we're on desktop (lg breakpoint and above)
@@ -46,9 +40,8 @@ const InnerLayout = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [sidebarOpen]);
 
-  // Get menu items for InnerLayout (both admin and employee items)
-  // InnerLayout is used by HR/Admin users who can see both admin and employee features
-  const menuItems = getMenuConfig(currentEmployee?.RoleID);
+  // Get menu items based on user's role permissions
+  const menuItems = getMenuConfig(user?.rolePermissions || []);
 
   const getActiveTabTitle = () => {
     const item = menuItems.find(
