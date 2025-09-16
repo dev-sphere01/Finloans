@@ -33,12 +33,12 @@ export const decodeToken = (token) => {
  */
 export const loginUser = async (username, password) => {
   try {
-    const response = await API.post('/Login', {
+    const response = await API.post('/auth/Login', {
       UserName: username,
       Password: password,
     });
 
-    const { token, isAutoGenPass } = response.data;
+    const { token, isAutoGenPass, user } = response.data;
     
     if (token) {
       // Decode token to get user information
@@ -46,11 +46,19 @@ export const loginUser = async (username, password) => {
       
       if (decodedToken) {
         const userData = {
-          empId: decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'],
-          roleId: parseInt(decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']),
-          isAutoGenPass: decodedToken['AutoGenPass'] === 'True',
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          fullName: user.fullName,
+          empId: user.username, // For backward compatibility
+          roleId: decodedToken.roleId,
+          roleName: decodedToken.roleName,
+          isAutoGenPass: isAutoGenPass,
           token: token,
-          exp: decodedToken.exp
+          exp: decodedToken.exp,
+          lastLogin: user.lastLogin
         };
 
         // Store token in localStorage for API interceptor
@@ -69,7 +77,7 @@ export const loginUser = async (username, password) => {
     console.error('Login error:', error);
     throw {
       success: false,
-      message: error.response?.data || error.message || 'Login failed'
+      message: error.response?.data?.error || error.message || 'Login failed'
     };
   }
 };
@@ -82,20 +90,21 @@ export const loginUser = async (username, password) => {
  */
 export const changePassword = async (currentPassword, newPassword) => {
   try {
-    const response = await API.put('/Login/ChangePassword', {
+    const response = await API.put('/auth/ChangePassword', {
       CurrentPassword: currentPassword,
       NewPassword: newPassword,
     });
 
     return {
       success: true,
-      message: response.data.message || 'Password changed successfully'
+      message: response.data.message || 'Password changed successfully',
+      isAutoGenPass: response.data.isAutoGenPass || false
     };
   } catch (error) {
     console.error('Change password error:', error);
     throw {
       success: false,
-      message: error.response?.data || error.message || 'Failed to change password'
+      message: error.response?.data?.error || error.message || 'Failed to change password'
     };
   }
 };
@@ -107,20 +116,20 @@ export const changePassword = async (currentPassword, newPassword) => {
  */
 export const forgotPassword = async (username) => {
   try {
-    const response = await API.put('/Login/Forgotpassword', {
+    const response = await API.put('/auth/Forgotpassword', {
       UserName: username,
     });
 
     return {
       success: true,
-      message: 'Password reset email sent successfully',
+      message: response.data.message || 'Password reset email sent successfully',
       data: response.data
     };
   } catch (error) {
     console.error('Forgot password error:', error);
     throw {
       success: false,
-      message: error.response?.data || error.message || 'Failed to send reset email'
+      message: error.response?.data?.error || error.message || 'Failed to send reset email'
     };
   }
 };
