@@ -12,6 +12,10 @@ const app = express();
 const authRoutes = require('./controllers/authController');
 const userRoutes = require('./controllers/userController');
 const roleRoutes = require('./controllers/roleController');
+const creditCardRoutes = require('./routes/creditCardRoutes');
+const insuranceRoutes = require('./routes/insuranceRoutes');
+const loanRoutes = require('./routes/loanRoutes');
+
 
 // Rate limiting
 const limiter = rateLimit({
@@ -52,6 +56,11 @@ mongoose.connect(process.env.MONGODB_URI, {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/creditcards', creditCardRoutes);
+app.use('/api/insurances', insuranceRoutes);
+app.use('/api/loans', loanRoutes);
+app.use('/uploads', express.static('uploads'));
+
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

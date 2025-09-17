@@ -6,6 +6,7 @@
     "fin": "concurrently -n \"API,UI\" -c \"blue.bold,magenta.bold\" \"npm run dev --prefix api\" \"npm run dev --prefix ui\""
   },
   "dependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "multer": "^2.0.2"
   }
 }
