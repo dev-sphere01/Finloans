@@ -30,6 +30,9 @@ import ChangePassword from '@/pages/auth/ChangePassword'
 import Dashboard from '@/pages/dashboard/Dashboard'
 import Profile from '@/pages/profile/Profile';
 import Settings from '@/pages/settings/Settings';
+import CreditCards from '@/pages/masters/creditcards/CreditCards';
+import Insurance from '@/pages/masters/insurance/Insurance';
+import Loans from '@/pages/masters/loans/Loans';
 
 
 function App() {
@@ -87,6 +90,11 @@ function App() {
         }>
           <Route path="/dashboard" element={<Dashboard />} />
           {/* Add more protected routes here as needed */}
+
+
+          <Route path="/dashboard/loans" element={<Loans />} />
+          <Route path="/dashboard/credit-cards" element={<CreditCards />} />
+          <Route path="/dashboard/insurance" element={<Insurance />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
         </Route>

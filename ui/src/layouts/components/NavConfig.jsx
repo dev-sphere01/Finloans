@@ -7,7 +7,10 @@ import {
   BarChart3,
   MapPin,
   CalendarDays,
-  ReceiptIndianRupee
+  ReceiptIndianRupee,
+  CreditCard ,
+  HandCoins ,
+  ShieldUser 
 } from "lucide-react";
 
 const allMenuItems = [
@@ -23,7 +26,9 @@ const allMenuItems = [
 
   // Masters Section
   { id: "masters", name: "Masters", type: "heading", roleId: [1] },
-  { id: "departments", name: "Departments", icon: <Building size={18} />, type: "item", roleId: [1] },
+  { id: "credit-cards", name: "Credit Cards", icon: <CreditCard  size={18} />, type: "item", roleId: [1] },
+  { id: "insurance", name: "Insurance", icon: <ShieldUser    size={18} />, type: "item", roleId: [1] },
+  { id: "loans", name: "Loans", icon: <HandCoins   size={18} />, type: "item", roleId: [1] },
 
 
   // Demo Pages
