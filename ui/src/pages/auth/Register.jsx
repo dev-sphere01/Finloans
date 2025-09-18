@@ -198,7 +198,7 @@ const Register = () => {
 
       <div className="text-center mt-6">
         <p className="text-xs text-gray-500">
-          © 2025 Your Company. All rights reserved.
+          © 2025 BoilerPlate. All rights reserved.
         </p>
       </div>
     </div>

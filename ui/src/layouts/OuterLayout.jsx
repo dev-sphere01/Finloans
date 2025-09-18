@@ -1,6 +1,10 @@
+// layouts/OuterLayout.jsx
 import React from "react";
 import { Outlet } from "react-router-dom";
-import LoginImage from "@/assets/login-image.svg";
+import LoginImage from "@/assets/images/login-image.svg";
+
+// component imports
+
 
 const OuterLayout = () => {
   return (

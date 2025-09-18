@@ -5,8 +5,8 @@
  * @uses axios - For making HTTP requests.
  */
 import axios from 'axios';
-import getBaseURL from '@/utils/getBaseURL';
-import { isTokenExpired } from './authService';
+import getBaseURL from '@/utils/getBaseApiURL';
+// import { isTokenExpired } from './authService';
 
 const baseURL = getBaseURL();
 // console.log('API Base URL:', baseURL)
@@ -67,11 +67,11 @@ API.interceptors.request.use(
         const user = JSON.parse(userStr);
         
         // Check if token is expired before making request
-        if (user.exp && isTokenExpired(user.exp)) {
-          console.warn('Token expired before request - logging out');
-          handleTokenExpiration();
-          return Promise.reject(new Error('Token expired'));
-        }
+        // if (user.exp && isTokenExpired(user.exp)) { // <--- disabled for now
+        //   console.warn('Token expired before request - logging out');
+        //   handleTokenExpiration();
+        //   return Promise.reject(new Error('Token expired'));
+        // }
         
         config.headers.Authorization = `Bearer ${token}`;
       } catch (error) {

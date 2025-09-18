@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Upload, FileSpreadsheet, Check, AlertCircle, Download, Edit3 } from 'lucide-react';
 
-const ExcelImportService = ({ predefinedFields, onDataChange, onFileReset, debugMode = false, exportJsonEnabled }) => {
+const ExcelMapper = ({ predefinedFields, onDataChange, onFileReset, debugMode = false, exportJsonEnabled }) => {
   const [file, setFile] = useState(null);
   const [headers, setHeaders] = useState([]);
   const [rawData, setRawData] = useState([]);
@@ -470,11 +470,11 @@ const ExcelImportService = ({ predefinedFields, onDataChange, onFileReset, debug
   );
 };
 
-export default ExcelImportService;
+export default ExcelMapper;
 
 //----------------- Example Usage -----------------
 /*
-import ExcelImportService from '@/services/ExcelMappingService';
+import ExcelMapper from '@/services/ExcelMappingService';
 import React, { useState } from 'react'
 
 const ExcelUploadDemo = () => {
@@ -496,7 +496,7 @@ const ExcelUploadDemo = () => {
     <div className="min-h-screen bg-gray-100 p-4">
       <div className="">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <ExcelImportService
+          <ExcelMapper
             predefinedFields={predefinedFields}
             onDataChange={handleDataChange}
             debugMode={false}

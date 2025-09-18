@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { changePassword } from '@/services/authService';
+// import { changePassword } from '@/services/authService'; // <--- temporarily disabled
 import notification from '@/services/NotificationService';
 import { FaLock, FaEye, FaEyeSlash, FaCheck, FaTimes } from 'react-icons/fa';
 
-const ChangePasswordForm = ({ 
+const ChangePassword = ({ 
   onSuccess, 
   onError, 
   showTitle = true, 
@@ -128,7 +128,7 @@ const ChangePasswordForm = ({
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6 ${className} bg-white rounded-2xl shadow-xl p-8 border border-slate-100`}>
       {showTitle && (
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Change Your Password</h2>
@@ -215,8 +215,8 @@ const ChangePasswordForm = ({
           </div>
         </div>
 
-        {/* Password Requirements */}
-        {formData.newPassword && (
+        {/* Password Requirements <--- disabled for now */}
+        {/* {formData.newPassword && (
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <h4 className="text-sm font-medium text-gray-700 mb-3">Password Requirements:</h4>
             <div className="space-y-2">
@@ -237,7 +237,7 @@ const ChangePasswordForm = ({
               })}
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Confirm Password */}
         <div>
@@ -297,4 +297,4 @@ const ChangePasswordForm = ({
   );
 };
 
-export default ChangePasswordForm;
+export default ChangePassword;

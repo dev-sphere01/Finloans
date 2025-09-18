@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
-import { loginUser } from "@/services/authService";
+// import { loginUser } from "@/services/authService"; // <--- temporarily disabled
 import notification from "@/services/NotificationService";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaSignInAlt, FaUser } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
@@ -117,7 +117,7 @@ const Login = () => {
               <input type="checkbox" className="mr-2 h-4 w-4 text-slate-600 border-gray-300 rounded" />
               Remember me
             </label>
-            <Link to="/forgot" className="text-sm text-slate-600 hover:text-slate-500 font-medium">
+            <Link to="/forgot-password" className="text-sm text-slate-600 hover:text-slate-500 font-medium">
               Forgot password?
             </Link>
           </div>
@@ -170,7 +170,7 @@ const Login = () => {
         </div> */}
       <div className="text-center mt-6">
         <p className="text-xs text-gray-500">
-          © 2025 CUPL. All rights reserved.
+          © 2025 BoilerPlate. All rights reserved.
         </p>
       </div>
       </div>

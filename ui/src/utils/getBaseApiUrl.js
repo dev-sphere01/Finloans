@@ -4,7 +4,7 @@
  * Get the appropriate base URL based on the application stage
  * @returns {string} The base URL for API calls
  */
-const getBaseURL = () => {
+const getBaseApiURL = () => {
   const stage = import.meta.env.VITE_APP_STAGE;
   const localURL = import.meta.env.VITE_API_BASE_URL_LOCAL;
   const liveURL = import.meta.env.VITE_API_BASE_URL_LIVE;
@@ -39,4 +39,4 @@ const getBaseURL = () => {
   return baseURL;
 };
 
-export default getBaseURL;
+export default getBaseApiURL;
