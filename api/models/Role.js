@@ -50,7 +50,6 @@ const roleSchema = new mongoose.Schema({
 });
 
 // Indexes
-roleSchema.index({ name: 1 });
 roleSchema.index({ isActive: 1 });
 
 // Method to check if role has permission
