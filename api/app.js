@@ -1,76 +1,109 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
-const config = require('./config');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
+require('dotenv').config();
+
 const app = express();
 
-// Enable CORS for all routes
+// Import routes
+const authRoutes = require('./controllers/authController');
+const userRoutes = require('./controllers/userController');
+const roleRoutes = require('./controllers/roleController');
+const creditCardRoutes = require('./routes/creditCardRoutes');
+const insuranceRoutes = require('./routes/insuranceRoutes');
+const loanRoutes = require('./routes/loanRoutes');
+
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Middleware
+app.use(limiter);
 app.use(cors({
-  origin: "*",
-  credentials: true, // Allow cookies and authentication headers
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  origin: ['http://localhost:3000', 'http://localhost:5173'], // Add your frontend URLs
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Middleware to parse JSON bodies
-app.use(express.json());
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
-// Add request logger in development mode
-if (config.isDevelopment) {
-  app.use((req, res, next) => {
-    console.log(`${req.method} ${req.originalUrl}`);
-    next();
-  });
-}
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => {
+  console.log('Connected to MongoDB');
+})
+.catch((error) => {
+  console.error('MongoDB connection error:', error);
+  process.exit(1);
+});
 
-
-// Route Imports
-
-// const userRoutes = require('./routes/userRoutes'); // Import user routes
-// const securityQuestionRoutes = require('./routes/securityQuestionRoute'); // Import security question routes
-// const enquiryRoute = require('./routes/enquiryRoute')
-// const studentDetailsRoute = require('./routes/studentDetailsRoutes')
-// const feeDetails = require('./routes/feeRoute')
-
-// Use the routes
-
-
-const baseRouter = express.Router();
-
-
-// baseRouter.use("/user", userRoutes); // Use user routes under the / path
-// baseRouter.use("/createSecurityQuestion", securityQuestionRoutes); // Use security question routes under the //security-questions path
-// baseRouter.use("/enquiry", enquiryRoute); // Use security question routes under the //security-questions path
-// baseRouter.use("/studentDetails", studentDetailsRoute);
-// baseRouter.use("/fee", feeDetails);
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/creditcards', creditCardRoutes);
+app.use('/api/insurances', insuranceRoutes);
+app.use('/api/loans', loanRoutes);
+app.use('/uploads', express.static('uploads'));
 
 
-// Use baseRouter once under /api/v1
-app.use('/api/v1', baseRouter);
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Not found - ${req.originalUrl}`
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV 
   });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
-
-  // Log error in development mode
-  if (config.isDevelopment) {
-    console.error(err);
+  console.error('Error:', err);
+  
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({
+      error: 'Validation Error',
+      details: Object.values(err.errors).map(e => e.message)
+    });
   }
-
-  res.status(statusCode).json({
-    success: false,
-    message,
-    stack: config.isDevelopment ? err.stack : undefined
+  
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+  
+  if (err.name === 'TokenExpiredError') {
+    return res.status(401).json({ error: 'Token expired' });
+  }
+  
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error'
   });
 });
 
-// Export the app
+// 404 handler - Fix the wildcard route
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+});
+
 module.exports = app;

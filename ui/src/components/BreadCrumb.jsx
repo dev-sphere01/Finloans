@@ -6,20 +6,8 @@ import { ChevronRight } from 'lucide-react';
 // Optional: human-friendly label map
 const routeLabelMap = {
   'dashboard': 'Dashboard',
-  'add-employee': 'Add Employee',
-  'all-employees': 'All Employees',
-  'import-employees': 'Import Employees',
-  'onboarding': 'Onboarding',
-  'departments': 'Departments',
-  'assets': 'Assets',
-  'process-payroll': 'Process Payroll',
-  'salary-structures': 'Salary Structures',
-  'payslips': 'Payslips',
-  'loans-advances': 'Loans & Advances',
-  'reports': 'Reports',
-  'user-roles': 'User Roles',
   'settings': 'Settings',
-  'audit-logs': 'Audit Logs',
+  'profile': 'Profile'
 };
 
 const Breadcrumb = () => {

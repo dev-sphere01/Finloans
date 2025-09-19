@@ -1,6 +1,10 @@
+// layouts/OuterLayout.jsx
 import React from "react";
 import { Outlet } from "react-router-dom";
-import MainGate from "@/assets/images/maingate-2.jpg";
+import LoginImage from "@/assets/images/login-image.svg";
+
+// component imports
+
 
 const OuterLayout = () => {
   return (
@@ -33,16 +37,13 @@ const OuterLayout = () => {
       {/* Layout Container */}
       <div className="relative z-10 w-full max-w-[1600px] h-[100vh] overflow-hidden grid grid-cols-1 lg:grid-cols-5 gap-4 items-center ">
         {/* Image Section */}
-        <div className="hidden lg:flex col-span-3 items-center justify-center p-4 ">
-          <div className="relative w-full max-h-[75vh] rounded-2xl overflow-hidden shadow-xl border-1 border-slate-200">
-            {/* slate Overlay */}
-            <div className="absolute inset-0 bg-slate-500/10 z-10 pointer-events-none" />
-
-            {/* Image */}
+        <div className="hidden lg:flex col-span-3 items-center justify-center p-4">
+          <div className="relative w-full h-full max-w-2xl max-h-[80vh] flex items-center justify-center">
+            {/* SVG Image */}
             <img
-              src={MainGate}
+              src={LoginImage}
               alt="Welcome illustration"
-              className="w-full h-auto object-cover z-0"
+              className="w-full h-full object-contain max-w-full max-h-full"
             />
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { forgotPassword } from "@/services/authService";
+// import { forgotPassword } from "@/services/authService"; // <--- temporarily disabled
 import notification from "@/services/NotificationService";
 import { FaEnvelope, FaPaperPlane, FaUnlockAlt, FaCheck, FaTimes } from "react-icons/fa";
 

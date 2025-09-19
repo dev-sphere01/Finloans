@@ -1,28 +1,29 @@
 import { useState, useEffect } from "react";
 import { motion as M, AnimatePresence } from "framer-motion";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
-import Footer from "@/components/Footer";
-import { Outlet, useLocation } from "react-router-dom";
-import { getMenuConfig } from "./components/menuConfig";
-import useEmpDataStore from "@/store/empDataStore";
 
+// layouts/InnerLayout.jsx
+import { Outlet, useLocation } from "react-router-dom";
+import useAuthStore from '@/store/authStore';
+
+// components imports
+import Navbar from '@/components/Navbar';
+import Sidebar from '@/components/Sidebar';
+import Footer from '@/components/Footer'
+
+// navigation items 
+import { getNavConfig } from "./components/NavConfig";
 
 const InnerLayout = () => {
-  const {
-    currentEmployee,
-    fetchEmployeeById,
-    getEmployeeDisplayName,
-    loading,
-    error
-  } = useEmpDataStore();
+  const { user, logout } = useAuthStore();
+  const location = useLocation();
+
+  const [activeTab, setActiveTab] = useState("");
   // Initialize sidebar state based on screen size
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     // Check if we're on desktop (lg breakpoint and above)
     return typeof window !== 'undefined' && window.innerWidth >= 1024;
   });
-  const location = useLocation();
-  const [activeTab, setActiveTab] = useState("");
+
 
   useEffect(() => {
     const currentPath = location.pathname.split("/")[2];
@@ -46,9 +47,9 @@ const InnerLayout = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [sidebarOpen]);
 
-  // Get menu items for InnerLayout (both admin and employee items)
-  // InnerLayout is used by HR/Admin users who can see both admin and employee features
-  const menuItems = getMenuConfig(currentEmployee?.RoleID);
+  // Get menu items based on user's role permissions
+  // const menuItems = getNavConfig(user?.rolePermissions || []);
+  const menuItems = getNavConfig(1 || []); // <--- temporary until role based access 
 
   const getActiveTabTitle = () => {
     const item = menuItems.find(
@@ -57,9 +58,8 @@ const InnerLayout = () => {
     return item ? item.name : activeTab === "dashboard" ? "Dashboard" : "Page Not Found";
   };
 
-
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="inner-layout h-screen w-full flex overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
 
       {/* Sidebar Container */}
       <div className="h-full overflow-y-auto z-50">
@@ -86,7 +86,6 @@ const InnerLayout = () => {
         )}
       </AnimatePresence>
 
-      {/* Main Content Container */}
       <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-100">
         <Navbar
           getActiveTabTitle={getActiveTabTitle}
