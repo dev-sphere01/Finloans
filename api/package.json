@@ -2,8 +2,9 @@
   "name": "api",
   "private": true,
   "version": "1.0.0",
+    "main": "server.js",
   "scripts": {
-    "dev": "nodemon app.js"
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
