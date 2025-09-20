@@ -36,7 +36,7 @@ const useAuthStore = create((set, get) => ({
       }
     } else {
       set({ 
-        isAuthenticated: true, // <--- change here for dev environment to access protected routes 
+        isAuthenticated: false, // <--- change here for dev environment to access protected routes 
         user: null, 
         isLoading: false,
         isInitialized: true // Set initialized to true

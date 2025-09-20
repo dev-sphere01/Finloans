@@ -33,6 +33,7 @@ import Settings from '@/pages/settings/Settings';
 import CreditCards from '@/pages/masters/creditcards/CreditCards';
 import Insurance from '@/pages/masters/insurance/Insurance';
 import Loans from '@/pages/masters/loans/Loans';
+import Users from '@/pages/masters/users/Users';
 
 
 function App() {
@@ -97,6 +98,7 @@ function App() {
           <Route path="/dashboard/insurance" element={<Insurance />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/dashboard/users" element={<Users />} />
         </Route>
 
         {/* Catch all route - redirect to login */}
