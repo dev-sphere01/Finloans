@@ -128,7 +128,7 @@ const ForgotPassword = () => {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-xs text-gray-500">
-            © 2025 CUPL. All rights reserved.
+            © 2025 Finloans Financial Services. All rights reserved.
           </p>
         </div>
       </div>

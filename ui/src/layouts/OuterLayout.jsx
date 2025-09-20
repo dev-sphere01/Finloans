@@ -37,13 +37,14 @@ const OuterLayout = () => {
       {/* Layout Container */}
       <div className="relative z-10 w-full max-w-[1600px] h-[100vh] overflow-hidden grid grid-cols-1 lg:grid-cols-5 gap-4 items-center ">
         {/* Image Section */}
-        <div className="hidden lg:flex col-span-3 items-center justify-center p-4">
+        <div className="hidden lg:flex col-span-3 items-center justify-center p-4 pointer-events-none z-10">
           <div className="relative w-full h-full max-w-2xl max-h-[80vh] flex items-center justify-center">
             {/* SVG Image */}
             <img
               src={LoginImage}
               alt="Welcome illustration"
-              className="w-full h-full object-contain max-w-full max-h-full"
+              className="w-full h-full object-contain max-w-full max-h-full pointer-events-none select-none"
+              draggable="false"
             />
           </div>
         </div>

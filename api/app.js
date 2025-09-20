@@ -7,9 +7,9 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 
 // Import routes
-const authRoutes = require('./controllers/authController');
-const userRoutes = require('./controllers/userController');
-const roleRoutes = require('./controllers/roleController');
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const roleRoutes = require('./routes/roleRoutes');
 const creditCardRoutes = require('./routes/creditCardRoutes');
 const insuranceRoutes = require('./routes/insuranceRoutes');
 const loanRoutes = require('./routes/loanRoutes');

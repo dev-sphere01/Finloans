@@ -1,30 +1,9 @@
-const express = require('express');
 const User = require('../models/User');
 const Role = require('../models/Role');
 const AuditLog = require('../models/AuditLog');
-const { 
-  authenticateToken, 
-  authorize, 
-  requireAdmin, 
-  canModifyUser,
-  logAccess 
-} = require('../middlewares/auth');
-const { 
-  validateUserRegistration, 
-  validateUserUpdate, 
-  validateMongoId,
-  validatePagination 
-} = require('../middlewares/validation');
-
-const router = express.Router();
 
 // Get all users (with pagination and filtering)
-router.get('/', 
-  authenticateToken, 
-  authorize('users', 'read'),
-  validatePagination,
-  logAccess('USER_LIST', 'users'),
-  async (req, res) => {
+exports.getAllUsers = async (req, res) => {
     try {
       const {
         page = 1,
@@ -88,16 +67,10 @@ router.get('/',
       console.error('Get users error:', error);
       res.status(500).json({ error: 'Failed to fetch users' });
     }
-  }
-);
+  };
 
 // Get user by ID
-router.get('/:id', 
-  authenticateToken, 
-  authorize('users', 'read'),
-  validateMongoId('id'),
-  logAccess('USER_VIEW', 'users'),
-  async (req, res) => {
+exports.getUserById = async (req, res) => {
     try {
       const user = await User.findById(req.params.id)
         .populate('roleId', 'name description permissions')
@@ -114,16 +87,10 @@ router.get('/:id',
       console.error('Get user error:', error);
       res.status(500).json({ error: 'Failed to fetch user' });
     }
-  }
-);
+  };
 
 // Create new user
-router.post('/', 
-  authenticateToken, 
-  authorize('users', 'create'),
-  validateUserRegistration,
-  logAccess('USER_CREATE', 'users'),
-  async (req, res) => {
+exports.createUser = async (req, res) => {
     try {
       const { username, email, password, firstName, lastName, roleId } = req.body;
 
@@ -201,17 +168,10 @@ router.post('/',
       
       res.status(500).json({ error: 'Failed to create user' });
     }
-  }
-);
+  };
 
 // Update user
-router.put('/:id', 
-  authenticateToken, 
-  canModifyUser,
-  validateMongoId('id'),
-  validateUserUpdate,
-  logAccess('USER_UPDATE', 'users'),
-  async (req, res) => {
+exports.updateUser = async (req, res) => {
     try {
       const userId = req.params.id;
       const updates = req.body;
@@ -317,16 +277,10 @@ router.put('/:id',
       
       res.status(500).json({ error: 'Failed to update user' });
     }
-  }
-);
+  };
 
 // Delete user (soft delete - deactivate)
-router.delete('/:id', 
-  authenticateToken, 
-  authorize('users', 'delete'),
-  validateMongoId('id'),
-  logAccess('USER_DELETE', 'users'),
-  async (req, res) => {
+exports.deleteUser = async (req, res) => {
     try {
       const userId = req.params.id;
 
@@ -368,16 +322,10 @@ router.delete('/:id',
       console.error('Delete user error:', error);
       res.status(500).json({ error: 'Failed to delete user' });
     }
-  }
-);
+  };
 
 // Unlock user account
-router.post('/:id/unlock', 
-  authenticateToken, 
-  requireAdmin,
-  validateMongoId('id'),
-  logAccess('ACCOUNT_UNLOCK', 'users'),
-  async (req, res) => {
+exports.unlockUser = async (req, res) => {
     try {
       const user = await User.findById(req.params.id);
       if (!user) {
@@ -414,13 +362,10 @@ router.post('/:id/unlock',
       console.error('Unlock account error:', error);
       res.status(500).json({ error: 'Failed to unlock account' });
     }
-  }
-);
+  };
 
 // Get current user profile
-router.get('/profile/me', 
-  authenticateToken,
-  async (req, res) => {
+exports.getCurrentUserProfile = async (req, res) => {
     try {
       const user = await User.findById(req.userId)
         .populate('roleId', 'name description permissions');
@@ -431,7 +376,4 @@ router.get('/profile/me',
       console.error('Get profile error:', error);
       res.status(500).json({ error: 'Failed to fetch profile' });
     }
-  }
-);
-
-module.exports = router;
+  };
