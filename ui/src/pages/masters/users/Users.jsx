@@ -1,131 +1,123 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import userService from '@/services/userService';
-import { useNavigate } from 'react-router-dom';
-import TableService from '@/services/TableService';
-import DeleteConfirmationModal from './components/DeleteConfirmationModal';
-import { createColumnHelper } from '@tanstack/react-table';
+import React, { useState } from 'react'
+import AddUser from './components/AddUser'
+import AllUsers from './components/AllUsers'
+import EditUser from './components/EditUser'
+import ViewUser from './components/ViewUser'
 
 const Users = () => {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [deletingUser, setDeletingUser] = useState(null);
-  const tableRef = useRef(null);
-  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('all')
+  const [editingUser, setEditingUser] = useState(null)
+  const [viewingUser, setViewingUser] = useState(null)
 
-  const columnHelper = createColumnHelper();
+  const tabs = [
+    { id: 'all', label: 'All Users', icon: '👥' },
+    { id: 'add', label: 'Add User', icon: '➕' },
+  ]
 
-  const columns = useMemo(
-    () => [
-      columnHelper.accessor('username', {
-        header: 'Username',
-        cell: (info) => info.getValue(),
-      }),
-      columnHelper.accessor('email', {
-        header: 'Email',
-        cell: (info) => info.getValue(),
-      }),
-      columnHelper.accessor('fullName', {
-        header: 'Full Name',
-        cell: (info) => info.getValue(),
-      }),
-      columnHelper.accessor('roleId.name', {
-        header: 'Role',
-        cell: (info) => info.getValue(),
-      }),
-      columnHelper.accessor('isActive', {
-        header: 'Status',
-        cell: (info) => (info.getValue() ? 'Active' : 'Inactive'),
-      }),
-      columnHelper.display({
-        id: 'actions',
-        header: 'Actions',
-        cell: (info) => (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate(`/dashboard/users/edit/${info.row.original._id}`)}
-              className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => handleDeleteClick(info.row.original)}
-              className="bg-red-500 text-white px-2 py-1 rounded text-sm"
-            >
-              Delete
-            </button>
-          </div>
-        ),
-      }),
-    ],
-    []
-  );
+  const handleEditUser = (user) => {
+    setEditingUser(user)
+    setViewingUser(null)
+    setActiveTab('edit')
+  }
 
-  const fetchUsers = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await userService.getUsers();
-      setData(data.users);
-    } catch (err) {
-      setError(err.error || 'Failed to fetch users');
-    }
-    setLoading(false);
-  }, []);
+  const handleViewUser = (user) => {
+    setViewingUser(user)
+    setEditingUser(null)
+    setActiveTab('view')
+  }
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  const handleCloseEdit = () => {
+    setEditingUser(null)
+    setActiveTab('all')
+  }
 
-  const handleDeleteClick = useCallback((user) => {
-    setDeletingUser(user);
-  }, []);
+  const handleCloseView = () => {
+    setViewingUser(null)
+    setActiveTab('all')
+  }
 
-  const handleDeleteUser = useCallback(async () => {
-    try {
-      if (deletingUser) {
-        await userService.deleteUser(deletingUser._id);
-        setDeletingUser(null);
-        fetchUsers(); // Refresh the list
-      }
-    } catch (error) {
-      console.error('Failed to delete user:', error);
-      // You might want to show an error message to the user
-    }
-  }, [deletingUser, fetchUsers]);
+  const handleUserCreated = () => {
+    setActiveTab('all')
+  }
 
-  if (error) {
-    return <div>Error: {error}</div>;
+  const handleUserUpdated = () => {
+    setEditingUser(null)
+    setActiveTab('all')
   }
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">User Management</h1>
-        <button
-          onClick={() => navigate('/dashboard/users/add')}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Add User
-        </button>
+    <div className="space-y-6">
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${activeTab === tab.id
+                ? `border-blue-500 text-blue-600`
+                : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
+                }`}
+            >
+              <span className="mr-2">{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+          {editingUser && (
+            <button
+              onClick={() => setActiveTab('edit')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${activeTab === 'edit'
+                ? `border-blue-500 text-blue-600`
+                : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
+                }`}
+            >
+              <span className="mr-2">✏️</span>
+              Edit User
+            </button>
+          )}
+          {viewingUser && (
+            <button
+              onClick={() => setActiveTab('view')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${activeTab === 'view'
+                ? `border-blue-500 text-blue-600`
+                : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
+                }`}
+            >
+              <span className="mr-2">👁️</span>
+              View User
+            </button>
+          )}
+        </nav>
       </div>
 
-      <TableService
-        ref={tableRef}
-        columns={columns}
-        data={data}
-        loading={loading}
-        onRefresh={fetchUsers}
-      />
+      {/* Tab Content */}
+      <div className="mt-6">
+        {activeTab === 'all' && (
+          <AllUsers
+            onEditUser={handleEditUser}
+            onViewUser={handleViewUser}
+          />
+        )}
+        {activeTab === 'add' && (
+          <AddUser onUserCreated={handleUserCreated} />
+        )}
+        {activeTab === 'edit' && editingUser && (
+          <EditUser
+            user={editingUser}
+            onUserUpdated={handleUserUpdated}
+            onClose={handleCloseEdit}
+          />
+        )}
+        {activeTab === 'view' && viewingUser && (
+          <ViewUser
+            user={viewingUser}
+            onClose={handleCloseView}
+            onEdit={handleEditUser}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
 
-      {deletingUser && (
-        <DeleteConfirmationModal
-          userName={deletingUser.username}
-          onConfirm={handleDeleteUser}
-          onCancel={() => setDeletingUser(null)}
-        />
-      )}
-    </>
-  );
-};
-
-export default Users;
+export default Users

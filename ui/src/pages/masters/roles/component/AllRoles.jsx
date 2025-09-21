@@ -91,24 +91,24 @@ const AllRoles = ({ onEditRole }) => {
     }
   }
 
-  const handleDeleteRole = async (roleId, roleName) => {
-    if (!window.confirm(`Are you sure you want to delete the role "${roleName}"? This action cannot be undone.`)) return;
+    const handleDeleteRole = async (roleId, roleName) => {
+      if (!window.confirm(`Are you sure you want to delete the role "${roleName}"? This action cannot be undone.`)) return;
 
-    try {
-      setDeleteLoading(roleId);
-      const response = await API.roles.delete(roleId);
-      if (response.success) {
-        notification.success('Role deleted successfully!');
-        fetchRoles(); // Re-fetch roles to update the table
-      } else {
-        notification.error(response.message || 'Failed to delete role');
+      try {
+        setDeleteLoading(roleId);
+        const response = await API.roles.delete(roleId);
+        if (response.success) {
+          notification.success('Role deleted successfully!');
+          fetchRoles(); // Re-fetch roles to update the table
+        } else {
+          notification.error(response.message || 'Failed to delete role');
+        }
+      } catch (err) {
+        notification.error(err.response?.data?.message || 'Failed to delete role');
+      } finally {
+        setDeleteLoading(null);
       }
-    } catch (err) {
-      notification.error(err.response?.data?.message || 'Failed to delete role');
-    } finally {
-      setDeleteLoading(null);
-    }
-  };
+    };
 
   const columnHelper = createColumnHelper();
 
@@ -174,7 +174,7 @@ const AllRoles = ({ onEditRole }) => {
           >
             Edit
           </button>
-          {!info.row.original.isSystem && (
+          {/* {!info.row.original.isSystem && (
             <button
               onClick={() => handleDeleteRole(info.row.original._id, info.row.original.RoleName)}
               disabled={deleteLoading === info.row.original._id}
@@ -182,7 +182,7 @@ const AllRoles = ({ onEditRole }) => {
             >
               {deleteLoading === info.row.original._id ? 'Deleting...' : 'Delete'}
             </button>
-          )}
+          )} */}
         </div>
       ),
       enableSorting: false,
@@ -192,7 +192,7 @@ const AllRoles = ({ onEditRole }) => {
 
 
   return (
-    <div className="rounded-lg shadow-md bg-white">
+    <div className="rounded-lg shadow-md bg-white ">
       {/* Header */}
       {/* <div className="p-6 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">

@@ -22,6 +22,26 @@ const roleService = {
       throw error.response?.data || { error: 'Failed to create role' };
     }
   },
+
+  update: async (id, roleData) => {
+    try {
+      const response = await API.put(`/roles/${id}`, roleData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating role with ID ${id}:`, error);
+      throw error.response?.data || { error: 'Failed to update role io' };
+    }
+  },
+
+  delete: async (id) => {
+    try {
+      const response = await API.delete(`/roles/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting role with ID ${id}:`, error);
+      throw error.response?.data || { error: 'Failed to delete role' };
+    }
+  }
 };
 
 export default roleService;
