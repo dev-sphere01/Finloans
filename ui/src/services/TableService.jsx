@@ -13,7 +13,7 @@ import React, {
   forwardRef,
   useCallback,
 } from "react";
-import { debounce } from "@/utils";
+import useDebounce from "@/utils/debounce"; // Corrected import
 import {
   useReactTable,
   getCoreRowModel,
@@ -34,8 +34,7 @@ import {
   ChevronsRight,
 } from "lucide-react";
 
-const TableService = forwardRef(
-  (
+const TableService = (
     {
       columns,
       data,
@@ -50,9 +49,9 @@ const TableService = forwardRef(
       onRowClick, // Optional: row click handler
       getIsRowExpanded, // Optional: function(row) => boolean
       renderExpandedRow, // Optional: function(row) => JSX
-    },
-    ref
-  ) => {
+      onStateChange, // New prop to pass state up
+    }
+) => {
     const [sorting, setSorting] = useState([]);
     const [columnFilters, setColumnFilters] = useState([]);
     const [columnVisibility, setColumnVisibility] = useState({});
@@ -66,8 +65,8 @@ const TableService = forwardRef(
     const [columnFilterInputs, setColumnFilterInputs] = useState({});
 
     // Use debounced values for API calls, not for UI display
-    const [debouncedGlobalFilter] = debounce(globalFilter, 500);
-    const [debouncedColumnFilters] = debounce(columnFilters, 500);
+    const [debouncedGlobalFilter] = useDebounce(globalFilter, 500); // Corrected usage
+    const [debouncedColumnFilters] = useDebounce(columnFilters, 500); // Corrected usage
 
     // Reset pagination when filters change (except on initial load)
     const [isInitialMount, setIsInitialMount] = useState(true);
@@ -87,28 +86,24 @@ const TableService = forwardRef(
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
     }, [debouncedColumnFilters]);
 
-    // Emit refresh signal when any debounced state changes
+    
+
     useEffect(() => {
-      if (typeof onRefresh === "function") {
-        onRefresh();
+      if (typeof onStateChange === "function") {
+        onStateChange({
+          pagination,
+          sorting,
+          columnFilters: debouncedColumnFilters,
+          globalFilter: debouncedGlobalFilter,
+        });
       }
     }, [
       pagination,
       sorting,
       debouncedColumnFilters,
       debouncedGlobalFilter,
-      onRefresh,
+      onStateChange,
     ]);
-
-    // Expose internal state to parent via ref
-    useImperativeHandle(ref, () => ({
-      getTableState: () => ({
-        pagination,
-        sorting,
-        columnFilters: debouncedColumnFilters,
-        globalFilter: debouncedGlobalFilter,
-      }),
-    }));
 
     const table = useReactTable({
       data: data || [],
@@ -522,8 +517,7 @@ const TableService = forwardRef(
               <span className="text-sm text-gray-700">Page</span>
               <input
                 type="number"
-                value={
-                  serverPagination && currentPage !== undefined
+                value={serverPagination && currentPage !== undefined
                     ? currentPage
                     : table.getState().pagination.pageIndex + 1
                 }
@@ -581,8 +575,7 @@ const TableService = forwardRef(
         </div>
       </div>
     );
-  }
-);
+  };
 
 TableService.displayName = "TableService";
 

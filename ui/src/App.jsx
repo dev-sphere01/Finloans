@@ -34,6 +34,7 @@ import CreditCards from '@/pages/masters/creditcards/CreditCards';
 import Insurance from '@/pages/masters/insurance/Insurance';
 import Loans from '@/pages/masters/loans/Loans';
 import Users from '@/pages/masters/users/Users';
+import UserFormPage from '@/pages/masters/users/UserFormPage';
 
 
 function App() {
@@ -99,6 +100,8 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/dashboard/users" element={<Users />} />
+          <Route path="/dashboard/users/add" element={<UserFormPage />} />
+          <Route path="/dashboard/users/edit/:id" element={<UserFormPage />} />
         </Route>
 
         {/* Catch all route - redirect to login */}

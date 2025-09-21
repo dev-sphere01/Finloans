@@ -11,6 +11,7 @@ import { confirm } from '@/services/ConfirmationService';
 // import TokenStatus from './TokenStatus'; //later to be integrated
 
 import getBaseFileURL from '@/utils/getBaseFileUrl';
+import { handleTokenExpiration } from '@/utils/logoutUtils';
 
 
 const Navbar = ({ getActiveTabTitle, setSidebarOpen, sidebarOpen }) => {
@@ -33,7 +34,7 @@ const Navbar = ({ getActiveTabTitle, setSidebarOpen, sidebarOpen }) => {
 
         if (confirmed) {
             // Use centralized logout utility
-            // handleManualLogout()  // from logout util later
+            handleTokenExpiration();
             notify.info("Loggin Out !")
         }
     };
@@ -132,10 +133,10 @@ const Navbar = ({ getActiveTabTitle, setSidebarOpen, sidebarOpen }) => {
                             </div>
                             <div className="hidden sm:block">
                                 <p className="text-sm font-medium text-gray-900">
-                                    Mr. Dummy
+                                    {user?.name || "Administrator"}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                    Administrator
+                                    {user?.role || "Administrator"}
                                 </p>
                             </div>
                             <motion.i
@@ -158,13 +159,13 @@ const Navbar = ({ getActiveTabTitle, setSidebarOpen, sidebarOpen }) => {
                                     {/* User Info */}
                                     <div className="px-4 py-3 border-b border-gray-100">
                                         <p className="text-sm font-medium text-gray-900">
-                                            Mr. Dummy
+                                            {user?.name || "N/A"}
                                         </p>
                                         <p className="text-xs text-gray-500">
-                                            dummy@example.com
+                                            {user?.email || "N/A"}
                                         </p>
                                         <p className="text-xs text-gray-400">
-                                            Employee ID: 123
+                                            Employee ID: {user?.id || "N/A"}
                                         </p>
                                     </div>
 

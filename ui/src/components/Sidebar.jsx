@@ -7,6 +7,7 @@ import useAuthStore from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
 import { confirm } from "@/services/ConfirmationService";
 import notification from "@/services/NotificationService";
+import { handleTokenExpiration } from "@/utils/logoutUtils";
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen, menuItems }) => {
     console.log(menuItems)
@@ -54,8 +55,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, menuItems }) => {
 
         if (confirmed) {
             notification().success("Logged out");
-            logout();
-            navigate("/login");
+            handleTokenExpiration();
         }
     };
 

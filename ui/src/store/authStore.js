@@ -45,10 +45,10 @@ const useAuthStore = create((set, get) => ({
   },
 
   // Login action
-  login: (userData, token) => {
-    sessionStorage.setItem('authToken', token);
-    sessionStorage.setItem('user', JSON.stringify(userData));
-    set({ isAuthenticated: true, user: userData });
+  login: (loginResponseData) => {
+    sessionStorage.setItem('authToken', loginResponseData.token);
+    sessionStorage.setItem('user', JSON.stringify(loginResponseData.user));
+    set({ isAuthenticated: true, user: loginResponseData.user });
   },
 
   // Logout action

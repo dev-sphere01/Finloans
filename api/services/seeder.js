@@ -1,14 +1,14 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Role = require('../models/Role');
-require('dotenv').config();
+require('dotenv').config({ path: './api/config/config.env' });
 
 const seedDatabase = async () => {
   try {
     console.log('Starting database seeding...');
 
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI, {
+    await mongoose.connect(process.env.DB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
