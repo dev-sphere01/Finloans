@@ -10,7 +10,6 @@ import notification from "@/services/NotificationService"; // Changed import
 import { handleTokenExpiration } from "@/utils/logoutUtils";
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen, menuItems }) => {
-    console.log(menuItems)
     const [isMobile, setIsMobile] = React.useState(false);
     const notify = notification(); // Added this line
     const [expandedSection, setExpandedSection] = useState(null);

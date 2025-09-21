@@ -8,6 +8,7 @@ const Users = () => {
   const [activeTab, setActiveTab] = useState('all')
   const [editingUser, setEditingUser] = useState(null)
   const [viewingUser, setViewingUser] = useState(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const tabs = [
     { id: 'all', label: 'All Users', icon: '👥' },
@@ -37,18 +38,20 @@ const Users = () => {
   }
 
   const handleUserCreated = () => {
+    setRefreshKey(prev => prev + 1) // Force refresh of AllUsers
     setActiveTab('all')
   }
 
   const handleUserUpdated = () => {
+    setRefreshKey(prev => prev + 1) // Force refresh of AllUsers
     setEditingUser(null)
     setActiveTab('all')
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0">
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <nav className="-mb-px flex space-x-8">
           {tabs.map((tab) => (
             <button
@@ -94,6 +97,7 @@ const Users = () => {
       <div className="mt-6">
         {activeTab === 'all' && (
           <AllUsers
+            key={refreshKey}
             onEditUser={handleEditUser}
             onViewUser={handleViewUser}
           />

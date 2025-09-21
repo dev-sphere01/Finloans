@@ -4,7 +4,7 @@ import roleService from '@/services/roleService'
 import notification from '@/services/NotificationService'
 
 const AddUser = ({ onUserCreated }) => {
-  const notify = notification()
+  const { success: notifySuccess, error: notifyError } = notification()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -26,7 +26,7 @@ const AddUser = ({ onUserCreated }) => {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const response = await roleService.getAll()
+        const response = await roleService.getRoles()
         setRoles(response.roles || [])
       } catch (err) {
         console.error('Error fetching roles:', err)
@@ -109,9 +109,9 @@ const AddUser = ({ onUserCreated }) => {
     try {
       const response = await userService.createUser(formData)
 
-      if (response.success) {
+      if (response.success || response) {
         setSuccess('User created successfully!')
-        notify('User created successfully!', 'success')
+        notifySuccess('User created successfully!')
         setFormData({
           username: '',
           email: '',
@@ -133,7 +133,7 @@ const AddUser = ({ onUserCreated }) => {
       console.error('Error creating user:', err)
       const msg = err.response?.data?.message || err.error || 'Failed to create user'
       setError(msg)
-      notify(msg, 'error')
+      notifyError(msg)
     } finally {
       setLoading(false)
     }
@@ -142,24 +142,24 @@ const AddUser = ({ onUserCreated }) => {
   return (
     <div className="rounded-lg shadow-md p-3 bg-white">
       {/* Success Message */}
-      {success && (
+      {/* {success && (
         <div className="mb-2 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md">
           <div className="flex items-center">
             <span className="mr-2">✅</span>
             {success}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Error Message */}
-      {error && (
+      {/* {error && (
         <div className="mb-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
           <div className="flex items-center">
             <span className="mr-2">❌</span>
             {error}
           </div>
         </div>
-      )}
+      )} */}
 
       <form onSubmit={handleSubmit} className="space-y-3">
         {/* Basic Information */}
@@ -234,8 +234,8 @@ const AddUser = ({ onUserCreated }) => {
           )}
         </div>
 
-        {/* Name Fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Name Fields and Role in one line */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* First Name */}
           <div>
             <label htmlFor="firstName" className="block text-sm font-medium mb-2 text-gray-700">
@@ -281,34 +281,34 @@ const AddUser = ({ onUserCreated }) => {
               <p className="mt-1 text-sm text-red-600">{validationErrors.lastName}</p>
             )}
           </div>
-        </div>
 
-        {/* Role Selection */}
-        <div>
-          <label htmlFor="roleId" className="block text-sm font-medium mb-2 text-gray-700">
-            Role <span className="text-red-500">*</span>
-          </label>
-          <select
-            id="roleId"
-            name="roleId"
-            value={formData.roleId}
-            onChange={handleInputChange}
-            className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              validationErrors.roleId
-                ? 'border-red-300 bg-white text-gray-900'
-                : 'border-gray-300 bg-white text-gray-900'
-            }`}
-          >
-            <option value="">Select a role</option>
-            {roles.map((role) => (
-              <option key={role._id} value={role._id}>
-                {role.name}
-              </option>
-            ))}
-          </select>
-          {validationErrors.roleId && (
-            <p className="mt-1 text-sm text-red-600">{validationErrors.roleId}</p>
-          )}
+          {/* Role Selection */}
+          <div>
+            <label htmlFor="roleId" className="block text-sm font-medium mb-2 text-gray-700">
+              Role <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="roleId"
+              name="roleId"
+              value={formData.roleId}
+              onChange={handleInputChange}
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                validationErrors.roleId
+                  ? 'border-red-300 bg-white text-gray-900'
+                  : 'border-gray-300 bg-white text-gray-900'
+              }`}
+            >
+              <option value="">Select a role</option>
+              {roles.map((role) => (
+                <option key={role._id} value={role._id}>
+                  {role.name}
+                </option>
+              ))}
+            </select>
+            {validationErrors.roleId && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.roleId}</p>
+            )}
+          </div>
         </div>
 
         {/* Status Checkbox */}

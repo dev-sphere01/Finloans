@@ -6,7 +6,7 @@ import { createColumnHelper } from '@tanstack/react-table'
 import notification from '@/services/NotificationService'
 
 const AllUsers = ({ onEditUser, onViewUser }) => {
-  const notify = notification()
+  const { success: notifySuccess, error: notifyError } = notification()
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -132,14 +132,14 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
     try {
       await userService.deleteUser(deletingUser._id)
       setDeletingUser(null)
-      notify('User deleted successfully!', 'success')
+      notifySuccess('User deleted successfully!')
       fetchUsers() // Refresh the list
     } catch (error) {
       console.error('Failed to delete user:', error)
       const errorMsg = error.response?.data?.message || error.error || 'Failed to delete user'
-      notify(errorMsg, 'error')
+      notifyError(errorMsg)
     }
-  }, [deletingUser, notify])
+  }, [deletingUser, notifySuccess, notifyError])
 
   if (error) {
     return (

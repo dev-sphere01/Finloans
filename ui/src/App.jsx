@@ -28,7 +28,7 @@ import ChangePassword from '@/pages/auth/ChangePassword'
 
 //authenticated pages imports
 import Dashboard from '@/pages/dashboard/Dashboard'
-import Profile from '@/pages/profile/Profile';
+import UserProfile from '@/pages/Profile/UserProfile';
 import Settings from '@/pages/settings/Settings';
 import CreditCards from '@/pages/masters/creditcards/CreditCards';
 import Insurance from '@/pages/masters/insurance/Insurance';
@@ -98,7 +98,7 @@ function App() {
           <Route path="/dashboard/loans" element={<Loans />} />
           <Route path="/dashboard/credit-cards" element={<CreditCards />} />
           <Route path="/dashboard/insurance" element={<Insurance />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<UserProfile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/dashboard/users" element={<Users />} />
           <Route path="/dashboard/users/add" element={<UserFormPage />} />

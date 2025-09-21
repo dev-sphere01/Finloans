@@ -76,7 +76,6 @@ const AllRoles = ({ onEditRole }) => {
 
       const response = await roleService.getAll(params)
 
-      console.log(response)
       if (response) {
         setRoles(response.roles || [])
         setTotalItems(response.pagination.total);
@@ -113,7 +112,6 @@ const AllRoles = ({ onEditRole }) => {
   const columnHelper = createColumnHelper();
 
 
-  console.log(roles)
   const columns = useMemo(() => [
     columnHelper.accessor('name', {
       header: 'Role Name',

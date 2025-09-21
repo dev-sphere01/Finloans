@@ -48,7 +48,7 @@ const Role = () => {
       </div> */}
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <nav className="-mb-px flex space-x-8">
           {tabs.map((tab) => (
             <button
