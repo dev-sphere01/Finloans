@@ -6,12 +6,13 @@ import { NavLink, useLocation } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
 import { confirm } from "@/services/ConfirmationService";
-import notification from "@/services/NotificationService";
+import notification from "@/services/NotificationService"; // Changed import
 import { handleTokenExpiration } from "@/utils/logoutUtils";
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen, menuItems }) => {
     console.log(menuItems)
     const [isMobile, setIsMobile] = React.useState(false);
+    const notify = notification(); // Added this line
     const [expandedSection, setExpandedSection] = useState(null);
     const logout = useAuthStore((state) => state.logout);
     const user = useAuthStore((state) => state.user);
@@ -54,7 +55,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, menuItems }) => {
         });
 
         if (confirmed) {
-            notification().success("Logged out");
+            notify.success("Logged out"); // Changed usage
             handleTokenExpiration();
         }
     };
@@ -138,7 +139,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, menuItems }) => {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
                 >
-                    BoilerPlate
+                    FinLoans
                 </motion.h1>
             </div>
 

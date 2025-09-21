@@ -35,6 +35,7 @@ import Insurance from '@/pages/masters/insurance/Insurance';
 import Loans from '@/pages/masters/loans/Loans';
 import Users from '@/pages/masters/users/Users';
 import UserFormPage from '@/pages/masters/users/UserFormPage';
+import Role from '@/pages/masters/roles/Role';
 
 
 function App() {
@@ -102,6 +103,7 @@ function App() {
           <Route path="/dashboard/users" element={<Users />} />
           <Route path="/dashboard/users/add" element={<UserFormPage />} />
           <Route path="/dashboard/users/edit/:id" element={<UserFormPage />} />
+          <Route path="/dashboard/roles" element={<Role />} />
         </Route>
 
         {/* Catch all route - redirect to login */}

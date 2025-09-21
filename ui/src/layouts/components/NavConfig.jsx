@@ -11,7 +11,8 @@ import {
   CreditCard ,
   HandCoins ,
   ShieldUser, 
-  Users
+  Users,
+  Shield
 } from "lucide-react";
 
 const allMenuItems = [
@@ -31,6 +32,7 @@ const allMenuItems = [
   { id: "insurance", name: "Insurance", icon: <ShieldUser    size={18} />, type: "item", roleId: [1] },
   { id: "loans", name: "Loans", icon: <HandCoins   size={18} />, type: "item", path: "/dashboard/loans", roleId: [1] },
   { id: "users", name: "Users", icon: <Users size={18} />, type: "item", path: "/dashboard/users", roleId: [1] },
+  { id: "roles", name: "Roles", icon: <Shield size={18} />, type: "item", path: "/dashboard/roles", roleId: [1] },
 
 
   // Demo Pages

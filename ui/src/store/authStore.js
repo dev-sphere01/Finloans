@@ -69,7 +69,7 @@ const useAuthStore = create((set, get) => ({
       const devUser = mockUser || {
         id: 1,
         name: 'Dev User',
-        email: 'dev@BoilerPlate.com',
+        email: 'dev@FinLoans.com',
         role: 'admin'
       };
       

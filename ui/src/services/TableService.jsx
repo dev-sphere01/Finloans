@@ -20,6 +20,7 @@ import {
   getSortedRowModel,
   getPaginationRowModel,
   flexRender,
+  createColumnHelper,
 } from "@tanstack/react-table";
 import {
   CircleX,
@@ -357,20 +358,38 @@ const TableService = (
                       <th key={header.id} className="px-2 py-0.5 bg-gray-100">
                         {header.column.getCanFilter() && (
                           <div className="relative mt-1">
-                            <input
-                              type="text"
-                              value={columnFilterInputs[header.column.id] ?? ""}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={(e) =>
-                                handleColumnFilterChange(
-                                  header.column.id,
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Filter..."
-                              className="px-2 py-1 pr-6 rounded border border-slate-300 bg-white w-full text-xs"
-                            />
-                            {columnFilterInputs[header.column.id] && (
+                            {header.column.id === 'isActive' ? (
+                              <select
+                                value={columnFilterInputs[header.column.id] ?? ""}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) =>
+                                  handleColumnFilterChange(
+                                    header.column.id,
+                                    e.target.value
+                                  )
+                                }
+                                className="px-2 py-1 rounded border border-slate-300 bg-white w-full text-xs"
+                              >
+                                <option value="">All</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                value={columnFilterInputs[header.column.id] ?? ""}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) =>
+                                  handleColumnFilterChange(
+                                    header.column.id,
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Filter..."
+                                className="px-2 py-1 pr-6 rounded border border-slate-300 bg-white w-full text-xs"
+                              />
+                            )}
+                            {columnFilterInputs[header.column.id] && header.column.id !== 'isActive' && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();

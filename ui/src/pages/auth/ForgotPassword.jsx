@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 // import { forgotPassword } from "@/services/authService"; // <--- temporarily disabled
-import notification from "@/services/NotificationService";
+import notification from "@/services/NotificationService"; // Changed import
 import { FaEnvelope, FaPaperPlane, FaUnlockAlt, FaCheck, FaTimes } from "react-icons/fa";
 
 const ForgotPassword = () => {
@@ -16,7 +16,7 @@ const ForgotPassword = () => {
     setMessage("");
     setError("");
 
-    const notify = notification();
+    const notify = notification(); // Changed usage
 
     try {
       const response = await forgotPassword(username);

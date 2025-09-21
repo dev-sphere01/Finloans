@@ -1,0 +1,27 @@
+[
+  {
+    "module": "users",
+    "ModuleDisplayName": "User Management",
+    "actions": ["read", "create", "update", "delete", "manage"]
+  },
+  {
+    "module": "roles",
+    "ModuleDisplayName": "Role Management",
+    "actions": ["read", "create", "update", "delete", "manage"]
+  },
+  {
+    "module": "credit-cards",
+    "ModuleDisplayName": "Credit Cards",
+    "actions": ["read", "create", "update", "delete"]
+  },
+  {
+    "module": "insurance",
+    "ModuleDisplayName": "Insurance",
+    "actions": ["read", "create", "update", "delete"]
+  },
+  {
+    "module": "loans",
+    "ModuleDisplayName": "Loans",
+    "actions": ["read", "create", "update", "delete"]
+  }
+]
