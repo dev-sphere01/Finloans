@@ -28,14 +28,12 @@ const AllRoles = ({ onEditRole }) => {
   const currentSearchTerm = tableState.globalFilter;
 
   // Column filters (derived from tableState for API calls)
-  const filterActive = useMemo(() => {
-    const activeFilter = tableState.columnFilters.find(f => f.id === 'isActive');
-    return activeFilter ? activeFilter.value : 'all';
-  }, [tableState.columnFilters]);
-
-  const filterSystem = useMemo(() => {
-    const systemFilter = tableState.columnFilters.find(f => f.id === 'isSystem');
-    return systemFilter ? systemFilter.value : 'all';
+  const currentColumnFilters = useMemo(() => {
+    const filters = {};
+    tableState.columnFilters.forEach(f => {
+      filters[f.id] = f.value;
+    });
+    return filters;
   }, [tableState.columnFilters]);
 
 
@@ -45,7 +43,7 @@ const AllRoles = ({ onEditRole }) => {
 
   useEffect(() => {
     fetchRoles()
-  }, [currentPage, currentLimit, currentSortBy, currentSortOrder, currentSearchTerm, filterActive, filterSystem])
+  }, [currentPage, currentLimit, currentSortBy, currentSortOrder, currentSearchTerm, currentColumnFilters])
 
   const fetchRoles = async () => {
     try {
@@ -57,21 +55,13 @@ const AllRoles = ({ onEditRole }) => {
         page: currentPage,
         limit: currentLimit,
         sortBy: currentSortBy,
-        sortOrder: currentSortOrder
+        sortOrder: currentSortOrder,
+        ...currentColumnFilters
       }
 
       // Add search if provided
       if (currentSearchTerm.trim()) {
         params.search = currentSearchTerm.trim()
-      }
-
-      // Add filters
-      if (filterActive !== 'all') {
-        params.isActive = filterActive === 'active'
-      }
-
-      if (filterSystem !== 'all') {
-        params.isSystem = filterSystem === 'system'
       }
 
       const response = await roleService.getAll(params)
@@ -131,7 +121,7 @@ const AllRoles = ({ onEditRole }) => {
     columnHelper.accessor('description', {
       header: 'Description',
       enableSorting: false,
-      enableColumnFilter: false,
+      enableColumnFilter: true,
     }),
     columnHelper.accessor('permissions', {
       header: 'Permissions',

@@ -12,7 +12,7 @@ exports.getAllRoles = async (req, res) => {
         sortBy = 'createdAt',
         sortOrder = 'desc',
         search,
-        isActive
+        ...filters
       } = req.query;
 
       // Build filter object
@@ -25,8 +25,20 @@ exports.getAllRoles = async (req, res) => {
         ];
       }
       
-      if (isActive !== undefined) {
-        filter.isActive = isActive === 'true';
+      for (const key in filters) {
+        if (filters[key]) {
+          if (key === 'isActive' || key === 'isSystem') {
+            if (filters[key] === 'active' || filters[key] === 'system') {
+                filter[key] = true;
+            } else if (filters[key] === 'inactive' || filters[key] === 'user') {
+                filter[key] = false;
+            } else {
+                filter[key] = filters[key] === 'true';
+            }
+          } else {
+            filter[key] = { $regex: filters[key], $options: 'i' };
+          }
+        }
       }
 
       // Build sort object

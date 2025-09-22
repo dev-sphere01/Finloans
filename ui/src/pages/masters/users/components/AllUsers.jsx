@@ -13,6 +13,30 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
   const [deletingUser, setDeletingUser] = useState(null)
   const tableRef = useRef(null)
 
+  const [tableState, setTableState] = useState({
+    pagination: { pageIndex: 0, pageSize: 10 },
+    sorting: [{ id: 'createdAt', desc: true }],
+    columnFilters: [],
+    globalFilter: '',
+  });
+
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const currentPage = tableState.pagination.pageIndex + 1;
+  const currentLimit = tableState.pagination.pageSize;
+  const currentSortBy = tableState.sorting.length > 0 ? tableState.sorting[0].id : 'createdAt';
+  const currentSortOrder = tableState.sorting.length > 0 ? (tableState.sorting[0].desc ? 'desc' : 'asc') : 'asc';
+  const currentSearchTerm = tableState.globalFilter;
+
+  const currentColumnFilters = useMemo(() => {
+    const filters = {};
+    tableState.columnFilters.forEach(f => {
+      filters[f.id] = f.value;
+    });
+    return filters;
+  }, [tableState.columnFilters]);
+
   const columnHelper = createColumnHelper()
 
   const columns = useMemo(
@@ -24,6 +48,7 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
             {info.getValue()}
           </div>
         ),
+        enableColumnFilter: true,
       }),
       columnHelper.accessor('email', {
         header: 'Email',
@@ -32,6 +57,7 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
             {info.getValue()}
           </div>
         ),
+        enableColumnFilter: true,
       }),
       columnHelper.accessor('fullName', {
         header: 'Full Name',
@@ -40,14 +66,17 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
             {info.getValue() || `${info.row.original.firstName} ${info.row.original.lastName}`}
           </div>
         ),
+        enableColumnFilter: true,
       }),
-      columnHelper.accessor('roleId.name', {
+      columnHelper.accessor('roleId_name', {
         header: 'Role',
         cell: (info) => (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            {info.getValue() || 'No Role'}
+            {info.row.original.roleId?.name || 'No Role'}
           </span>
         ),
+        enableColumnFilter: true,
+        enableSorting: false,
       }),
       columnHelper.accessor('isActive', {
         header: 'Status',
@@ -60,6 +89,7 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
             {info.getValue() ? 'Active' : 'Inactive'}
           </span>
         ),
+        enableColumnFilter: true,
       }),
       columnHelper.accessor('createdAt', {
         header: 'Created',
@@ -68,6 +98,7 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
             {new Date(info.getValue()).toLocaleDateString()}
           </div>
         ),
+        enableColumnFilter: false,
       }),
       columnHelper.display({
         id: 'actions',
@@ -106,8 +137,24 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
     try {
       setLoading(true)
       setError(null)
-      const response = await userService.getUsers()
+
+      const params = {
+        page: currentPage,
+        limit: currentLimit,
+        sortBy: currentSortBy,
+        sortOrder: currentSortOrder,
+        ...currentColumnFilters
+      }
+
+      if (currentSearchTerm.trim()) {
+        params.search = currentSearchTerm.trim()
+      }
+
+      const response = await userService.getUsers(params)
       setData(response.users || [])
+      setTotalItems(response.pagination.total);
+      setTotalPages(response.pagination.totalPages);
+
     } catch (err) {
       console.error('Error fetching users:', err)
       const errorMsg = err.response?.data?.message || err.error || 'Failed to fetch users'
@@ -116,7 +163,7 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [currentPage, currentLimit, currentSortBy, currentSortOrder, currentSearchTerm, currentColumnFilters])
 
   useEffect(() => {
     fetchUsers()
@@ -176,7 +223,7 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">
-                Total: {data.length} users
+                Total: {totalItems} users
               </span>
               <button
                 onClick={fetchUsers}
@@ -194,7 +241,12 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
             ref={tableRef}
             columns={columns}
             data={data}
+            serverPagination={true}
+            pageCount={totalPages}
+            totalItems={totalItems}
+            currentPage={currentPage}
             loading={loading}
+            onStateChange={setTableState}
             onRefresh={fetchUsers}
           />
         </div>

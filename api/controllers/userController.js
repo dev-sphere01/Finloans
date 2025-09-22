@@ -11,8 +11,7 @@ exports.getAllUsers = async (req, res) => {
         sortBy = 'createdAt',
         sortOrder = 'desc',
         search,
-        roleId,
-        isActive
+        ...filters
       } = req.query;
 
       // Build filter object
@@ -26,13 +25,32 @@ exports.getAllUsers = async (req, res) => {
           { lastName: { $regex: search, $options: 'i' } }
         ];
       }
-      
-      if (roleId) {
-        filter.roleId = roleId;
-      }
-      
-      if (isActive !== undefined) {
-        filter.isActive = isActive === 'true';
+
+      for (const key in filters) {
+        if (filters[key]) {
+          if (key === 'isActive') {
+            if (filters[key] === 'active') {
+                filter[key] = true;
+            } else if (filters[key] === 'inactive') {
+                filter[key] = false;
+            } else {
+                filter[key] = filters[key] === 'true';
+            }
+          } else if (key === 'roleId_name') {
+            const roles = await Role.find({ name: { $regex: filters[key], $options: 'i' } }).select('_id');
+            filter.roleId = { $in: roles.map(r => r._id) };
+          } else if (key === 'fullName') {
+            if (!filter.$and) filter.$and = [];
+            filter.$and.push({
+              $or: [
+                { firstName: { $regex: filters[key], $options: 'i' } },
+                { lastName: { $regex: filters[key], $options: 'i' } }
+              ]
+            });
+          } else {
+            filter[key] = { $regex: filters[key], $options: 'i' };
+          }
+        }
       }
 
       // Build sort object
