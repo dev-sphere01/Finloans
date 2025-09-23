@@ -1,91 +1,62 @@
 const User = require('../models/User');
 const Role = require('../models/Role');
 const AuditLog = require('../models/AuditLog');
+const queryService = require("../services/queryService");
 
+// Get all users (with pagination and filtering)
 // Get all users (with pagination and filtering)
 exports.getAllUsers = async (req, res) => {
     try {
-      const {
-        page = 1,
-        limit = 10,
-        sortBy = 'createdAt',
-        sortOrder = 'desc',
-        search,
-        ...filters
-      } = req.query;
-
-      // Build filter object
-      const filter = {};
-      
-      if (search) {
-        filter.$or = [
-          { username: { $regex: search, $options: 'i' } },
-          { email: { $regex: search, $options: 'i' } },
-          { firstName: { $regex: search, $options: 'i' } },
-          { lastName: { $regex: search, $options: 'i' } }
-        ];
-      }
-
-      for (const key in filters) {
-        if (filters[key]) {
-          if (key === 'isActive') {
-            if (filters[key] === 'active') {
-                filter[key] = true;
-            } else if (filters[key] === 'inactive') {
-                filter[key] = false;
-            } else {
-                filter[key] = filters[key] === 'true';
+        const options = {
+            searchableFields: ['username', 'email', 'firstName', 'lastName'],
+            populate: [
+                { path: 'roleId', select: 'name description' },
+                { path: 'createdBy', select: 'username firstName lastName' },
+                { path: 'updatedBy', select: 'username firstName lastName' }
+            ],
+            customFilters: async (filters, baseFilter) => {
+                for (const key in filters) {
+                    if (filters[key]) {
+                        if (key === 'isActive') {
+                            if (filters[key] === 'active') {
+                                baseFilter[key] = true;
+                            } else if (filters[key] === 'inactive') {
+                                baseFilter[key] = false;
+                            } else {
+                                baseFilter[key] = filters[key] === 'true';
+                            }
+                        } else if (key === 'roleId_name') {
+                            const roles = await Role.find({ name: { $regex: filters[key], $options: 'i' } }).select('_id');
+                            baseFilter.roleId = { $in: roles.map(r => r._id) };
+                        } else if (key === 'fullName') {
+                            if (!baseFilter.$and) baseFilter.$and = [];
+                            baseFilter.$and.push({
+                                $or: [
+                                    { firstName: { $regex: filters[key], $options: 'i' } },
+                                    { lastName: { $regex: filters[key], $options: 'i' } }
+                                ]
+                            });
+                        } else {
+                            baseFilter[key] = { $regex: filters[key], $options: 'i' };
+                        }
+                    }
+                }
+                return baseFilter;
             }
-          } else if (key === 'roleId_name') {
-            const roles = await Role.find({ name: { $regex: filters[key], $options: 'i' } }).select('_id');
-            filter.roleId = { $in: roles.map(r => r._id) };
-          } else if (key === 'fullName') {
-            if (!filter.$and) filter.$and = [];
-            filter.$and.push({
-              $or: [
-                { firstName: { $regex: filters[key], $options: 'i' } },
-                { lastName: { $regex: filters[key], $options: 'i' } }
-              ]
-            });
-          } else {
-            filter[key] = { $regex: filters[key], $options: 'i' };
-          }
-        }
-      }
+        };
 
-      // Build sort object
-      const sort = {};
-      sort[sortBy] = sortOrder === 'desc' || sortOrder === '-1' ? -1 : 1;
+        const { data, pagination } = await queryService.query(User, req.query, options);
 
-      // Execute query with pagination
-      const skip = (parseInt(page) - 1) * parseInt(limit);
-      
-      const [users, total] = await Promise.all([
-        User.find(filter)
-          .populate('roleId', 'name description')
-          .populate('createdBy', 'username firstName lastName')
-          .populate('updatedBy', 'username firstName lastName')
-          .sort(sort)
-          .skip(skip)
-          .limit(parseInt(limit)),
-        User.countDocuments(filter)
-      ]);
-
-      res.json({
-        users,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / parseInt(limit))
-        }
-      });
+        res.json({
+            users: data,
+            pagination
+        });
 
     } catch (error) {
-      console.error('Get users error:', error);
-      res.status(500).json({ error: 'Failed to fetch users' });
+        console.error('Get users error:', error);
+        res.status(500).json({ error: 'Failed to fetch users' });
     }
-  };
+};
 
 // Get user by ID
 exports.getUserById = async (req, res) => {

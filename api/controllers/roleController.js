@@ -2,88 +2,61 @@ const Role = require('../models/Role');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const { SYSTEM_MODULES, CRUD_ACTIONS, MODULE_CATEGORIES, DEFAULT_ROLE_TEMPLATES } = require('../config/modules');
+const queryService = require("../services/queryService");
 
+// Get all roles (with pagination and filtering)
 // Get all roles (with pagination and filtering)
 exports.getAllRoles = async (req, res) => {
     try {
-      const {
-        page = 1,
-        limit = 10,
-        sortBy = 'createdAt',
-        sortOrder = 'desc',
-        search,
-        ...filters
-      } = req.query;
-
-      // Build filter object
-      const filter = {};
-      
-      if (search) {
-        filter.$or = [
-          { name: { $regex: search, $options: 'i' } },
-          { description: { $regex: search, $options: 'i' } }
-        ];
-      }
-      
-      for (const key in filters) {
-        if (filters[key]) {
-          if (key === 'isActive' || key === 'isSystem') {
-            if (filters[key] === 'active' || filters[key] === 'system') {
-                filter[key] = true;
-            } else if (filters[key] === 'inactive' || filters[key] === 'user') {
-                filter[key] = false;
-            } else {
-                filter[key] = filters[key] === 'true';
+        const options = {
+            searchableFields: ['name', 'description'],
+            populate: [
+                { path: 'createdBy', select: 'username firstName lastName' },
+                { path: 'updatedBy', select: 'username firstName lastName' }
+            ],
+            customFilters: async (filters, baseFilter) => {
+                for (const key in filters) {
+                    if (filters[key]) {
+                        if (key === 'isActive' || key === 'isSystem') {
+                            if (filters[key] === 'active' || filters[key] === 'system') {
+                                baseFilter[key] = true;
+                            } else if (filters[key] === 'inactive' || filters[key] === 'user') {
+                                baseFilter[key] = false;
+                            } else {
+                                baseFilter[key] = filters[key] === 'true';
+                            }
+                        } else {
+                            baseFilter[key] = { $regex: filters[key], $options: 'i' };
+                        }
+                    }
+                }
+                return baseFilter;
             }
-          } else {
-            filter[key] = { $regex: filters[key], $options: 'i' };
-          }
-        }
-      }
+        };
 
-      // Build sort object
-      const sort = {};
-      sort[sortBy] = sortOrder === 'desc' || sortOrder === '-1' ? -1 : 1;
+        const { data: roles, pagination } = await queryService.query(Role, req.query, options);
 
-      // Execute query with pagination
-      const skip = (parseInt(page) - 1) * parseInt(limit);
-      
-      const [roles, total] = await Promise.all([
-        Role.find(filter)
-          .populate('createdBy', 'username firstName lastName')
-          .populate('updatedBy', 'username firstName lastName')
-          .sort(sort)
-          .skip(skip)
-          .limit(parseInt(limit)),
-        Role.countDocuments(filter)
-      ]);
+        // Get user count for each role
+        const rolesWithUserCount = await Promise.all(
+            roles.map(async (role) => {
+                const userCount = await User.countDocuments({ roleId: role._id, isActive: true });
+                return {
+                    ...role.toObject(),
+                    userCount
+                };
+            })
+        );
 
-      // Get user count for each role
-      const rolesWithUserCount = await Promise.all(
-        roles.map(async (role) => {
-          const userCount = await User.countDocuments({ roleId: role._id, isActive: true });
-          return {
-            ...role.toObject(),
-            userCount
-          };
-        })
-      );
-
-      res.json({
-        roles: rolesWithUserCount,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / parseInt(limit))
-        }
-      });
+        res.json({
+            roles: rolesWithUserCount,
+            pagination
+        });
 
     } catch (error) {
-      console.error('Get roles error:', error);
-      res.status(500).json({ error: 'Failed to fetch roles' });
+        console.error('Get roles error:', error);
+        res.status(500).json({ error: 'Failed to fetch roles' });
     }
-  };
+};
 
 // Get role by ID
 exports.getRoleById = async (req, res) => {

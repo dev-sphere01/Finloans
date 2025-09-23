@@ -1,4 +1,5 @@
 const CreditCard = require("../models/CreditCards");
+const queryService = require("../services/queryService");
 
 // CREATE
 exports.createCreditCard = async (req, res, next) => {
@@ -16,8 +17,11 @@ exports.createCreditCard = async (req, res, next) => {
 // READ ALL
 exports.getAllCreditCards = async (req, res, next) => {
   try {
-    const cards = await CreditCard.find().sort({ createdAt: -1 });
-    res.json(cards);
+    const { data, pagination } = await queryService.query(CreditCard, req.query, ['creditCardName', 'cibilRange']);
+    res.json({
+      cards: data,
+      pagination
+    });
   } catch (err) {
     next(err);
   }

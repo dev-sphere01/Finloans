@@ -41,7 +41,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/roles', roleRoutes);
-app.use('/api/creditcards', creditCardRoutes);
+app.use('/api/credit-cards', creditCardRoutes);
 app.use('/api/insurances', insuranceRoutes);
 app.use('/api/loans', loanRoutes);
 app.use('/uploads', express.static('uploads'));
