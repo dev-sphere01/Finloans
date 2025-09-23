@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Role = require('../models/Role');
-require('dotenv').config({ path: './api/config/config.env' });
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const seedDatabase = async () => {
   try {

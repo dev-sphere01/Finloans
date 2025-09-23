@@ -2,10 +2,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 
 // Load environment variables from .env file
-// First try to load from backend/.env, then fallback to backend/config/config.env
-// Since dotenv doesn't overwrite existing variables, the first one found will be used.
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
-dotenv.config({ path: path.resolve(__dirname, './config.env') });
 
 // Environment
 const NODE_ENV = process.env.NODE_ENV || 'development';
