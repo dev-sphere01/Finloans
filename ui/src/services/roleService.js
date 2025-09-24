@@ -12,6 +12,17 @@ const roleService = {
     }
   },
 
+  // Fetch a single role by ID
+  getRoleById: async (id) => {
+    try {
+      const response = await API.get(`/roles/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching role ${id}:`, error);
+      throw error.response?.data || { error: 'Failed to fetch role' };
+    }
+  },
+
   // Create a new role
   create: async (roleData) => {
     try {
@@ -28,7 +39,7 @@ const roleService = {
       const response = await API.put(`/roles/${id}`, roleData);
       return response.data;
     } catch (error) {
-      console.error(`Error updating role with ID ${id}:`, error);
+      console.error(`Error updating role ${id}:`, error);
       throw error.response?.data || { error: 'Failed to update role' };
     }
   },
