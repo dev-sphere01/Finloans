@@ -24,10 +24,6 @@ const getBaseFileURL = () => {
   // Remove trailing slash for consistency
   baseURL = baseURL.replace(/\/$/, '');
 
-  // if (import.meta.env.DEV) {
-  //   console.log(`📁 File Base URL (${stage}):`, baseURL);
-  // }
-
   return baseURL;
 };
 

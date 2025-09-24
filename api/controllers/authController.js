@@ -1,17 +1,8 @@
-const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const Role = require('../models/Role');
 const AuditLog = require('../models/AuditLog');
-const { authenticateToken } = require('../middlewares/auth');
-const { 
-  validateLogin, 
-  validatePasswordChange, 
-  validatePasswordReset 
-} = require('../middlewares/validation');
-
-const router = express.Router();
 
 // Generate JWT token
 const generateToken = (user) => {
@@ -31,7 +22,7 @@ const generateToken = (user) => {
 };
 
 // Login endpoint
-router.post('/Login', validateLogin, async (req, res) => {
+exports.login = async (req, res) => {
   try {
     const { UserName, Password } = req.body;
     const ipAddress = req.ip;
@@ -184,10 +175,10 @@ router.post('/Login', validateLogin, async (req, res) => {
 
     res.status(500).json({ error: 'Login failed. Please try again.' });
   }
-});
+};
 
 // Change password endpoint
-router.put('/ChangePassword', authenticateToken, validatePasswordChange, async (req, res) => {
+exports.changePassword = async (req, res) => {
   try {
     const { CurrentPassword, NewPassword } = req.body;
     const user = req.user;
@@ -250,10 +241,10 @@ router.put('/ChangePassword', authenticateToken, validatePasswordChange, async (
 
     res.status(500).json({ error: 'Failed to change password. Please try again.' });
   }
-});
+};
 
 // Forgot password endpoint
-router.put('/Forgotpassword', validatePasswordReset, async (req, res) => {
+exports.forgotPassword = async (req, res) => {
   try {
     const { UserName } = req.body;
 
@@ -340,10 +331,10 @@ router.put('/Forgotpassword', validatePasswordReset, async (req, res) => {
 
     res.status(500).json({ error: 'Failed to process password reset. Please try again.' });
   }
-});
+};
 
 // Logout endpoint (optional - mainly for logging)
-router.post('/logout', authenticateToken, async (req, res) => {
+exports.logout = async (req, res) => {
   try {
     // Log logout
     await AuditLog.logAction({
@@ -359,10 +350,10 @@ router.post('/logout', authenticateToken, async (req, res) => {
     console.error('Logout error:', error);
     res.status(500).json({ error: 'Logout failed' });
   }
-});
+};
 
 // Verify token endpoint
-router.get('/verify', authenticateToken, async (req, res) => {
+exports.verifyToken = async (req, res) => {
   try {
     const user = req.user;
     
@@ -374,7 +365,7 @@ router.get('/verify', authenticateToken, async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        fullName: user.fullName,
+        fullName:user.fullName,
         roleId: user.roleId._id,
         roleName: user.roleId.name,
         isAutoGenPass: user.isAutoGenPass,
@@ -385,6 +376,4 @@ router.get('/verify', authenticateToken, async (req, res) => {
     console.error('Token verification error:', error);
     res.status(500).json({ error: 'Token verification failed' });
   }
-});
-
-module.exports = router;
+};

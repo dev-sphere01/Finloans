@@ -1,4 +1,5 @@
 const Loan = require("../models/Loans");
+const queryService = require("../services/queryService");
 
 // Helper to normalize `links` into an array of strings
 function normalizeLinks(links) {
@@ -33,8 +34,11 @@ exports.createLoan = async (req, res, next) => {
 // READ ALL
 exports.getAllLoans = async (req, res, next) => {
   try {
-    const items = await Loan.find().sort({ createdAt: -1 });
-    res.json(items);
+    const { data, pagination } = await queryService.query(Loan, req.query, ['loanType']);
+    res.json({
+      items: data,
+      pagination
+    });
   } catch (err) {
     next(err);
   }

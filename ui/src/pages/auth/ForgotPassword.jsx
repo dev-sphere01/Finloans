@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 // import { forgotPassword } from "@/services/authService"; // <--- temporarily disabled
-import notification from "@/services/NotificationService";
+import notification from "@/services/NotificationService"; // Changed import
 import { FaEnvelope, FaPaperPlane, FaUnlockAlt, FaCheck, FaTimes } from "react-icons/fa";
 
 const ForgotPassword = () => {
@@ -16,7 +16,7 @@ const ForgotPassword = () => {
     setMessage("");
     setError("");
 
-    const notify = notification();
+    const notify = notification(); // Changed usage
 
     try {
       const response = await forgotPassword(username);
@@ -128,7 +128,7 @@ const ForgotPassword = () => {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-xs text-gray-500">
-            © 2025 CUPL. All rights reserved.
+            © 2025 Finloans Financial Services. All rights reserved.
           </p>
         </div>
       </div>

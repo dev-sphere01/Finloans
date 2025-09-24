@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
-// import { loginUser } from "@/services/authService"; // <--- temporarily disabled
-import notification from "@/services/NotificationService";
+import { loginUser } from "@/services/authService";
+import notification from "@/services/NotificationService"; // Changed import
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaSignInAlt, FaUser } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 
@@ -21,7 +21,7 @@ const Login = () => {
     setIsLoading(true);
     setError("");
 
-    const notify = notification();
+    const notify = notification(); // Changed usage
 
     try {
       const response = await loginUser(username, password);
@@ -170,7 +170,7 @@ const Login = () => {
         </div> */}
       <div className="text-center mt-6">
         <p className="text-xs text-gray-500">
-          © 2025 BoilerPlate. All rights reserved.
+          © 2025 FinLoans. All rights reserved.
         </p>
       </div>
       </div>

@@ -36,7 +36,7 @@ const useAuthStore = create((set, get) => ({
       }
     } else {
       set({ 
-        isAuthenticated: true, // <--- change here for dev environment to access protected routes 
+        isAuthenticated: false, // <--- change here for dev environment to access protected routes 
         user: null, 
         isLoading: false,
         isInitialized: true // Set initialized to true
@@ -45,10 +45,10 @@ const useAuthStore = create((set, get) => ({
   },
 
   // Login action
-  login: (userData, token) => {
-    sessionStorage.setItem('authToken', token);
-    sessionStorage.setItem('user', JSON.stringify(userData));
-    set({ isAuthenticated: true, user: userData });
+  login: (loginResponseData) => {
+    sessionStorage.setItem('authToken', loginResponseData.token);
+    sessionStorage.setItem('user', JSON.stringify(loginResponseData.user));
+    set({ isAuthenticated: true, user: loginResponseData.user });
   },
 
   // Logout action
@@ -69,7 +69,7 @@ const useAuthStore = create((set, get) => ({
       const devUser = mockUser || {
         id: 1,
         name: 'Dev User',
-        email: 'dev@BoilerPlate.com',
+        email: 'dev@FinLoans.com',
         role: 'admin'
       };
       

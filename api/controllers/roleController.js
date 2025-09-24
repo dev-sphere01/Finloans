@@ -1,105 +1,65 @@
-const express = require('express');
 const Role = require('../models/Role');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
-const { 
-  authenticateToken, 
-  authorize, 
-  requireAdmin,
-  logAccess 
-} = require('../middlewares/auth');
-const { 
-  validateRoleCreation, 
-  validateRoleUpdate, 
-  validateMongoId,
-  validatePagination 
-} = require('../middlewares/validation');
-
-const router = express.Router();
+const { SYSTEM_MODULES, CRUD_ACTIONS, MODULE_CATEGORIES, DEFAULT_ROLE_TEMPLATES } = require('../config/modules');
+const queryService = require("../services/queryService");
 
 // Get all roles (with pagination and filtering)
-router.get('/', 
-  authenticateToken, 
-  authorize('roles', 'read'),
-  validatePagination,
-  logAccess('ROLE_LIST', 'roles'),
-  async (req, res) => {
+// Get all roles (with pagination and filtering)
+exports.getAllRoles = async (req, res) => {
     try {
-      const {
-        page = 1,
-        limit = 10,
-        sortBy = 'createdAt',
-        sortOrder = 'desc',
-        search,
-        isActive
-      } = req.query;
+        const options = {
+            searchableFields: ['name', 'description'],
+            populate: [
+                { path: 'createdBy', select: 'username firstName lastName' },
+                { path: 'updatedBy', select: 'username firstName lastName' }
+            ],
+            customFilters: async (filters, baseFilter) => {
+                for (const key in filters) {
+                    if (filters[key]) {
+                        if (key === 'isActive' || key === 'isSystem') {
+                            if (filters[key] === 'active' || filters[key] === 'system') {
+                                baseFilter[key] = true;
+                            } else if (filters[key] === 'inactive' || filters[key] === 'user') {
+                                baseFilter[key] = false;
+                            } else {
+                                baseFilter[key] = filters[key] === 'true';
+                            }
+                        } else {
+                            baseFilter[key] = { $regex: filters[key], $options: 'i' };
+                        }
+                    }
+                }
+                return baseFilter;
+            }
+        };
 
-      // Build filter object
-      const filter = {};
-      
-      if (search) {
-        filter.$or = [
-          { name: { $regex: search, $options: 'i' } },
-          { description: { $regex: search, $options: 'i' } }
-        ];
-      }
-      
-      if (isActive !== undefined) {
-        filter.isActive = isActive === 'true';
-      }
+        const { data: roles, pagination } = await queryService.query(Role, req.query, options);
 
-      // Build sort object
-      const sort = {};
-      sort[sortBy] = sortOrder === 'desc' || sortOrder === '-1' ? -1 : 1;
+        // Get user count for each role
+        const rolesWithUserCount = await Promise.all(
+            roles.map(async (role) => {
+                const userCount = await User.countDocuments({ roleId: role._id, isActive: true });
+                return {
+                    ...role.toObject(),
+                    userCount
+                };
+            })
+        );
 
-      // Execute query with pagination
-      const skip = (parseInt(page) - 1) * parseInt(limit);
-      
-      const [roles, total] = await Promise.all([
-        Role.find(filter)
-          .populate('createdBy', 'username firstName lastName')
-          .populate('updatedBy', 'username firstName lastName')
-          .sort(sort)
-          .skip(skip)
-          .limit(parseInt(limit)),
-        Role.countDocuments(filter)
-      ]);
-
-      // Get user count for each role
-      const rolesWithUserCount = await Promise.all(
-        roles.map(async (role) => {
-          const userCount = await User.countDocuments({ roleId: role._id, isActive: true });
-          return {
-            ...role.toObject(),
-            userCount
-          };
-        })
-      );
-
-      res.json({
-        roles: rolesWithUserCount,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / parseInt(limit))
-        }
-      });
+        res.json({
+            roles: rolesWithUserCount,
+            pagination
+        });
 
     } catch (error) {
-      console.error('Get roles error:', error);
-      res.status(500).json({ error: 'Failed to fetch roles' });
+        console.error('Get roles error:', error);
+        res.status(500).json({ error: 'Failed to fetch roles' });
     }
-  }
-);
+};
 
 // Get role by ID
-router.get('/:id', 
-  authenticateToken, 
-  authorize('roles', 'read'),
-  validateMongoId('id'),
-  logAccess('ROLE_VIEW', 'roles'),
-  async (req, res) => {
+exports.getRoleById = async (req, res) => {
     try {
       const role = await Role.findById(req.params.id)
         .populate('createdBy', 'username firstName lastName')
@@ -123,16 +83,10 @@ router.get('/:id',
       console.error('Get role error:', error);
       res.status(500).json({ error: 'Failed to fetch role' });
     }
-  }
-);
+  };
 
 // Create new role
-router.post('/', 
-  authenticateToken, 
-  authorize('roles', 'create'),
-  validateRoleCreation,
-  logAccess('ROLE_CREATE', 'roles'),
-  async (req, res) => {
+exports.createRole = async (req, res) => {
     try {
       const { name, description, permissions = [] } = req.body;
 
@@ -184,17 +138,10 @@ router.post('/',
       
       res.status(500).json({ error: 'Failed to create role' });
     }
-  }
-);
+  };
 
 // Update role
-router.put('/:id', 
-  authenticateToken, 
-  authorize('roles', 'update'),
-  validateMongoId('id'),
-  validateRoleUpdate,
-  logAccess('ROLE_UPDATE', 'roles'),
-  async (req, res) => {
+exports.updateRole = async (req, res) => {
     try {
       const roleId = req.params.id;
       const updates = req.body;
@@ -266,16 +213,10 @@ router.put('/:id',
       
       res.status(500).json({ error: 'Failed to update role' });
     }
-  }
-);
+  };
 
 // Delete role (soft delete - deactivate)
-router.delete('/:id', 
-  authenticateToken, 
-  authorize('roles', 'delete'),
-  validateMongoId('id'),
-  logAccess('ROLE_DELETE', 'roles'),
-  async (req, res) => {
+exports.deleteRole = async (req, res) => {
     try {
       const roleId = req.params.id;
 
@@ -325,16 +266,10 @@ router.delete('/:id',
       console.error('Delete role error:', error);
       res.status(500).json({ error: 'Failed to delete role' });
     }
-  }
-);
+  };
 
 // Add permission to role
-router.post('/:id/permissions', 
-  authenticateToken, 
-  authorize('roles', 'update'),
-  validateMongoId('id'),
-  logAccess('PERMISSION_GRANT', 'roles'),
-  async (req, res) => {
+exports.addPermissionToRole = async (req, res) => {
     try {
       const { resource, actions } = req.body;
 
@@ -388,16 +323,10 @@ router.post('/:id/permissions',
       console.error('Add permission error:', error);
       res.status(500).json({ error: 'Failed to add permission' });
     }
-  }
-);
+  };
 
 // Remove permission from role
-router.delete('/:id/permissions', 
-  authenticateToken, 
-  authorize('roles', 'update'),
-  validateMongoId('id'),
-  logAccess('PERMISSION_REVOKE', 'roles'),
-  async (req, res) => {
+exports.removePermissionFromRole = async (req, res) => {
     try {
       const { resource, actions } = req.body;
 
@@ -440,17 +369,11 @@ router.delete('/:id/permissions',
       console.error('Remove permission error:', error);
       res.status(500).json({ error: 'Failed to remove permission' });
     }
-  }
-);
+  };
 
 // Get available permissions/resources
-router.get('/permissions/available', 
-  authenticateToken, 
-  authorize('roles', 'read'),
-  async (req, res) => {
+exports.getAvailablePermissions = async (req, res) => {
     try {
-      const { SYSTEM_MODULES, CRUD_ACTIONS, MODULE_CATEGORIES } = require('../config/modules');
-
       res.json({ 
         modules: SYSTEM_MODULES,
         actions: CRUD_ACTIONS,
@@ -461,24 +384,15 @@ router.get('/permissions/available',
       console.error('Get available permissions error:', error);
       res.status(500).json({ error: 'Failed to fetch available permissions' });
     }
-  }
-);
+  };
 
 // Get role templates
-router.get('/templates', 
-  authenticateToken, 
-  authorize('roles', 'read'),
-  async (req, res) => {
+exports.getRoleTemplates = async (req, res) => {
     try {
-      const { DEFAULT_ROLE_TEMPLATES } = require('../config/modules');
-
       res.json({ templates: DEFAULT_ROLE_TEMPLATES });
 
     } catch (error) {
       console.error('Get role templates error:', error);
       res.status(500).json({ error: 'Failed to fetch role templates' });
     }
-  }
-);
-
-module.exports = router;
+  };

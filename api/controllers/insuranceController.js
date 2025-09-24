@@ -1,4 +1,5 @@
 const Insurance = require("../models/Insurance");
+const queryService = require("../services/queryService");
 
 // Helper to normalize `links` into an array of strings
 function normalizeLinks(links) {
@@ -34,8 +35,11 @@ exports.createInsurance = async (req, res, next) => {
 // READ ALL
 exports.getAllInsurances = async (req, res, next) => {
   try {
-    const items = await Insurance.find().sort({ createdAt: -1 });
-    res.json(items);
+    const { data, pagination } = await queryService.query(Insurance, req.query, ['insuranceType']);
+    res.json({
+      items: data,
+      pagination
+    });
   } catch (err) {
     next(err);
   }

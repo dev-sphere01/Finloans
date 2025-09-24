@@ -10,7 +10,9 @@ import {
   ReceiptIndianRupee,
   CreditCard ,
   HandCoins ,
-  ShieldUser 
+  ShieldUser, 
+  Users,
+  Shield
 } from "lucide-react";
 
 const allMenuItems = [
@@ -28,7 +30,9 @@ const allMenuItems = [
   { id: "masters", name: "Masters", type: "heading", roleId: [1] },
   { id: "credit-cards", name: "Credit Cards", icon: <CreditCard  size={18} />, type: "item", roleId: [1] },
   { id: "insurance", name: "Insurance", icon: <ShieldUser    size={18} />, type: "item", roleId: [1] },
-  { id: "loans", name: "Loans", icon: <HandCoins   size={18} />, type: "item", roleId: [1] },
+  { id: "loans", name: "Loans", icon: <HandCoins   size={18} />, type: "item", path: "/dashboard/loans", roleId: [1] },
+  { id: "users", name: "Users", icon: <Users size={18} />, type: "item", path: "/dashboard/users", roleId: [1] },
+  { id: "roles", name: "Roles", icon: <Shield size={18} />, type: "item", path: "/dashboard/roles", roleId: [1] },
 
 
   // Demo Pages

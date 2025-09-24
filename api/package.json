@@ -2,9 +2,10 @@
   "name": "api",
   "private": true,
   "version": "1.0.0",
+  "main": "server.js",
   "scripts": {
-    "dev": "nodemon app.js",
-    "start": "node app.js",
+    "dev": "nodemon server.js",
+    "start": "node server.js",
     "seed": "node services/seeder.js"
   },
   "dependencies": {
@@ -16,6 +17,7 @@
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",
     "express-validator": "^7.2.1",
+    "finloans": "file:..",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.0",
     "multer": "^2.0.2",

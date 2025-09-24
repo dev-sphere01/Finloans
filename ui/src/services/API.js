@@ -59,8 +59,8 @@ API.interceptors.request.use(
       return config;
     }
     
-    const token = localStorage.getItem('authToken');
-    const userStr = localStorage.getItem('user');
+    const token = sessionStorage.getItem('authToken');
+    const userStr = sessionStorage.getItem('user');
     
     if (token && userStr) {
       try {

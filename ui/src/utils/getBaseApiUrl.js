@@ -31,6 +31,11 @@ const getBaseApiURL = () => {
   // Remove trailing slash if present for consistency
   baseURL = baseURL.replace(/\/$/, '');
 
+  // Ensure the base URL includes /api
+  if (!baseURL.endsWith('/api')) {
+    baseURL = `${baseURL}/api`;
+  }
+
   // Log current configuration (only in development)
   // if (import.meta.env.DEV) {
   //   console.log(`🌐 API Base URL (${stage}):`, baseURL);
