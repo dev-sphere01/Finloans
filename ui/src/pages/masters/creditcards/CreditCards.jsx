@@ -1,52 +1,88 @@
 import React, { useState } from 'react';
 import AllCreditCards from './components/AllCreditCards';
 import AddCreditCard from './components/AddCreditCard';
+import EditCreditCard from './components/EditCreditCard';
 
 const CreditCards = () => {
-  const [view, setView] = useState('table'); // 'table' or 'form'
-  const [editingCard, setEditingCard] = useState(null);
+  const [activeTab, setActiveTab] = useState('all');
+  const [editingCreditCard, setEditingCreditCard] = useState(null);
 
-  const handleAddClick = () => {
-    setEditingCard(null);
-    setView('form');
+  const tabs = [
+    { id: 'all', label: 'All Credit Cards', icon: '💳' },
+    { id: 'add', label: 'Add Credit Card', icon: '➕' },
+  ];
+
+  const handleEditCreditCard = (creditCard) => {
+    setEditingCreditCard(creditCard);
+    setActiveTab('edit');
   };
 
-  const handleEditClick = (creditCard) => {
-    setEditingCard(creditCard);
-    setView('form');
+  const handleCloseEdit = () => {
+    setEditingCreditCard(null);
+    setActiveTab('all');
   };
 
-  const handleSave = () => {
-    setView('table');
-    setEditingCard(null);
+  const handleCreditCardCreated = () => {
+    setActiveTab('all');
   };
 
-  const handleCancel = () => {
-    setView('table');
-    setEditingCard(null);
+  const handleCreditCardUpdated = () => {
+    setEditingCreditCard(null);
+    setActiveTab('all');
   };
 
   return (
-    <div className="p-6 bg-slate-50 h-full">
-      {view === 'table' ? (
-        <>
-          <div className="flex justify-end mb-4">
+    <div className="space-y-6">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+        <nav className="-mb-px flex space-x-8">
+          {tabs.map((tab) => (
             <button
-              onClick={handleAddClick}
-              className="px-4 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-800 transition-colors duration-200 font-medium"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                activeTab === tab.id
+                  ? `border-blue-500 text-blue-600`
+                  : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
+              }`}
             >
-              Add Credit Card
+              <span className="mr-2">{tab.icon}</span>
+              {tab.label}
             </button>
-          </div>
-          <AllCreditCards onEditCreditCard={handleEditClick} />
-        </>
-      ) : (
-        <AddCreditCard
-          onSave={handleSave}
-          onCancel={handleCancel}
-          creditCard={editingCard}
-        />
-      )}
+          ))}
+          {editingCreditCard && (
+            <button
+              onClick={() => setActiveTab('edit')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                activeTab === 'edit'
+                  ? `border-blue-500 text-blue-600`
+                  : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
+              }`}
+            >
+              <span className="mr-2">✏️</span>
+              Edit Credit Card
+            </button>
+          )}
+        </nav>
+      </div>
+
+      <div className="mt-6">
+        {activeTab === 'all' && (
+          <AllCreditCards
+            onEditCreditCard={handleEditCreditCard}
+            onViewCreditCard={handleEditCreditCard} // Use edit handler for view for now
+          />
+        )}
+        {activeTab === 'add' && (
+          <AddCreditCard onSave={handleCreditCardCreated} onCancel={handleCloseEdit} />
+        )}
+        {activeTab === 'edit' && editingCreditCard && (
+          <EditCreditCard
+            creditCard={editingCreditCard}
+            onSave={handleCreditCardUpdated}
+            onCancel={handleCloseEdit}
+          />
+        )}
+      </div>
     </div>
   );
 };

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import creditCardService from '@/services/creditCardService';
 import notification from '@/services/NotificationService';
 
-const AddCreditCard = ({ onSave, onCancel }) => {
+const EditCreditCard = ({ onSave, onCancel, creditCard }) => {
   const { success: notifySuccess, error: notifyError } = notification();
   const [form, setForm] = useState({
     creditCardName: '',
@@ -10,6 +10,17 @@ const AddCreditCard = ({ onSave, onCancel }) => {
     creditCardPic: null,
     link: ''
   });
+
+  useEffect(() => {
+    if (creditCard) {
+      setForm({
+        creditCardName: creditCard.creditCardName,
+        cibilRange: creditCard.cibilRange,
+        creditCardPic: null, // We don't pre-fill the file input
+        link: creditCard.link || ''
+      });
+    }
+  }, [creditCard]);
 
   const handleChange = e => {
     const { name, value, files } = e.target;
@@ -22,11 +33,11 @@ const AddCreditCard = ({ onSave, onCancel }) => {
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      await creditCardService.createCreditCard(form);
-      notifySuccess('Credit card created successfully!');
+      await creditCardService.updateCreditCard(creditCard._id, form);
+      notifySuccess('Credit card updated successfully!');
       onSave();
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.error || 'Failed to create credit card';
+      const errorMsg = error.response?.data?.message || error.error || 'Failed to update credit card';
       notifyError(errorMsg);
     }
   };
@@ -35,7 +46,7 @@ const AddCreditCard = ({ onSave, onCancel }) => {
     <div className="p-6 bg-slate-50 h-full">
       <div className="bg-gray-100 border border-slate-200 shadow-lg rounded-lg p-8 w-full max-w-4xl mx-auto">
         <h2 className="text-2xl font-semibold text-slate-700 mb-6 text-center">
-          Add Credit Card
+          Edit Credit Card
         </h2>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -103,7 +114,7 @@ const AddCreditCard = ({ onSave, onCancel }) => {
               type="submit"
               className="px-8 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-800 transition-colors duration-200 font-medium"
             >
-              Submit Credit Card
+              Update Credit Card
             </button>
           </div>
         </form>
@@ -112,4 +123,4 @@ const AddCreditCard = ({ onSave, onCancel }) => {
   );
 };
 
-export default AddCreditCard;
+export default EditCreditCard;

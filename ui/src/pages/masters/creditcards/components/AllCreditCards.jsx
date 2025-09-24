@@ -42,11 +42,23 @@ const AllCreditCards = ({ onEditCreditCard, onViewCreditCard }) => {
     () => [
       columnHelper.accessor('creditCardName', {
         header: 'Card Name',
-        cell: (info) => (
-          <div className="font-medium text-gray-900">
-            {info.getValue()}
-          </div>
-        ),
+        cell: (info) => {
+          const handleClick = () => {
+            if (onViewCreditCard) {
+              onViewCreditCard(info.row.original);
+            } else if (onEditCreditCard) {
+              onEditCreditCard(info.row.original);
+            }
+          };
+          return (
+            <div
+              className={`font-medium ${onViewCreditCard || onEditCreditCard ? 'text-blue-600 hover:underline cursor-pointer' : 'text-gray-900'}`}
+              onClick={handleClick}
+            >
+              {info.getValue()}
+            </div>
+          );
+        },
         enableColumnFilter: true,
       }),
       columnHelper.accessor('cibilRange', {
@@ -68,11 +80,18 @@ const AllCreditCards = ({ onEditCreditCard, onViewCreditCard }) => {
       }),
       columnHelper.accessor('link', {
         header: 'Apply Link',
-        cell: (info) => (
-            <a href={info.getValue()} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                Apply
+        cell: (info) => {
+          const url = info.getValue();
+          if (!url) {
+            return <span className="text-gray-500">N/A</span>;
+          }
+          const fullUrl = !url.startsWith('http://') && !url.startsWith('https://') ? `http://${url}` : url;
+          return (
+            <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+              Apply
             </a>
-        ),
+          );
+        },
         enableColumnFilter: false,
         enableSorting: false,
       }),

@@ -43,11 +43,23 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
     () => [
       columnHelper.accessor('username', {
         header: 'Username',
-        cell: (info) => (
-          <div className="font-medium text-gray-900">
-            {info.getValue()}
-          </div>
-        ),
+        cell: (info) => {
+          const handleClick = () => {
+            if (onViewUser) {
+              onViewUser(info.row.original);
+            } else if (onEditUser) {
+              onEditUser(info.row.original);
+            }
+          };
+          return (
+            <div
+              className={`font-medium ${onViewUser || onEditUser ? 'text-blue-600 hover:underline cursor-pointer' : 'text-gray-900'}`}
+              onClick={handleClick}
+            >
+              {info.getValue()}
+            </div>
+          );
+        },
         enableColumnFilter: true,
       }),
       columnHelper.accessor('email', {

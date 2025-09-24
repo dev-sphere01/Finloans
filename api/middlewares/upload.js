@@ -1,14 +1,20 @@
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
+const crypto = require("crypto");
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/creditcards/"); // create this folder
+    const dir = "uploads/creditcards/";
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
   },
   filename: function (req, file, cb) {
     cb(
       null,
-      Date.now() + "-" + file.fieldname + path.extname(file.originalname)
+      crypto.randomBytes(16).toString('hex') + path.extname(file.originalname)
     );
   },
 });

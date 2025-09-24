@@ -1,52 +1,88 @@
 import React, { useState } from 'react';
 import AllLoans from './components/AllLoans';
 import AddLoan from './components/AddLoan';
+import EditLoan from './components/EditLoan';
 
 const Loans = () => {
-  const [view, setView] = useState('table'); // 'table' or 'form'
+  const [activeTab, setActiveTab] = useState('all');
   const [editingLoan, setEditingLoan] = useState(null);
 
-  const handleAddClick = () => {
-    setEditingLoan(null);
-    setView('form');
-  };
+  const tabs = [
+    { id: 'all', label: 'All Loans', icon: '💰' },
+    { id: 'add', label: 'Add Loan', icon: '➕' },
+  ];
 
-  const handleEditClick = (loan) => {
+  const handleEditLoan = (loan) => {
     setEditingLoan(loan);
-    setView('form');
+    setActiveTab('edit');
   };
 
-  const handleSave = () => {
-    setView('table');
+  const handleCloseEdit = () => {
     setEditingLoan(null);
+    setActiveTab('all');
   };
 
-  const handleCancel = () => {
-    setView('table');
+  const handleLoanCreated = () => {
+    setActiveTab('all');
+  };
+
+  const handleLoanUpdated = () => {
     setEditingLoan(null);
+    setActiveTab('all');
   };
 
   return (
-    <div className="p-6 bg-slate-50 h-full">
-      {view === 'table' ? (
-        <>
-          <div className="flex justify-end mb-4">
+    <div className="space-y-6">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+        <nav className="-mb-px flex space-x-8">
+          {tabs.map((tab) => (
             <button
-              onClick={handleAddClick}
-              className="px-4 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-800 transition-colors duration-200 font-medium"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                activeTab === tab.id
+                  ? `border-blue-500 text-blue-600`
+                  : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
+              }`}
             >
-              Add Loan
+              <span className="mr-2">{tab.icon}</span>
+              {tab.label}
             </button>
-          </div>
-          <AllLoans onEditLoan={handleEditClick} />
-        </>
-      ) : (
-        <AddLoan
-          onSave={handleSave}
-          onCancel={handleCancel}
-          loan={editingLoan}
-        />
-      )}
+          ))}
+          {editingLoan && (
+            <button
+              onClick={() => setActiveTab('edit')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                activeTab === 'edit'
+                  ? `border-blue-500 text-blue-600`
+                  : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
+              }`}
+            >
+              <span className="mr-2">✏️</span>
+              Edit Loan
+            </button>
+          )}
+        </nav>
+      </div>
+
+      <div className="mt-6">
+        {activeTab === 'all' && (
+          <AllLoans
+            onEditLoan={handleEditLoan}
+            onViewLoan={handleEditLoan} // Use edit handler for view for now
+          />
+        )}
+        {activeTab === 'add' && (
+          <AddLoan onSave={handleLoanCreated} onCancel={handleCloseEdit} />
+        )}
+        {activeTab === 'edit' && editingLoan && (
+          <EditLoan
+            loan={editingLoan}
+            onSave={handleLoanUpdated}
+            onCancel={handleCloseEdit}
+          />
+        )}
+      </div>
     </div>
   );
 };

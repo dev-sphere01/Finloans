@@ -42,11 +42,23 @@ const AllInsurances = ({ onEditInsurance, onViewInsurance }) => {
     () => [
       columnHelper.accessor('insuranceType', {
         header: 'Insurance Type',
-        cell: (info) => (
-          <div className="font-medium text-gray-900">
-            {info.getValue()}
-          </div>
-        ),
+        cell: (info) => {
+          const handleClick = () => {
+            if (onViewInsurance) {
+              onViewInsurance(info.row.original);
+            } else if (onEditInsurance) {
+              onEditInsurance(info.row.original);
+            }
+          };
+          return (
+            <div
+              className={`font-medium ${onViewInsurance || onEditInsurance ? 'text-blue-600 hover:underline cursor-pointer' : 'text-gray-900'}`}
+              onClick={handleClick}
+            >
+              {info.getValue()}
+            </div>
+          );
+        },
         enableColumnFilter: true,
       }),
       columnHelper.accessor('links', {

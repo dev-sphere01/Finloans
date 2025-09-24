@@ -83,7 +83,10 @@ const Role = () => {
       {/* Tab Content */}
       <div className="mt-6">
         {activeTab === 'all' && (
-          <AllRoles onEditRole={handleEditRole} />
+          <AllRoles
+            onEditRole={handleEditRole}
+            onViewRole={handleEditRole} // Use edit handler for view for now
+          />
         )}
         {activeTab === 'add' && (
           <AddRole onRoleCreated={handleRoleCreated} />

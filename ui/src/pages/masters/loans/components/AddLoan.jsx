@@ -1,30 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import loanService from '@/services/loanService';
 import notification from '@/services/NotificationService';
 
-const AddLoan = ({ onSave, onCancel, loan }) => {
+const AddLoan = ({ onSave, onCancel }) => {
   const { success: notifySuccess, error: notifyError } = notification();
   const [form, setForm] = useState({
     loanType: '',
     links: ['']
   });
-  const [isEditing, setIsEditing] = useState(false);
-
-  useEffect(() => {
-    if (loan) {
-      setForm({
-        loanType: loan.loanType,
-        links: loan.links.length > 0 ? loan.links : ['']
-      });
-      setIsEditing(true);
-    } else {
-      setForm({
-        loanType: '',
-        links: ['']
-      });
-      setIsEditing(false);
-    }
-  }, [loan]);
 
   const handleChange = e => {
     const { name, value } = e.target;
@@ -69,16 +52,11 @@ const AddLoan = ({ onSave, onCancel, loan }) => {
     };
 
     try {
-      if (isEditing) {
-        await loanService.updateLoan(loan._id, submitData);
-        notifySuccess('Loan updated successfully!');
-      } else {
-        await loanService.createLoan(submitData);
-        notifySuccess('Loan created successfully!');
-      }
+      await loanService.createLoan(submitData);
+      notifySuccess('Loan created successfully!');
       onSave();
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.error || (isEditing ? 'Failed to update loan' : 'Failed to create loan');
+      const errorMsg = error.response?.data?.message || error.error || 'Failed to create loan';
       notifyError(errorMsg);
     }
   };
@@ -87,7 +65,7 @@ const AddLoan = ({ onSave, onCancel, loan }) => {
     <div className="p-6 bg-slate-50 min-h-screen">
       <div className="bg-gray-100 border border-slate-200 shadow-lg rounded-lg p-8 w-full max-w-4xl mx-auto">
         <h2 className="text-2xl font-semibold text-slate-700 mb-6 text-center">
-          {isEditing ? 'Edit Loan Product' : 'Add Loan Product'}
+          Add Loan Product
         </h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-6">
@@ -160,7 +138,7 @@ const AddLoan = ({ onSave, onCancel, loan }) => {
               type="submit"
               className="px-8 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-800 transition-colors duration-200 font-medium"
             >
-              {isEditing ? 'Update Loan Product' : 'Submit Loan Product'}
+              Submit Loan Product
             </button>
           </div>
         </form>

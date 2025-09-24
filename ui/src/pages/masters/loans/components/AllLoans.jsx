@@ -42,11 +42,23 @@ const AllLoans = ({ onEditLoan, onViewLoan }) => {
     () => [
       columnHelper.accessor('loanType', {
         header: 'Loan Type',
-        cell: (info) => (
-          <div className="font-medium text-gray-900">
-            {info.getValue()}
-          </div>
-        ),
+        cell: (info) => {
+          const handleClick = () => {
+            if (onViewLoan) {
+              onViewLoan(info.row.original);
+            } else if (onEditLoan) {
+              onEditLoan(info.row.original);
+            }
+          };
+          return (
+            <div
+              className={`font-medium ${onViewLoan || onEditLoan ? 'text-blue-600 hover:underline cursor-pointer' : 'text-gray-900'}`}
+              onClick={handleClick}
+            >
+              {info.getValue()}
+            </div>
+          );
+        },
         enableColumnFilter: true,
       }),
       columnHelper.accessor('links', {

@@ -1,30 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import insuranceService from '@/services/insuranceService';
 import notification from '@/services/NotificationService';
 
-const AddInsurance = ({ onSave, onCancel, insurance }) => {
+const AddInsurance = ({ onSave, onCancel }) => {
   const { success: notifySuccess, error: notifyError } = notification();
   const [form, setForm] = useState({
     insuranceType: '',
     links: ['']
   });
-  const [isEditing, setIsEditing] = useState(false);
-
-  useEffect(() => {
-    if (insurance) {
-      setForm({
-        insuranceType: insurance.insuranceType,
-        links: insurance.links.length > 0 ? insurance.links : ['']
-      });
-      setIsEditing(true);
-    } else {
-      setForm({
-        insuranceType: '',
-        links: ['']
-      });
-      setIsEditing(false);
-    }
-  }, [insurance]);
 
   const handleChange = e => {
     const { name, value } = e.target;
@@ -69,16 +52,11 @@ const AddInsurance = ({ onSave, onCancel, insurance }) => {
     };
 
     try {
-      if (isEditing) {
-        await insuranceService.updateInsurance(insurance._id, submitData);
-        notifySuccess('Insurance updated successfully!');
-      } else {
-        await insuranceService.createInsurance(submitData);
-        notifySuccess('Insurance created successfully!');
-      }
+      await insuranceService.createInsurance(submitData);
+      notifySuccess('Insurance created successfully!');
       onSave();
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.error || (isEditing ? 'Failed to update insurance' : 'Failed to create insurance');
+      const errorMsg = error.response?.data?.message || error.error || 'Failed to create insurance';
       notifyError(errorMsg);
     }
   };
@@ -87,7 +65,7 @@ const AddInsurance = ({ onSave, onCancel, insurance }) => {
     <div className="p-6 bg-slate-50 min-h-screen">
       <div className="bg-gray-100 border border-slate-200 shadow-lg rounded-lg p-8 w-full max-w-4xl mx-auto">
         <h2 className="text-2xl font-semibold text-slate-700 mb-6 text-center">
-          {isEditing ? 'Edit Insurance' : 'Add Insurance'}
+          Add Insurance
         </h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-6">
@@ -160,7 +138,7 @@ const AddInsurance = ({ onSave, onCancel, insurance }) => {
               type="submit"
               className="px-8 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-800 transition-colors duration-200 font-medium"
             >
-              {isEditing ? 'Update Insurance' : 'Submit Insurance'}
+              Submit Insurance
             </button>
           </div>
         </form>

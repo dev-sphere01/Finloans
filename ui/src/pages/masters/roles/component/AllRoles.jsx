@@ -105,18 +105,29 @@ const AllRoles = ({ onEditRole }) => {
   const columns = useMemo(() => [
     columnHelper.accessor('name', {
       header: 'Role Name',
-      cell: info => (
-        <div className="flex items-center">
-          <div>
-            <div className="text-sm font-medium text-gray-900">
-              {info.getValue()}
+      cell: info => {
+        const handleClick = () => {
+          // AllRoles does not have onViewRole prop, so only check onEditRole
+          if (onEditRole) {
+            onEditRole(info.row.original);
+          }
+        };
+        return (
+          <div
+            className={`flex items-center font-medium ${onEditRole ? 'text-blue-600 hover:underline cursor-pointer' : 'text-gray-900'}`}
+            onClick={handleClick}
+          >
+            <div>
+              <div className="text-sm">
+                {info.getValue()}
+              </div>
+              {info.row.original.isSystem && (
+                <div className="text-xs text-purple-600 font-medium">System Role</div>
+              )}
             </div>
-            {info.row.original.isSystem && (
-              <div className="text-xs text-purple-600 font-medium">System Role</div>
-            )}
           </div>
-        </div>
-      ),
+        );
+      },
     }),
     columnHelper.accessor('description', {
       header: 'Description',
