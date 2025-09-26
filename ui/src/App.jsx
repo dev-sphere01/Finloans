@@ -1,45 +1,55 @@
 // App.jsx
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
 // css import
-import './App.css'
+import "./App.css";
 
 // Layout imports
-import OuterLayout from '@/layouts/OuterLayout';
-import InnerLayout from '@/layouts/InnerLayout';
+import OuterLayout from "@/layouts/OuterLayout";
+import InnerLayout from "@/layouts/InnerLayout";
+import UserLayout from "@/layouts/UserLayout";
 
 // wrapper imports
-import GuestRoutes from '@/routes/GuestRoutes'
-import ProtectedRoutes from '@/routes/ProtectedRoutes'
+import GuestRoutes from "@/routes/GuestRoutes";
+import ProtectedRoutes from "@/routes/ProtectedRoutes";
 
 // services imports
-import NotificationContainer from '@/components/NotificationContainer'
-import ConfirmationProvider from '@/components/ConfirmationProvider'
+import NotificationContainer from "@/components/NotificationContainer";
+import ConfirmationProvider from "@/components/ConfirmationProvider";
 
 // auth store
-import useAuthStore from '@/store/authStore';
+import useAuthStore from "@/store/authStore";
 
 //guest pages imports
-import Login from "@/pages/auth/Login"
-import ForgotPassword from '@/pages/auth/ForgotPassword'
-import Register from '@/pages/auth/Register'
-import ChangePassword from '@/pages/auth/ChangePassword'
+import Login from "@/pages/auth/Login";
+import ForgotPassword from "@/pages/auth/ForgotPassword";
+import Register from "@/pages/auth/Register";
+import ChangePassword from "@/pages/auth/ChangePassword";
 
 //authenticated pages imports
-import Dashboard from '@/pages/dashboard/Dashboard'
-import UserProfile from '@/pages/Profile/UserProfile';
-import Settings from '@/pages/settings/Settings';
-import CreditCards from '@/pages/masters/creditcards/CreditCards';
-import Insurance from '@/pages/masters/insurance/Insurance';
-import Loans from '@/pages/masters/loans/Loans';
-import Users from '@/pages/masters/users/Users';
-import UserFormPage from '@/pages/masters/users/UserFormPage';
-import Role from '@/pages/masters/roles/Role';
-
+import Dashboard from "@/pages/dashboard/Dashboard";
+import UserProfile from "@/pages/Profile/UserProfile";
+import Settings from "@/pages/settings/Settings";
+import CreditCards from "@/pages/masters/creditcards/CreditCards";
+import Insurance from "@/pages/masters/insurance/Insurance";
+import Loans from "@/pages/masters/loans/Loans";
+import Users from "@/pages/masters/users/Users";
+import UserFormPage from "@/pages/masters/users/UserFormPage";
+import Role from "@/pages/masters/roles/Role";
+import UserDashboard from "@/pages/userPages/landingPage/UserDashboard";
+import ProductsPage from "./pages/userPages/products/Products";
+import CibilScorePage from "./pages/userPages/Cibil/Cibil";
+import ApplyLoanPage from "./pages/userPages/apply/ApplyFor";
 
 function App() {
-  const { initializeAuth, isLoading, isInitialized } = useAuthStore();
+  const { initializeAuth, isLoading, isInitialized, user } = useAuthStore();
+  const role = "user";
 
   // Initialize auth state on app load
   useEffect(() => {
@@ -60,7 +70,6 @@ function App() {
 
   return (
     <Router>
-      
       {/* ✅ Mount notifications globally — outside Routes */}
       <NotificationContainer />
       {/* ✅ Mount confirmation modal globally — outside Routes */}
@@ -71,40 +80,64 @@ function App() {
         <Route path="/" element={<Navigate to="/login" />} />
 
         {/* Guest Routes with OuterLayout */}
-        <Route element={
-          <GuestRoutes>
-            <OuterLayout />
-          </GuestRoutes>
-        }>
+        <Route
+          element={
+            <GuestRoutes>
+              <OuterLayout />
+            </GuestRoutes>
+          }
+        >
           {/* Auth routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} /> /
-          <Route path="/change-password" element={<ChangePassword />} /> /
-
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/change-password" element={<ChangePassword />} />
           {/* Add more guest routes here */}
         </Route>
 
+        {/* user routes  */}
+        {role === "user" && (
+          <Route
+            element={
+              <ProtectedRoutes>
+                <UserLayout />
+              </ProtectedRoutes>
+            }
+          >
+            <Route path="/dashboard" element={<UserDashboard />} />
+            <Route path="/products/:productType" element={<ProductsPage />} />
+            <Route path="/cibil-score" element={<CibilScorePage />} />
+            <Route path="/apply/:loanType" element={<ApplyLoanPage />} />
+            {/* Add more protected routes here as needed */}
+          </Route>
+        )}
+
         {/* Protected Routes with InnerLayout */}
-        <Route element={
-          <ProtectedRoutes>
-            <InnerLayout />
-          </ProtectedRoutes>
-        }>
-          <Route path="/dashboard" element={<Dashboard />} />
-          {/* Add more protected routes here as needed */}
+        {role !== "user" && (
+          <Route
+            element={
+              <ProtectedRoutes>
+                <InnerLayout />
+              </ProtectedRoutes>
+            }
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
+            {/* Add more protected routes here as needed */}
 
-
-          <Route path="/dashboard/loans" element={<Loans />} />
-          <Route path="/dashboard/credit-cards" element={<CreditCards />} />
-          <Route path="/dashboard/insurance" element={<Insurance />} />
-          <Route path="/profile" element={<UserProfile />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/dashboard/users" element={<Users />} />
-          <Route path="/dashboard/users/add" element={<UserFormPage />} />
-          <Route path="/dashboard/users/edit/:id" element={<UserFormPage />} />
-          <Route path="/dashboard/roles" element={<Role />} />
-        </Route>
+            <Route path="/dashboard/loans" element={<Loans />} />
+            <Route path="/dashboard/credit-cards" element={<CreditCards />} />
+            <Route path="/dashboard/insurance" element={<Insurance />} />
+            <Route path="/profile" element={<UserProfile />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/dashboard/users" element={<Users />} />
+            <Route path="/dashboard/users/add" element={<UserFormPage />} />
+            <Route
+              path="/dashboard/users/edit/:userId"
+              element={<UserFormPage />}
+            />
+            <Route path="/dashboard/roles" element={<Role />} />
+          </Route>
+        )}
 
         {/* Catch all route - redirect to login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
