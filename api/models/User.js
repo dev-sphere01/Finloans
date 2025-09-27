@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const config = require('../config');
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -112,7 +113,7 @@ userSchema.pre('save', async function(next) {
   
   try {
     // Hash password with cost of 12
-    const rounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+    const rounds = parseInt(config.BCRYPT_ROUNDS) || 12;
     this.password = await bcrypt.hash(this.password, rounds);
     next();
   } catch (error) {

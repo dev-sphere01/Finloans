@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const Role = require('../models/Role');
 const AuditLog = require('../models/AuditLog');
+const config = require('../config')
 
 // Generate JWT token
 const generateToken = (user) => {
@@ -14,8 +15,8 @@ const generateToken = (user) => {
     isAutoGenPass: user.isAutoGenPass
   };
 
-  return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '8h',
+  return jwt.sign(payload, config .JWT_SECRET, {
+    expiresIn: config .JWT_EXPIRES_IN || '8h',
     issuer: 'auth-system',
     audience: 'auth-system-users'
   });
@@ -305,7 +306,7 @@ exports.forgotPassword = async (req, res) => {
 
     // In development, return the temporary password
     // In production, this should be sent via email
-    if (process.env.NODE_ENV === 'development') {
+    if (config.NODE_STAGE === 'development') {
       res.json({ 
         message: 'Password has been reset successfully.',
         tempPassword: tempPassword // Remove this in production

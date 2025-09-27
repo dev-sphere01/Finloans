@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Role = require('../models/Role');
 const AuditLog = require('../models/AuditLog');
+const config = require("../config"); 
 
 // Middleware to verify JWT token
 const authenticateToken = async (req, res, next) => {
@@ -14,7 +15,7 @@ const authenticateToken = async (req, res, next) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, config.JWT_SECRET);
     
     // Get user from database
     const user = await User.findById(decoded.userId).populate('roleId');
