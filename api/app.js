@@ -31,7 +31,7 @@ app.use(limiter);
 
 app.use(
   cors({
-    origin: [config.CORS_ORIGIN, configCORS_PORT],// now controlled by config.js
+    origin: [config.CORS_ORIGIN, config.CORS_PORT],// now controlled by config.js
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],

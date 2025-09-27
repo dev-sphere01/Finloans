@@ -2,7 +2,7 @@ const app = require("./app");
 const config = require("./config");
 const connectDatabase = require("./config/database");
 const dotenv = require('dotenv');
-const isProduction = require("./utils/isProduction");
+
 
 // Display environment information
 console.log(`Environment: ${config.NODE_ENV}`);
