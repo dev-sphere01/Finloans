@@ -1,4 +1,5 @@
 import { User, CreditCard, Shield, Briefcase, PiggyBank } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function HomePage() {
   const products = [
@@ -54,30 +55,30 @@ export default function HomePage() {
 
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-8">
-                <a
-                  href="/"
+                <Link
+                  to="/"
                   className="text-[#1e7a8c] font-medium px-3 py-2 text-sm"
                 >
                   Home
-                </a>
-                <a
-                  href="/products"
+                </Link>
+                <Link
+                  to="/products"
                   className="text-gray-600 hover:text-[#1e7a8c] font-medium px-3 py-2 text-sm transition-colors"
                 >
                   Products
-                </a>
-                <a
-                  href="/about"
+                </Link>
+                <Link
+                  to="/about"
                   className="text-gray-600 hover:text-[#1e7a8c] font-medium px-3 py-2 text-sm transition-colors"
                 >
                   About
-                </a>
-                <a
-                  href="/contact"
+                </Link>
+                <Link
+                  to="/contact"
                   className="text-gray-600 hover:text-[#1e7a8c] font-medium px-3 py-2 text-sm transition-colors"
                 >
                   Contact
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -125,9 +126,9 @@ export default function HomePage() {
           {products.map((product) => {
             const Icon = product.icon;
             return (
-              <a
+              <Link
                 key={product.id}
-                href={product.href}
+                to={product.href}
                 className="group cursor-pointer"
               >
                 <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
@@ -159,7 +160,7 @@ export default function HomePage() {
                     </svg>
                   </div>
                 </div>
-              </a>
+              </Link>
             );
           })}
         </div>
@@ -184,28 +185,28 @@ export default function HomePage() {
               <h4 className="font-semibold mb-4">Products</h4>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <a
-                    href="/products/loans"
+                  <Link
+                    to="/products/loans"
                     className="hover:text-white transition-colors"
                   >
                     Loans
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="/products/credit-cards"
+                  <Link
+                    to="/products/credit-cards"
                     className="hover:text-white transition-colors"
                   >
                     Credit Cards
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="/products/insurance"
+                  <Link
+                    to="/products/insurance"
                     className="hover:text-white transition-colors"
                   >
                     Insurance
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -213,28 +214,28 @@ export default function HomePage() {
               <h4 className="font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <a
-                    href="/about"
+                  <Link
+                    to="/about"
                     className="hover:text-white transition-colors"
                   >
                     About Us
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="/careers"
+                  <Link
+                    to="/careers"
                     className="hover:text-white transition-colors"
                   >
                     Careers
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="/contact"
+                  <Link
+                    to="/contact"
                     className="hover:text-white transition-colors"
                   >
                     Contact
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -242,28 +243,28 @@ export default function HomePage() {
               <h4 className="font-semibold mb-4">Support</h4>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <a
-                    href="/help"
+                  <Link
+                    to="/help"
                     className="hover:text-white transition-colors"
                   >
                     Help Center
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="/privacy"
+                  <Link
+                    to="/privacy"
                     className="hover:text-white transition-colors"
                   >
                     Privacy Policy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="/terms"
+                  <Link
+                    to="/terms"
                     className="hover:text-white transition-colors"
                   >
                     Terms of Service
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -276,6 +277,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-
-

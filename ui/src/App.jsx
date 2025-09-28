@@ -49,7 +49,6 @@ import ApplyLoanPage from "./pages/userPages/apply/ApplyFor";
 
 function App() {
   const { initializeAuth, isLoading, isInitialized, user } = useAuthStore();
-  const role = "user";
 
   // Initialize auth state on app load
   useEffect(() => {
@@ -96,7 +95,7 @@ function App() {
         </Route>
 
         {/* user routes  */}
-        {role === "user" && (
+        {user?.roleName === "user" && (
           <Route
             element={
               <ProtectedRoutes>
@@ -113,7 +112,7 @@ function App() {
         )}
 
         {/* Protected Routes with InnerLayout */}
-        {role !== "user" && (
+        {user?.roleName !== "user" && (
           <Route
             element={
               <ProtectedRoutes>
