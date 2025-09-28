@@ -49,7 +49,8 @@ import ApplyLoanPage from "./pages/userPages/apply/ApplyFor";
 
 function App() {
   const { initializeAuth, isLoading, isInitialized, user } = useAuthStore();
-  const role = "user";
+  // console.log("user", user);
+  const role = user?.roleName;
 
   // Initialize auth state on app load
   useEffect(() => {
