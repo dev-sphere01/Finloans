@@ -49,6 +49,8 @@ import ApplyLoanPage from "./pages/userPages/apply/ApplyFor";
 
 function App() {
   const { initializeAuth, isLoading, isInitialized, user } = useAuthStore();
+  // console.log("user", user);
+  const role = user?.roleName;
 
   // Initialize auth state on app load
   useEffect(() => {
@@ -74,28 +76,29 @@ function App() {
       {/* ✅ Mount confirmation modal globally — outside Routes */}
       <ConfirmationProvider />
 
-      <Routes>
-        {/* Redirect root to login */}
-        <Route path="/" element={<Navigate to="/login" />} />
+      {isInitialized && (
+        <Routes>
+          {/* Redirect root to login */}
+          <Route path="/" element={<Navigate to="/login" />} />
 
-        {/* Guest Routes with OuterLayout */}
-        <Route
-          element={
-            <GuestRoutes>
-              <OuterLayout />
-            </GuestRoutes>
-          }
-        >
-          {/* Auth routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/change-password" element={<ChangePassword />} />
-          {/* Add more guest routes here */}
-        </Route>
+          {/* Guest Routes with OuterLayout */}
+          <Route
+            element={
+              <GuestRoutes>
+                <OuterLayout />
+              </GuestRoutes>
+            }
+          >
+            {/* Auth routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/change-password" element={<ChangePassword />} />
+            {/* Add more guest routes here */}
+          </Route>
 
         {/* user routes  */}
-        {user?.roleName === "user" && (
+        {role === "user" && (
           <Route
             element={
               <ProtectedRoutes>
@@ -112,7 +115,7 @@ function App() {
         )}
 
         {/* Protected Routes with InnerLayout */}
-        {user?.roleName !== "user" && (
+        {role !== "user" && (
           <Route
             element={
               <ProtectedRoutes>
@@ -123,24 +126,25 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             {/* Add more protected routes here as needed */}
 
-            <Route path="/dashboard/loans" element={<Loans />} />
-            <Route path="/dashboard/credit-cards" element={<CreditCards />} />
-            <Route path="/dashboard/insurance" element={<Insurance />} />
-            <Route path="/profile" element={<UserProfile />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/dashboard/users" element={<Users />} />
-            <Route path="/dashboard/users/add" element={<UserFormPage />} />
-            <Route
-              path="/dashboard/users/edit/:userId"
-              element={<UserFormPage />}
-            />
-            <Route path="/dashboard/roles" element={<Role />} />
-          </Route>
-        )}
+              <Route path="/dashboard/loans" element={<Loans />} />
+              <Route path="/dashboard/credit-cards" element={<CreditCards />} />
+              <Route path="/dashboard/insurance" element={<Insurance />} />
+              <Route path="/profile" element={<UserProfile />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/dashboard/users" element={<Users />} />
+              <Route path="/dashboard/users/add" element={<UserFormPage />} />
+              <Route
+                path="/dashboard/users/edit/:userId"
+                element={<UserFormPage />}
+              />
+              <Route path="/dashboard/roles" element={<Role />} />
+            </Route>
+          )}
 
-        {/* Catch all route - redirect to login */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+          {/* Catch all route - redirect to login */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      )}
     </Router>
   );
 }

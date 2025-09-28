@@ -1,7 +1,16 @@
+import { useState } from "react";
 import { User, CreditCard, Shield, Briefcase, PiggyBank } from "lucide-react";
 import { Link } from "react-router-dom";
+import useAuthStore from "@/store/authStore";
 
 export default function HomePage() {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const logout = useAuthStore((state) => state.logout);
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/login";
+  };
   const products = [
     {
       id: "loans",
@@ -82,10 +91,29 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+            <div className="relative flex items-center gap-4">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              >
                 <User size={20} className="text-gray-600" />
               </button>
+              {isDropdownOpen && (
+                <div className="absolute top-12 right-0 w-48 bg-white rounded-md shadow-lg py-1 z-20">
+                  <Link
+                    to="/"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
