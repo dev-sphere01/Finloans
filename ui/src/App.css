@@ -25,3 +25,10 @@
 .animate-shake {
   animation: shake 0.5s ease-in-out;
 }
+
+html body{
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
