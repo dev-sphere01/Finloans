@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Shield, Phone, Mail } from 'lucide-react';
+import { ArrowLeft, Shield, Phone, Mail, CreditCard, PiggyBank, Briefcase } from 'lucide-react';
+import Breadcrumb from '@/components/Breadcrumb';
 
 // Import service components
 import LoansService from './loans/LoansService';
@@ -13,22 +14,26 @@ const serviceConfig = {
   loans: {
     title: 'Loans',
     description: 'Choose from our comprehensive range of loan products designed to meet your financial goals',
-    component: LoansService
+    component: LoansService,
+    icon: PiggyBank
   },
   insurance: {
     title: 'Insurance',
     description: 'Comprehensive insurance solutions to protect what matters most to you',
-    component: InsuranceService
+    component: InsuranceService,
+    icon: Shield
   },
   'credit-cards': {
     title: 'Credit Cards',
     description: 'Discover credit cards tailored to your lifestyle with exclusive rewards and benefits',
-    component: CreditCardsService
+    component: CreditCardsService,
+    icon: CreditCard
   },
   'work-with-us': {
     title: 'Work With Us',
     description: 'Join our team and partner with us to bring financial growth opportunities and career advancements',
-    component: WorkWithUsService
+    component: WorkWithUsService,
+    icon: Briefcase
   }
 };
 
@@ -117,21 +122,12 @@ export default function ServicesPage() {
       </div>
 
       {/* Breadcrumb */}
-      <div className="bg-white/60 backdrop-blur-sm border-b border-white/20 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-2 text-sm"
-          >
-            <Link to="/" className="text-slate-500 hover:text-[#1e7a8c] transition-colors">Home</Link>
-            <span className="text-slate-400">/</span>
-            <span className="text-slate-500">Services</span>
-            <span className="text-slate-400">/</span>
-            <span className="text-[#1e7a8c] font-medium">{service.title}</span>
-          </motion.div>
-        </div>
-      </div>
+      <Breadcrumb 
+        items={[
+          { label: 'Services', href: '/services' },
+          { label: service.title, icon: service.icon }
+        ]} 
+      />
 
       {/* Compact Hero Header with highlights */}
       <div className="relative z-10 overflow-hidden">

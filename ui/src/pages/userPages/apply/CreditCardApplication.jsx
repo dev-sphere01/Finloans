@@ -1,19 +1,18 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { 
-  CreditCard, Shield, AlertCircle, User, Calendar, Phone, FileText, 
-  CheckCircle, MapPin, Building, Mail, Upload, Camera, DollarSign 
+import {
+  CreditCard, Shield, AlertCircle, User, Calendar, FileText,
+  CheckCircle, MapPin, Building, Mail, Upload, Camera, DollarSign, TrendingUp
 } from 'lucide-react';
-import notification from '@/services/NotificationService';
+import Breadcrumb from '@/components/Breadcrumb';
 
 function calculateSimulatedScore(panNumber) {
   const firstLetter = panNumber.charAt(0);
   const lastDigit = parseInt(panNumber.charAt(9));
   const fourthChar = panNumber.charAt(3);
-  
+
   let baseScore = 650;
-  
+
   if (['A', 'B', 'C'].includes(firstLetter)) {
     baseScore += 100;
   } else if (['D', 'E', 'F'].includes(firstLetter)) {
@@ -21,31 +20,30 @@ function calculateSimulatedScore(panNumber) {
   } else if (['G', 'H', 'I'].includes(firstLetter)) {
     baseScore += 25;
   }
-  
+
   if (lastDigit % 2 === 0) {
     baseScore += 25;
   }
-  
+
   if (['P', 'L', 'F', 'G'].includes(fourthChar)) {
     baseScore += 50;
   }
-  
+
   const panSum = panNumber.split('').reduce((sum, char) => {
     return sum + (isNaN(char) ? char.charCodeAt(0) : parseInt(char));
   }, 0);
-  
+
   const randomAdjustment = (panSum % 100) - 50;
   baseScore += randomAdjustment;
-  
+
   baseScore = Math.max(300, Math.min(900, baseScore));
-  
+
   return Math.round(baseScore);
 }
 
 const CreditCardApplication = () => {
   const { cardType } = useParams();
   const navigate = useNavigate();
-  const notify = notification();
 
   const [formData, setFormData] = useState({
     // Basic Information
@@ -56,14 +54,14 @@ const CreditCardApplication = () => {
     motherName: '',
     aadhaarNumber: '',
     currentAddress: '',
-    
+
     // Employment Information
     companyName: '',
     designation: '',
     officialEmail: '',
     personalEmail: '',
     netSalary: '',
-    
+
     // Document uploads
     salarySlips: [],
     bankStatement: null,
@@ -99,7 +97,7 @@ const CreditCardApplication = () => {
       ...prev,
       [field]: field === 'panNumber' ? value.toUpperCase() : value
     }));
-    
+
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -112,7 +110,7 @@ const CreditCardApplication = () => {
     } else {
       setFormData(prev => ({ ...prev, [field]: files[0] }));
     }
-    
+
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -172,13 +170,13 @@ const CreditCardApplication = () => {
     setTimeout(() => {
       try {
         const score = calculateSimulatedScore(formData.panNumber);
-        navigate('/application-success', { 
-          state: { 
-            ...formData, 
+        navigate('/application-success', {
+          state: {
+            ...formData,
             serviceType: cardType,
             serviceName: serviceTypeNames[cardType] || 'Credit Card',
             message: `Your ${serviceTypeNames[cardType] || 'Credit Card'} application has been submitted successfully. Our team will contact you within 24-48 hours.`
-          } 
+          }
         });
       } catch (error) {
         console.error('Error processing application:', error);
@@ -195,7 +193,7 @@ const CreditCardApplication = () => {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold text-slate-800 mb-6">Basic Information</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
@@ -310,7 +308,7 @@ const CreditCardApplication = () => {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold text-slate-800 mb-6">Employment Information</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
@@ -394,7 +392,7 @@ const CreditCardApplication = () => {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold text-slate-800 mb-6">Document Upload</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
@@ -497,7 +495,16 @@ const CreditCardApplication = () => {
         <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
       </div>
 
-      
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: 'Services', disabled: true },
+          { label: 'Credit Cards', href: '/services/credit-cards', icon: CreditCard },
+          { label: 'CIBIL Check', disabled: true, icon: Shield },
+          { label: 'CIBIL Score', disabled: true, icon: TrendingUp },
+          { label: serviceTypeNames[cardType] || 'Credit Card', icon: CreditCard }
+        ]}
+      />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
         {/* Header */}
@@ -509,7 +516,7 @@ const CreditCardApplication = () => {
             Apply for {serviceTypeNames[cardType] || 'Credit Card'}
           </h1>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Complete your application to check your CIBIL score and find eligible credit cards
+            Complete your application
           </p>
         </div>
 
@@ -522,7 +529,7 @@ const CreditCardApplication = () => {
             <span className={currentStep >= 4 ? 'text-[#1e7a8c] font-medium' : ''}>CIBIL Check</span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-2">
-            <div 
+            <div
               className="bg-gradient-to-r from-[#1e7a8c] to-[#0f4c59] h-2 rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / 4) * 100}%` }}
             ></div>

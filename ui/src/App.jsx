@@ -1,5 +1,5 @@
 // App.jsx
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -42,11 +42,9 @@ import Loans from "@/pages/masters/loans/Loans";
 import Users from "@/pages/masters/users/Users";
 import UserFormPage from "@/pages/masters/users/UserFormPage";
 import Role from "@/pages/masters/roles/Role";
-import UserDashboard from "@/pages/userPages/landingPage/UserDashboard";
+
 import LandingPage from "@/pages/userPages/landingPage/LandingPage";
-import ServicesPage from "@/pages/userPages/Services/ServicesPage";
-import CibilScorePage from "./pages/userPages/Cibil/Cibil";
-import ApplyLoanPage from "./pages/userPages/apply/ApplyFor";
+import ServicesPage from "@/pages/userPages/services/Servicespage";
 import ApplicationSuccess from "./pages/userPages/apply/ApplicationSuccess";
 import CibilScore from "./pages/userPages/apply/CibilScore";
 import CibilCheck from "./pages/userPages/apply/CibilCheck";
@@ -114,12 +112,10 @@ function App() {
               }
             >
               <Route path="/dashboard" element={<LandingPage />} />
-              <Route path="/user-dashboard" element={<UserDashboard />} />
               <Route path="/services" element={<ServicesPage />} />
               <Route path="/services/:serviceType" element={<ServicesPage />} />
               <Route path="/cibil-score" element={<CibilScore />} />
               <Route path="/cibil-check" element={<CibilCheck />} />
-              <Route path="/apply/:loanType" element={<ApplyLoanPage />} />
               <Route path="/apply-loan/:loanType" element={<LoanApplication />} />
               <Route path="/apply-insurance/:insuranceType" element={<InsuranceApplication />} />
               <Route path="/apply-credit-card/:cardType" element={<CreditCardApplication />} />

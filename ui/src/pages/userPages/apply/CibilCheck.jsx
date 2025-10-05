@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, Shield, AlertCircle, User, Calendar, Phone, FileText, CheckCircle } from 'lucide-react';
+import Breadcrumb from '@/components/Breadcrumb';
 
 function calculateSimulatedScore(panNumber) {
   // Simulate score calculation based on PAN number patterns
@@ -142,6 +143,14 @@ export default function CibilCheck() {
         <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
       </div>
 
+      {/* Breadcrumb */}
+      <Breadcrumb 
+        items={[
+          { label: 'Services', disabled: true },
+          { label: 'Credit Cards', href: '/services/credit-cards', icon: CreditCard },
+          { label: 'CIBIL Check', icon: Shield }
+        ]} 
+      />
      
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
         {/* Header */}

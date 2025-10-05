@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle, Home, Phone, Mail, Calendar } from 'lucide-react';
+import { CheckCircle, Home, Phone, Mail, Calendar, CreditCard, Shield, PiggyBank } from 'lucide-react';
 import { useEffect } from 'react';
+import Breadcrumb from '@/components/Breadcrumb';
 
 export default function ApplicationSuccess() {
   const location = useLocation();
@@ -20,6 +21,43 @@ export default function ApplicationSuccess() {
 
   const { serviceName, message, fullName, serviceType } = applicationData;
 
+  // Generate breadcrumb items based on service type
+  const getBreadcrumbItems = () => {
+    const baseItems = [
+      { label: 'Services', disabled: true }
+    ];
+
+    if (serviceType?.includes('card')) {
+      return [
+        ...baseItems,
+        { label: 'Credit Cards', disabled: true, icon: CreditCard },
+        { label: 'CIBIL Check', disabled: true, icon: Shield },
+        { label: 'Application', disabled: true, icon: CreditCard },
+        { label: 'Success', icon: CheckCircle }
+      ];
+    } else if (serviceType?.includes('loan')) {
+      return [
+        ...baseItems,
+        { label: 'Loans', disabled: true, icon: PiggyBank },
+        { label: 'Application', disabled: true, icon: PiggyBank },
+        { label: 'Success', icon: CheckCircle }
+      ];
+    } else if (serviceType?.includes('insurance')) {
+      return [
+        ...baseItems,
+        { label: 'Insurance', disabled: true, icon: Shield },
+        { label: 'Application', disabled: true, icon: Shield },
+        { label: 'Success', icon: CheckCircle }
+      ];
+    }
+
+    return [
+      ...baseItems,
+      { label: 'Application', disabled: true },
+      { label: 'Success', icon: CheckCircle }
+    ];
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-indigo-50">
       {/* Background decorations */}
@@ -29,7 +67,8 @@ export default function ApplicationSuccess() {
         <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
       </div>
 
-      {/* Navigation */}
+      {/* Breadcrumb */}
+      <Breadcrumb items={getBreadcrumbItems()} />
       
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">

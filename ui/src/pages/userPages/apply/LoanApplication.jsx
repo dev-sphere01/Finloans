@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Home, Car, Briefcase, AlertCircle, User, Calendar, Phone, FileText, CheckCircle, MapPin, Building, Mail, DollarSign } from 'lucide-react';
+import { Home, Car, Briefcase, AlertCircle, User, Calendar, Phone, FileText, CheckCircle, MapPin, Building, Mail, DollarSign, PiggyBank } from 'lucide-react';
+import Breadcrumb from '@/components/Breadcrumb';
 
 export default function LoanApplication() {
   const { loanType } = useParams();
@@ -176,7 +177,14 @@ export default function LoanApplication() {
         <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
       </div>
 
-     
+      {/* Breadcrumb */}
+      <Breadcrumb 
+        items={[
+          { label: 'Services', disabled: true },
+          { label: 'Loans', href: '/services/loans', icon: PiggyBank },
+          { label: loanName, icon: Icon }
+        ]} 
+      />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
         {/* Header */}
