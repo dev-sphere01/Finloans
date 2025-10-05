@@ -102,11 +102,11 @@ function App() {
             {/* Add more guest routes here */}
           </Route>
 
-          {/* user routes  */}
+          {/* User routes - only accessible by users with "user" role */}
           {role === "user" && (
             <Route
               element={
-                <ProtectedRoutes>
+                <ProtectedRoutes requiredRole="user">
                   <UserLayout />
                 </ProtectedRoutes>
               }
@@ -124,8 +124,8 @@ function App() {
             </Route>
           )}
 
-          {/* Protected Routes with InnerLayout */}
-          {role !== "user" && (
+          {/* Admin/Staff routes - only accessible by authenticated users with valid admin/staff roles */}
+          {role && role !== "user" && (
             <Route
               element={
                 <ProtectedRoutes>
@@ -134,8 +134,6 @@ function App() {
               }
             >
               <Route path="/dashboard" element={<Dashboard />} />
-              {/* Add more protected routes here as needed */}
-
               <Route path="/dashboard/loans" element={<Loans />} />
               <Route path="/dashboard/credit-cards" element={<CreditCards />} />
               <Route path="/dashboard/insurance" element={<Insurance />} />
@@ -143,10 +141,7 @@ function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/dashboard/users" element={<Users />} />
               <Route path="/dashboard/users/add" element={<UserFormPage />} />
-              <Route
-                path="/dashboard/users/edit/:userId"
-                element={<UserFormPage />}
-              />
+              <Route path="/dashboard/users/edit/:userId" element={<UserFormPage />} />
               <Route path="/dashboard/roles" element={<Role />} />
             </Route>
           )}

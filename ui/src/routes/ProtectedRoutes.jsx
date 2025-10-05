@@ -2,12 +2,23 @@
 import { Navigate, useLocation } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 
-const ProtectedRoutes = ({ children }) => {
-    const { isAuthenticated, needsPasswordChange } = useAuthStore();
+const ProtectedRoutes = ({ children, requiredRole = null }) => {
+    const { isAuthenticated, needsPasswordChange, user } = useAuthStore();
     const location = useLocation();
+    const userRole = user?.roleName;
 
     // If not authenticated, redirect to login
     if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
+    }
+
+    // If user has no role or undefined role, redirect to login
+    if (!userRole) {
+        return <Navigate to="/login" replace />;
+    }
+
+    // If a specific role is required and user doesn't have it, redirect to login
+    if (requiredRole && userRole !== requiredRole) {
         return <Navigate to="/login" replace />;
     }
 

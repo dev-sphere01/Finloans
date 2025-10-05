@@ -38,10 +38,18 @@ const Login = () => {
           notify.success("Login successful! Welcome back.");
           navigate("/dashboard");
         }
+      } else {
+        // Login failed, show error from API response
+        const errorMessage = response.message || "Login failed. Please check your credentials.";
+        setError(errorMessage);
+        notify.error(errorMessage);
       }
     } catch (error) {
       console.error("Login failed:", error);
-      const errorMessage = error.message || "Login failed. Please try again.";
+      const errorMessage = error.response?.data?.message || 
+                           error.response?.data?.error || 
+                           error.message || 
+                           "Network error. Please check your connection and try again.";
       setError(errorMessage);
       notify.error(errorMessage);
     } finally {
@@ -62,8 +70,14 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2 animate-shake">
+              <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-xs font-bold">!</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Login Failed</p>
+                <p className="text-sm">{error}</p>
+              </div>
             </div>
           )}
           
@@ -76,7 +90,10 @@ const Login = () => {
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (error) setError(""); // Clear error when user starts typing
+                }}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500"
                 placeholder="Enter your username"
                 required
@@ -93,7 +110,10 @@ const Login = () => {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError(""); // Clear error when user starts typing
+                }}
                 className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500"
                 placeholder="Enter your password"
                 required
