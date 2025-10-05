@@ -43,9 +43,16 @@ import Users from "@/pages/masters/users/Users";
 import UserFormPage from "@/pages/masters/users/UserFormPage";
 import Role from "@/pages/masters/roles/Role";
 import UserDashboard from "@/pages/userPages/landingPage/UserDashboard";
-import ProductsPage from "./pages/userPages/products/Products";
+import LandingPage from "@/pages/userPages/landingPage/LandingPage";
+import ServicesPage from "@/pages/userPages/Services/ServicesPage";
 import CibilScorePage from "./pages/userPages/Cibil/Cibil";
 import ApplyLoanPage from "./pages/userPages/apply/ApplyFor";
+import ApplicationSuccess from "./pages/userPages/apply/ApplicationSuccess";
+import CibilScore from "./pages/userPages/apply/CibilScore";
+import CibilCheck from "./pages/userPages/apply/CibilCheck";
+import LoanApplication from "./pages/userPages/apply/LoanApplication";
+import InsuranceApplication from "./pages/userPages/apply/InsuranceApplication";
+import CreditCardApplication from "./pages/userPages/apply/CreditCardApplication";
 
 function App() {
   const { initializeAuth, isLoading, isInitialized, user } = useAuthStore();
@@ -97,34 +104,41 @@ function App() {
             {/* Add more guest routes here */}
           </Route>
 
-        {/* user routes  */}
-        {role === "user" && (
-          <Route
-            element={
-              <ProtectedRoutes>
-                <UserLayout />
-              </ProtectedRoutes>
-            }
-          >
-            <Route path="/dashboard" element={<UserDashboard />} />
-            <Route path="/products/:productType" element={<ProductsPage />} />
-            <Route path="/cibil-score" element={<CibilScorePage />} />
-            <Route path="/apply/:loanType" element={<ApplyLoanPage />} />
-            {/* Add more protected routes here as needed */}
-          </Route>
-        )}
+          {/* user routes  */}
+          {role === "user" && (
+            <Route
+              element={
+                <ProtectedRoutes>
+                  <UserLayout />
+                </ProtectedRoutes>
+              }
+            >
+              <Route path="/dashboard" element={<LandingPage />} />
+              <Route path="/user-dashboard" element={<UserDashboard />} />
+              <Route path="/services" element={<ServicesPage />} />
+              <Route path="/services/:serviceType" element={<ServicesPage />} />
+              <Route path="/cibil-score" element={<CibilScore />} />
+              <Route path="/cibil-check" element={<CibilCheck />} />
+              <Route path="/apply/:loanType" element={<ApplyLoanPage />} />
+              <Route path="/apply-loan/:loanType" element={<LoanApplication />} />
+              <Route path="/apply-insurance/:insuranceType" element={<InsuranceApplication />} />
+              <Route path="/apply-credit-card/:cardType" element={<CreditCardApplication />} />
+              <Route path="/application-success" element={<ApplicationSuccess />} />
+              {/* Add more protected routes here as needed */}
+            </Route>
+          )}
 
-        {/* Protected Routes with InnerLayout */}
-        {role !== "user" && (
-          <Route
-            element={
-              <ProtectedRoutes>
-                <InnerLayout />
-              </ProtectedRoutes>
-            }
-          >
-            <Route path="/dashboard" element={<Dashboard />} />
-            {/* Add more protected routes here as needed */}
+          {/* Protected Routes with InnerLayout */}
+          {role !== "user" && (
+            <Route
+              element={
+                <ProtectedRoutes>
+                  <InnerLayout />
+                </ProtectedRoutes>
+              }
+            >
+              <Route path="/dashboard" element={<Dashboard />} />
+              {/* Add more protected routes here as needed */}
 
               <Route path="/dashboard/loans" element={<Loans />} />
               <Route path="/dashboard/credit-cards" element={<CreditCards />} />

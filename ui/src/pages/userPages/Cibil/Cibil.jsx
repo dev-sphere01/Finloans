@@ -1,18 +1,61 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, AlertCircle, XCircle, TrendingUp, Phone, Mail } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+  TrendingUp, 
+  CheckCircle, 
+  AlertCircle, 
+  CreditCard, 
+  Star, 
+  ArrowRight,
+  RefreshCw,
+  Shield,
+  Award
+} from 'lucide-react';
+import creditCardService from '@/services/creditCardService';
+import notification from '@/services/NotificationService';
 
-export default function CibilScorePage() {
-  const [scoreData, setScoreData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+const CibilScorePage = () => {
   const location = useLocation();
-
+  const navigate = useNavigate();
+  const notify = notification();
+  
+  const [eligibleCards, setEligibleCards] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Get data from navigation state
+  const userData = location.state;
+  
+  // If no data, redirect back
   useEffect(() => {
-    if (location.state) {
-      setScoreData(location.state);
+    if (!userData || !userData.isCreditCard) {
+      navigate('/');
+      return;
     }
-    setIsLoading(false);
-  }, [location]);
+    
+    fetchEligibleCards();
+  }, [userData, navigate]);
+
+  const fetchEligibleCards = async () => {
+    try {
+      setLoading(true);
+      const response = await creditCardService.getCreditCards();
+      
+      // Filter cards based on CIBIL score range
+      const userScore = userData.score;
+      const eligible = response.cards?.filter(card => {
+        const [minScore, maxScore] = card.cibilRange.split('-').map(s => parseInt(s.trim()));
+        return userScore >= minScore && userScore <= maxScore;
+      }) || [];
+      
+      setEligibleCards(eligible);
+    } catch (error) {
+      console.error('Error fetching credit cards:', error);
+      notify.error('Failed to load eligible credit cards');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getScoreColor = (score) => {
     if (score >= 750) return 'text-green-600';
@@ -20,308 +63,247 @@ export default function CibilScorePage() {
     return 'text-red-600';
   };
 
-  const getScoreBackground = (score) => {
-    if (score >= 750) return 'from-green-500 to-green-600';
-    if (score >= 650) return 'from-yellow-500 to-yellow-600';
-    return 'from-red-500 to-red-600';
+  const getScoreGradient = (score) => {
+    if (score >= 750) return 'from-green-500 to-emerald-500';
+    if (score >= 650) return 'from-yellow-500 to-orange-500';
+    return 'from-red-500 to-pink-500';
   };
 
   const getScoreStatus = (score) => {
-    if (score >= 750) return 'Excellent';
-    if (score >= 650) return 'Good';
-    return 'Fair';
+    if (score >= 750) return { status: 'Excellent', message: 'You have an excellent credit score!' };
+    if (score >= 650) return { status: 'Good', message: 'You have a good credit score.' };
+    return { status: 'Fair', message: 'Your credit score needs improvement.' };
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'approved':
-        return <CheckCircle size={32} className="text-green-600" />;
-      case 'review':
-        return <AlertCircle size={32} className="text-yellow-600" />;
-      case 'rejected':
-        return <XCircle size={32} className="text-red-600" />;
-      default:
-        return <TrendingUp size={32} className="text-[#1e7a8c]" />;
-    }
+  const handleApplyCard = (cardId) => {
+    navigate(`/apply/${cardId}`, {
+      state: {
+        ...userData,
+        preApproved: true
+      }
+    });
   };
 
-  const getStatusMessage = (status, score) => {
-    switch (status) {
-      case 'approved':
-        return {
-          title: 'Congratulations! You\'re Pre-Approved',
-          message: 'Based on your excellent credit score, you qualify for our best rates and terms.',
-          color: 'text-green-800',
-          bgColor: 'bg-green-50 border-green-200'
-        };
-      case 'review':
-        return {
-          title: 'Application Under Review',
-          message: 'Your application is being reviewed. We may need additional documents for approval.',
-          color: 'text-yellow-800',
-          bgColor: 'bg-yellow-50 border-yellow-200'
-        };
-      case 'rejected':
-        return {
-          title: 'Application Needs Improvement',
-          message: 'Your current credit score needs improvement. Our team can help you build better credit.',
-          color: 'text-red-800',
-          bgColor: 'bg-red-50 border-red-200'
-        };
-      default:
-        return {
-          title: 'Score Retrieved Successfully',
-          message: 'Your CIBIL score has been successfully retrieved and evaluated.',
-          color: 'text-blue-800',
-          bgColor: 'bg-blue-50 border-blue-200'
-        };
-    }
-  };
-
-  const loanTypeNames = {
-    'home-loan': 'Home Loan',
-    'personal-loan': 'Personal Loan',
-    'car-loan': 'Car Loan',
-    'business-loan': 'Business Loan'
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1e7a8c] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your CIBIL score...</p>
-        </div>
-      </div>
-    );
+  if (!userData) {
+    return null;
   }
 
-  if (!scoreData) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">No score data available</p>
-          <a href="/" className="text-[#1e7a8c] hover:underline">Return to Home</a>
-        </div>
-      </div>
-    );
-  }
-
-  const statusInfo = getStatusMessage(scoreData.status, scoreData.score);
+  const scoreInfo = getScoreStatus(userData.score);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={() => window.history.back()}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              >
-                <ArrowLeft size={20} className="text-gray-600" />
-              </button>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-[#1e7a8c] to-[#0f4c59] rounded-lg flex items-center justify-center">
-                  <div className="w-5 h-5 bg-white rounded-sm"></div>
-                </div>
-                <span className="text-xl font-bold text-black">FinLoans</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Progress Bar */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">Step 1: PAN Verification</span>
-            <span className="text-[#1e7a8c] font-medium">Step 2: CIBIL Score Check</span>
-          </div>
-          <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-[#1e7a8c] h-2 rounded-full w-full"></div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Background decorations */}
+      <div className="absolute inset-0 opacity-10 overflow-hidden">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-black mb-4">
-            Your CIBIL Score Report
-          </h1>
-          <p className="text-lg text-gray-600">
-            Application for {loanTypeNames[scoreData.loanType] || 'Loan'} • PAN: {scoreData.panNumber}
-          </p>
-        </div>
+    
 
-        {/* Score Display */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Score Card */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
-            <div className="text-center">
-              <div className={`w-32 h-32 bg-gradient-to-r ${getScoreBackground(scoreData.score)} rounded-full flex items-center justify-center mx-auto mb-6`}>
-                <div className="text-white">
-                  <div className="text-3xl font-bold">{scoreData.score}</div>
-                  <div className="text-sm opacity-90">/ 900</div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+        {/* CIBIL Score Display */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20 mb-8">
+            <div className="flex items-center justify-center mb-6">
+              <div className={`w-32 h-32 rounded-full bg-gradient-to-r ${getScoreGradient(userData.score)} flex items-center justify-center shadow-lg`}>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-white">{userData.score}</div>
+                  <div className="text-sm text-white/90">CIBIL Score</div>
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-black mb-2">
-                CIBIL Score: {getScoreStatus(scoreData.score)}
+            </div>
+            
+            <h1 className="text-3xl font-bold text-slate-800 mb-2">
+              Hello, {userData.fullName}!
+            </h1>
+            <p className={`text-xl font-semibold mb-2 ${getScoreColor(userData.score)}`}>
+              {scoreInfo.status} Credit Score
+            </p>
+            <p className="text-slate-600 mb-6">{scoreInfo.message}</p>
+            
+            {/* Score Range Indicator */}
+            <div className="max-w-md mx-auto">
+              <div className="flex justify-between text-xs text-slate-500 mb-2">
+                <span>300</span>
+                <span>500</span>
+                <span>650</span>
+                <span>750</span>
+                <span>900</span>
+              </div>
+              <div className="w-full bg-slate-200 rounded-full h-3 relative">
+                <div className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-3 rounded-full"></div>
+                <div 
+                  className="absolute top-0 w-4 h-4 bg-white border-2 border-slate-400 rounded-full transform -translate-y-0.5"
+                  style={{ left: `${((userData.score - 300) / 600) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Eligible Credit Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-slate-800 mb-4">
+              Credit Cards You're Eligible For
+            </h2>
+            <p className="text-lg text-slate-600">
+              Based on your CIBIL score of {userData.score}, here are the credit cards available for you
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white/90 rounded-3xl p-6 animate-pulse">
+                  <div className="h-40 bg-slate-200 rounded-2xl mb-4"></div>
+                  <div className="h-4 bg-slate-200 rounded mb-2"></div>
+                  <div className="h-3 bg-slate-200 rounded mb-4"></div>
+                  <div className="h-10 bg-slate-200 rounded"></div>
+                </div>
+              ))}
+            </div>
+          ) : eligibleCards.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {eligibleCards.map((card, index) => (
+                <motion.div
+                  key={card._id}
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden border border-white/20 group hover:shadow-2xl transition-all duration-300"
+                >
+                  {/* Card Image */}
+                  {card.creditCardPic && (
+                    <div className="relative h-48 overflow-hidden">
+                      <img
+                        src={card.creditCardPic}
+                        alt={card.creditCardName}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                      <div className="absolute top-4 right-4">
+                        <div className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                          <CheckCircle size={12} />
+                          Eligible
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-slate-800 mb-2">
+                      {card.creditCardName}
+                    </h3>
+                    <p className="text-slate-600 text-sm mb-4">
+                      CIBIL Range: {card.cibilRange}
+                    </p>
+                    
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-1 text-yellow-500">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} size={16} fill="currentColor" />
+                        ))}
+                      </div>
+                      <span className="text-sm text-slate-500">Recommended</span>
+                    </div>
+
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleApplyCard(card._id)}
+                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold py-3 px-4 rounded-xl hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                    >
+                      Apply Now
+                      <ArrowRight size={16} />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-24 h-24 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertCircle size={48} className="text-slate-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-4">
+                No Eligible Credit Cards Found
               </h3>
-              <p className="text-gray-600">
-                Your credit score indicates {getScoreStatus(scoreData.score).toLowerCase()} creditworthiness
+              <p className="text-slate-600 mb-6 max-w-md mx-auto">
+                Based on your current CIBIL score of {userData.score}, there are no credit cards available at this time. 
+                Consider improving your credit score and try again later.
               </p>
-            </div>
-          </div>
-
-          {/* Status Card */}
-          <div className={`border rounded-2xl p-8 ${statusInfo.bgColor}`}>
-            <div className="text-center">
-              <div className="mb-6">
-                {getStatusIcon(scoreData.status)}
-              </div>
-              <h3 className={`text-2xl font-bold mb-4 ${statusInfo.color}`}>
-                {statusInfo.title}
-              </h3>
-              <p className={`${statusInfo.color} text-lg`}>
-                {statusInfo.message}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Score Range Guide */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 mb-8">
-          <h3 className="text-xl font-bold text-black mb-6">CIBIL Score Range Guide</h3>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-              <div className="flex-1">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-800">300 - 649: Fair</span>
-                  <span className="text-sm text-gray-600">Needs Improvement</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
-              <div className="flex-1">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-800">650 - 749: Good</span>
-                  <span className="text-sm text-gray-600">Eligible for Most Loans</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-              <div className="flex-1">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-800">750 - 900: Excellent</span>
-                  <span className="text-sm text-gray-600">Best Rates & Terms</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Next Steps */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 mb-8">
-          <h3 className="text-xl font-bold text-black mb-6">Next Steps</h3>
-          
-          {scoreData.status === 'approved' && (
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-[#1e7a8c] text-white rounded-full flex items-center justify-center text-sm font-bold mt-1">1</div>
-                <div>
-                  <h4 className="font-semibold text-gray-800">Complete Your Application</h4>
-                  <p className="text-gray-600">Provide additional documents and personal details</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-[#1e7a8c] text-white rounded-full flex items-center justify-center text-sm font-bold mt-1">2</div>
-                <div>
-                  <h4 className="font-semibold text-gray-800">Document Verification</h4>
-                  <p className="text-gray-600">Our team will verify your documents within 24 hours</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-[#1e7a8c] text-white rounded-full flex items-center justify-center text-sm font-bold mt-1">3</div>
-                <div>
-                  <h4 className="font-semibold text-gray-800">Loan Approval & Disbursal</h4>
-                  <p className="text-gray-600">Get your loan approved and funds disbursed quickly</p>
-                </div>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/')}
+                  className="bg-slate-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-slate-700 transition-all"
+                >
+                  Back to Home
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={fetchEligibleCards}
+                  className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all flex items-center gap-2"
+                >
+                  <RefreshCw size={16} />
+                  Refresh
+                </motion.button>
               </div>
             </div>
           )}
+        </motion.div>
 
-          {scoreData.status === 'review' && (
-            <div className="space-y-4">
-              <p className="text-gray-700">Our loan specialists will contact you within 24 hours to discuss your application and any additional requirements.</p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-blue-800 text-sm">
-                  <strong>Tip:</strong> Having a co-applicant or providing additional income documents may improve your chances of approval.
-                </p>
+        {/* Credit Score Tips */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="mt-16"
+        >
+          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-white/30">
+            <h3 className="text-2xl font-bold text-slate-800 mb-6 text-center">
+              Tips to Improve Your Credit Score
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CreditCard size={32} className="text-white" />
+                </div>
+                <h4 className="font-semibold text-slate-800 mb-2">Pay Bills On Time</h4>
+                <p className="text-slate-600 text-sm">Always pay your credit card bills and EMIs on time to maintain a good payment history.</p>
               </div>
-            </div>
-          )}
-
-          {scoreData.status === 'rejected' && (
-            <div className="space-y-4">
-              <p className="text-gray-700">Don't worry! There are steps you can take to improve your credit score:</p>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                <li>Pay all bills and EMIs on time</li>
-                <li>Keep credit utilization below 30%</li>
-                <li>Don't apply for multiple loans at once</li>
-                <li>Check and correct any errors in your credit report</li>
-              </ul>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-yellow-800 text-sm">
-                  <strong>Good News:</strong> You can reapply after 3-6 months of improving your credit score.
-                </p>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <TrendingUp size={32} className="text-white" />
+                </div>
+                <h4 className="font-semibold text-slate-800 mb-2">Keep Credit Utilization Low</h4>
+                <p className="text-slate-600 text-sm">Use less than 30% of your available credit limit to show responsible credit usage.</p>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          {scoreData.status === 'approved' && (
-            <button className="bg-[#1e7a8c] text-white font-semibold py-4 px-8 rounded-lg hover:bg-[#0f4c59] transition-colors text-lg">
-              Continue Application
-            </button>
-          )}
-          
-          <button className="border border-[#1e7a8c] text-[#1e7a8c] font-semibold py-4 px-8 rounded-lg hover:bg-[#1e7a8c] hover:text-white transition-colors text-lg">
-            Download Report
-          </button>
-        </div>
-
-        {/* Contact Information */}
-        <div className="mt-12 bg-gray-100 rounded-2xl p-8">
-          <h3 className="text-xl font-bold text-black mb-6 text-center">Need Help?</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex items-center gap-3">
-              <Phone size={24} className="text-[#1e7a8c]" />
-              <div>
-                <p className="font-semibold text-gray-800">Call Us</p>
-                <p className="text-gray-600">1800-123-4567 (Toll Free)</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Mail size={24} className="text-[#1e7a8c]" />
-              <div>
-                <p className="font-semibold text-gray-800">Email Us</p>
-                <p className="text-gray-600">support@FinLoans.com</p>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Award size={32} className="text-white" />
+                </div>
+                <h4 className="font-semibold text-slate-800 mb-2">Maintain Credit History</h4>
+                <p className="text-slate-600 text-sm">Keep old credit accounts open to maintain a longer credit history.</p>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
-}
+};
 
-
+export default CibilScorePage;

@@ -50,74 +50,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-[#1e7a8c] to-[#0f4c59] rounded-lg flex items-center justify-center">
-                  <div className="w-5 h-5 bg-white rounded-sm"></div>
-                </div>
-                <span className="text-xl font-bold text-black">FinLoans</span>
-              </div>
-            </div>
-
-            <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-8">
-                <Link
-                  to="/"
-                  className="text-[#1e7a8c] font-medium px-3 py-2 text-sm"
-                >
-                  Home
-                </Link>
-                <Link
-                  to="/products"
-                  className="text-gray-600 hover:text-[#1e7a8c] font-medium px-3 py-2 text-sm transition-colors"
-                >
-                  Products
-                </Link>
-                <Link
-                  to="/about"
-                  className="text-gray-600 hover:text-[#1e7a8c] font-medium px-3 py-2 text-sm transition-colors"
-                >
-                  About
-                </Link>
-                <Link
-                  to="/contact"
-                  className="text-gray-600 hover:text-[#1e7a8c] font-medium px-3 py-2 text-sm transition-colors"
-                >
-                  Contact
-                </Link>
-              </div>
-            </div>
-
-            <div className="relative flex items-center gap-4">
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              >
-                <User size={20} className="text-gray-600" />
-              </button>
-              {isDropdownOpen && (
-                <div className="absolute top-12 right-0 w-48 bg-white rounded-md shadow-lg py-1 z-20">
-                  <Link
-                    to="/"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Profile
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      
 
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-[#1e7a8c] to-[#0f4c59] text-white">
