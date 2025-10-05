@@ -1,10 +1,9 @@
-import { TrendingUp, TrendingDown, CheckCircle, CreditCard, ArrowRight, Shield, Award, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, CheckCircle, CreditCard, Shield, Award, Target } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import creditCardService from '../../../services/creditCardService';
+import ServiceApplicationButton from '../../../components/ServiceApplicationButton';
 
 export default function CibilScore() {
-  const navigate = useNavigate();
   const [showCards, setShowCards] = useState(false);
   const [animateScore, setAnimateScore] = useState(0);
   const [creditCards, setCreditCards] = useState([]);
@@ -19,15 +18,7 @@ export default function CibilScore() {
 
   const { score, fullName } = applicationData;
 
-  const handleApplyCard = (cardType) => {
-    navigate(`/apply-credit-card/${cardType}`, {
-      state: {
-        ...applicationData,
-        preApproved: score >= 700,
-        creditScore: score
-      }
-    });
-  };
+
 
   useEffect(() => {
     const duration = 2000;
@@ -316,12 +307,18 @@ export default function CibilScore() {
                         </ul>
                       </div>
 
-                      <button
-                        onClick={() => handleApplyCard(card.id || card.name.toLowerCase().replace(/\s+/g, '-'))}
-                        className="w-full bg-gradient-to-r from-[#2D9DB2] to-[#1e7a8c] text-white font-semibold py-2 px-4 rounded-lg text-sm hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        Apply Now <ArrowRight size={14} />
-                      </button>
+                      <ServiceApplicationButton
+                        serviceType="credit-card"
+                        subType={card.id || card.name.toLowerCase().replace(/\s+/g, '-')}
+                        data={{
+                          ...applicationData,
+                          preApproved: score >= 700,
+                          creditScore: score,
+                          selectedCard: card
+                        }}
+                        label="Apply Now"
+                        className="w-full text-sm py-2"
+                      />
                     </div>
                   );
                 })}

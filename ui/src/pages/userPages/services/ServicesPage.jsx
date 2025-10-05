@@ -52,35 +52,55 @@ export default function ServicesPage() {
   const handleApplyNow = (applyFor) => {
     // Create a mapping for service types to route parameters
     const serviceTypeMapping = {
-      'home-loan': 'home-loan',
-      'personal-loan': 'personal-loan',
-      'car-loan': 'car-loan',
-      'business-loan': 'business-loan',
-      'life-insurance': 'life-insurance',
-      'health-insurance': 'health-insurance',
-      'vehicle-insurance': 'vehicle-insurance',
-      'property-insurance': 'property-insurance',
-      'premium-card': 'premium-card',
-      'cashback-card': 'cashback-card',
-      'travel-card': 'travel-card',
-      'business-card': 'business-card'
+      // Loan mappings
+      'home-loan': 'home',
+      'personal-loan': 'personal',
+      'car-loan': 'vehicle',
+      'business-loan': 'business',
+      // Insurance mappings
+      'life-insurance': 'life',
+      'health-insurance': 'health',
+      'vehicle-insurance': 'vehicle',
+      'property-insurance': 'property',
+      // Credit card mappings
+      'premium-card': 'premium',
+      'cashback-card': 'cashback',
+      'travel-card': 'travel',
+      'business-card': 'business'
     };
 
-    // Determine the correct route based on service type
+    // Determine the correct route based on service type using unified routing
     if (serviceType === 'credit-cards') {
       // For credit cards, go to CIBIL check first
       navigate('/cibil-check');
     } else if (serviceType === 'loans') {
-      // For loans, go directly to loan application
-      const loanType = serviceTypeMapping[applyFor] || applyFor;
-      navigate(`/apply-loan/${loanType}`);
+      // For loans, use unified loan application
+      const loanType = serviceTypeMapping[applyFor] || applyFor.replace('-loan', '');
+      navigate(`/apply/loan/${loanType}`, {
+        state: {
+          serviceType: 'loan',
+          subType: loanType,
+          serviceName: `${loanType.charAt(0).toUpperCase() + loanType.slice(1)} Loan`
+        }
+      });
     } else if (serviceType === 'insurance') {
-      // For insurance, go directly to insurance application
-      const insuranceType = serviceTypeMapping[applyFor] || applyFor;
-      navigate(`/apply-insurance/${insuranceType}`);
+      // For insurance, use unified insurance application
+      const insuranceType = serviceTypeMapping[applyFor] || applyFor.replace('-insurance', '');
+      navigate(`/apply/insurance/${insuranceType}`, {
+        state: {
+          serviceType: 'insurance',
+          subType: insuranceType,
+          serviceName: `${insuranceType.charAt(0).toUpperCase() + insuranceType.slice(1)} Insurance`
+        }
+      });
     } else {
-      // Fallback to original route
-      navigate(`/apply/${applyFor}`);
+      // Fallback to unified route
+      navigate(`/apply/${serviceType}/${applyFor}`, {
+        state: {
+          serviceType: serviceType,
+          subType: applyFor
+        }
+      });
     }
   };
 

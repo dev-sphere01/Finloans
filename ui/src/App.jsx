@@ -48,9 +48,7 @@ import ServicesPage from "@/pages/userPages/services/Servicespage";
 import ApplicationSuccess from "./pages/userPages/apply/ApplicationSuccess";
 import CibilScore from "./pages/userPages/apply/CibilScore";
 import CibilCheck from "./pages/userPages/apply/CibilCheck";
-import LoanApplication from "./pages/userPages/apply/LoanApplication";
-import InsuranceApplication from "./pages/userPages/apply/InsuranceApplication";
-import CreditCardApplication from "./pages/userPages/apply/CreditCardApplication";
+import UnifiedApplicationForm from "./pages/userPages/apply/UnifiedApplicationForm";
 
 function App() {
   const { initializeAuth, isLoading, isInitialized, user } = useAuthStore();
@@ -116,9 +114,11 @@ function App() {
               <Route path="/services/:serviceType" element={<ServicesPage />} />
               <Route path="/cibil-score" element={<CibilScore />} />
               <Route path="/cibil-check" element={<CibilCheck />} />
-              <Route path="/apply-loan/:loanType" element={<LoanApplication />} />
-              <Route path="/apply-insurance/:insuranceType" element={<InsuranceApplication />} />
-              <Route path="/apply-credit-card/:cardType" element={<CreditCardApplication />} />
+              
+              {/* Unified Application Form Routes */}
+              <Route path="/apply/:serviceType/:subType" element={<UnifiedApplicationForm />} />
+              <Route path="/apply/:serviceType" element={<UnifiedApplicationForm />} />
+              
               <Route path="/application-success" element={<ApplicationSuccess />} />
               {/* Add more protected routes here as needed */}
             </Route>
