@@ -137,6 +137,8 @@ const applicationController = {
   // Get applications with filters and pagination
   getApplications: async (req, res) => {
     try {
+      console.log('getApplications called with query:', req.query);
+      
       const {
         page = 1,
         limit = 10,

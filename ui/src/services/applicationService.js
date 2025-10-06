@@ -1,6 +1,17 @@
 import API from './API';
 
 const applicationService = {
+  // Test API connection
+  testConnection: async () => {
+    try {
+      const response = await API.get('/applications/test');
+      return response.data;
+    } catch (error) {
+      console.error('Error testing API connection:', error);
+      throw error;
+    }
+  },
+
   // Submit a new application
   submitApplication: async (applicationData) => {
     try {
@@ -34,7 +45,7 @@ const applicationService = {
         }
       });
 
-      const response = await API.get(`/applications?${queryParams.toString()}`);
+      const response = await API.get(`/applications/admin/list?${queryParams.toString()}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching applications:', error);
@@ -72,7 +83,7 @@ const applicationService = {
   // Get application statistics (admin only)
   getApplicationStats: async () => {
     try {
-      const response = await API.get('/applications/stats/overview');
+      const response = await API.get('/applications/admin/stats');
       return response.data;
     } catch (error) {
       console.error('Error fetching application stats:', error);

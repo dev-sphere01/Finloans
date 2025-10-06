@@ -42,6 +42,7 @@ import Loans from "@/pages/masters/loans/Loans";
 import Users from "@/pages/masters/users/Users";
 import UserFormPage from "@/pages/masters/users/UserFormPage";
 import Role from "@/pages/masters/roles/Role";
+import ApplicationsList from "@/pages/masters/applications/ApplicationsList";
 
 import LandingPage from "@/pages/userPages/landingPage/LandingPage";
 import ServicesPage from "@/pages/userPages/services/Servicespage";
@@ -137,6 +138,7 @@ function App() {
               <Route path="/dashboard/loans" element={<Loans />} />
               <Route path="/dashboard/credit-cards" element={<CreditCards />} />
               <Route path="/dashboard/insurance" element={<Insurance />} />
+              <Route path="/dashboard/applications" element={<ApplicationsList />} />
               <Route path="/profile" element={<UserProfile />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/dashboard/users" element={<Users />} />
