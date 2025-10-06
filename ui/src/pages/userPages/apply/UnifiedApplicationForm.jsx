@@ -5,6 +5,7 @@ import {
     CheckCircle, MapPin, DollarSign, CreditCard, Building, Briefcase
 } from 'lucide-react';
 import Breadcrumb from '@/components/Breadcrumb';
+import applicationService from '@/services/applicationService';
 
 export default function UnifiedApplicationForm({ service }) {
     const { serviceType, subType } = useParams();
@@ -219,27 +220,100 @@ export default function UnifiedApplicationForm({ service }) {
         }
 
         setIsLoading(true);
+        setErrors({}); // Clear any previous errors
 
-        // Simulate API call
-        setTimeout(() => {
-            try {
+        try {
+            // Prepare application data
+            const applicationData = {
+                ...formData,
+                serviceType: serviceType,
+                // Only include subType if it's a valid string and not an ObjectId
+                ...(subType && typeof subType === 'string' && !subType.match(/^[0-9a-fA-F]{24}$/) && { subType: subType }),
+                // Include credit card specific data if available
+                ...(passedData.creditScore && { creditScore: passedData.creditScore }),
+                ...(passedData.preApproved && { preApproved: passedData.preApproved }),
+                ...(selectedCard && { 
+                    selectedCard: {
+                        cardId: selectedCard.id,
+                        name: selectedCard.name,
+                        bank: selectedCard.bank,
+                        limit: selectedCard.limit,
+                        approval: selectedCard.approval
+                    }
+                })
+            };
+
+            // Clean up empty string values that should be undefined for enum validation
+            Object.keys(applicationData).forEach(key => {
+                if (applicationData[key] === '') {
+                    delete applicationData[key];
+                }
+            });
+
+            // Submit application to API
+            const response = await applicationService.submitApplication(applicationData);
+
+            if (response.success) {
+                // Navigate to success page with application details
                 navigate('/application-success', {
                     state: {
-                        ...formData,
-                        ...passedData,
-                        serviceType: serviceType,
-                        subType: subType,
+                        applicationId: response.data.applicationId,
+                        status: response.data.status,
+                        submittedAt: response.data.submittedAt,
+                        serviceType: response.data.serviceType,
+                        subType: response.data.subType,
                         serviceName: currentService.name,
+                        fullName: formData.fullName,
                         message: `Your ${currentService.name} application has been submitted successfully. Our team will contact you within 24-48 hours to complete the process.`
                     }
                 });
-            } catch (error) {
-                console.error('Error processing application:', error);
-                setErrors({ submit: 'Unable to process your request. Please try again.' });
-            } finally {
-                setIsLoading(false);
+            } else {
+                setErrors({ submit: response.message || 'Failed to submit application. Please try again.' });
             }
-        }, 2000);
+
+        } catch (error) {
+            console.error('Error submitting application:', error);
+            
+            // Handle different types of errors
+            if (error.response?.status === 400) {
+                // Validation errors from server
+                const serverErrors = error.response.data.errors || [];
+                const errorMap = {};
+                
+                serverErrors.forEach(err => {
+                    // Handle both 'field' and 'path' properties from express-validator
+                    const fieldName = err.field || err.path;
+                    const message = err.message || err.msg;
+                    
+                    if (fieldName && message) {
+                        errorMap[fieldName] = message;
+                    }
+                });
+                
+                if (Object.keys(errorMap).length > 0) {
+                    setErrors(errorMap);
+                    
+                    // Scroll to first error field
+                    const firstErrorField = Object.keys(errorMap)[0];
+                    const errorElement = document.getElementById(firstErrorField);
+                    if (errorElement) {
+                        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        errorElement.focus();
+                    }
+                } else {
+                    setErrors({ submit: error.response.data.message || 'Validation failed. Please check your inputs.' });
+                }
+            } else if (error.response?.status === 409) {
+                // Duplicate application
+                setErrors({ submit: error.response.data.message || 'You have already submitted a similar application recently.' });
+            } else if (error.response?.status >= 500) {
+                setErrors({ submit: 'Server error. Please try again later or contact support.' });
+            } else {
+                setErrors({ submit: 'Unable to process your request. Please check your connection and try again.' });
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Render field helper function
@@ -261,7 +335,11 @@ export default function UnifiedApplicationForm({ service }) {
                         onChange={(e) => handleInputChange(fieldName, e.target.value)}
                         placeholder={placeholder}
                         rows={rows || 2}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#1e7a8c] focus:border-[#1e7a8c] outline-none transition-all text-sm bg-white/80 resize-none"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-1 outline-none transition-all text-sm bg-white/80 resize-none ${
+                            errors[fieldName] 
+                                ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                                : 'border-slate-300 focus:ring-[#1e7a8c] focus:border-[#1e7a8c]'
+                        }`}
                         required={required}
                     />
                 ) : type === 'select' ? (
@@ -269,7 +347,11 @@ export default function UnifiedApplicationForm({ service }) {
                         id={fieldName}
                         value={formData[fieldName]}
                         onChange={(e) => handleInputChange(fieldName, e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#1e7a8c] focus:border-[#1e7a8c] outline-none transition-all text-sm bg-white/80"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-1 outline-none transition-all text-sm bg-white/80 ${
+                            errors[fieldName] 
+                                ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                                : 'border-slate-300 focus:ring-[#1e7a8c] focus:border-[#1e7a8c]'
+                        }`}
                         required={required}
                     >
                         <option value="">{placeholder}</option>
@@ -284,7 +366,11 @@ export default function UnifiedApplicationForm({ service }) {
                         value={formData[fieldName]}
                         onChange={(e) => handleInputChange(fieldName, type === 'number' ? e.target.value : e.target.value)}
                         placeholder={placeholder}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#1e7a8c] focus:border-[#1e7a8c] outline-none transition-all text-sm bg-white/80"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-1 outline-none transition-all text-sm bg-white/80 ${
+                            errors[fieldName] 
+                                ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                                : 'border-slate-300 focus:ring-[#1e7a8c] focus:border-[#1e7a8c]'
+                        }`}
                         maxLength={maxLength}
                         min={min}
                         max={max}
@@ -591,6 +677,29 @@ export default function UnifiedApplicationForm({ service }) {
                                     </div>
                                 )}
                             </>
+                        )}
+
+                        {/* Validation Summary */}
+                        {Object.keys(errors).length > 1 && !errors.submit && (
+                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
+                                    <h4 className="text-red-800 font-semibold text-sm">Please fix the following errors:</h4>
+                                </div>
+                                <ul className="list-disc list-inside space-y-1 text-red-700 text-sm ml-5">
+                                    {Object.entries(errors).map(([field, message]) => (
+                                        <li key={field} className="cursor-pointer hover:text-red-800" onClick={() => {
+                                            const element = document.getElementById(field);
+                                            if (element) {
+                                                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                element.focus();
+                                            }
+                                        }}>
+                                            {message}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         )}
 
                         {errors.submit && (

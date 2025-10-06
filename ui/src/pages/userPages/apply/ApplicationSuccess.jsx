@@ -1,7 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle, Home, Phone, Mail, Calendar, CreditCard, Shield, PiggyBank } from 'lucide-react';
+import { CheckCircle, FileText, Calendar, User, ArrowRight, Home } from 'lucide-react';
 import { useEffect } from 'react';
-import Breadcrumb from '@/components/Breadcrumb';
 
 export default function ApplicationSuccess() {
   const location = useLocation();
@@ -19,47 +18,18 @@ export default function ApplicationSuccess() {
     return null;
   }
 
-  const { serviceName, message, fullName, serviceType } = applicationData;
-
-  // Generate breadcrumb items based on service type
-  const getBreadcrumbItems = () => {
-    const baseItems = [
-      { label: 'Services', disabled: true }
-    ];
-
-    if (serviceType?.includes('card')) {
-      return [
-        ...baseItems,
-        { label: 'Credit Cards', disabled: true, icon: CreditCard },
-        { label: 'CIBIL Check', disabled: true, icon: Shield },
-        { label: 'Application', disabled: true, icon: CreditCard },
-        { label: 'Success', icon: CheckCircle }
-      ];
-    } else if (serviceType?.includes('loan')) {
-      return [
-        ...baseItems,
-        { label: 'Loans', disabled: true, icon: PiggyBank },
-        { label: 'Application', disabled: true, icon: PiggyBank },
-        { label: 'Success', icon: CheckCircle }
-      ];
-    } else if (serviceType?.includes('insurance')) {
-      return [
-        ...baseItems,
-        { label: 'Insurance', disabled: true, icon: Shield },
-        { label: 'Application', disabled: true, icon: Shield },
-        { label: 'Success', icon: CheckCircle }
-      ];
-    }
-
-    return [
-      ...baseItems,
-      { label: 'Application', disabled: true },
-      { label: 'Success', icon: CheckCircle }
-    ];
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Background decorations */}
       <div className="absolute inset-0 opacity-10 overflow-hidden">
         <div className="absolute top-20 left-10 w-72 h-72 bg-green-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
@@ -67,104 +37,159 @@ export default function ApplicationSuccess() {
         <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
       </div>
 
-      {/* Breadcrumb */}
-      <Breadcrumb items={getBreadcrumbItems()} />
-      
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
-        {/* Success Message */}
-        <div className="text-center mb-12">
-          <div className="w-24 h-24 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-bounce">
-            <CheckCircle size={48} className="text-white" />
+      <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
+        {/* Success Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full mb-6 shadow-lg">
+            <CheckCircle size={40} className="text-white" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
             Application Submitted Successfully!
           </h1>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Thank you, {fullName}! Your {serviceName} application has been received.
+            {applicationData.message}
           </p>
         </div>
 
-        {/* Application Details */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20 mb-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-slate-800 mb-4">What Happens Next?</h2>
-            <p className="text-slate-600 text-lg">
-              {message}
-            </p>
+        {/* Application Details Card */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 mb-8 border border-white/20">
+          <h2 className="text-xl font-semibold text-slate-800 mb-6 flex items-center gap-2">
+            <FileText size={20} />
+            Application Details
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                <div className="w-10 h-10 bg-gradient-to-r from-[#1e7a8c] to-[#0f4c59] rounded-lg flex items-center justify-center">
+                  <FileText size={18} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Application ID</p>
+                  <p className="font-bold text-slate-800">{applicationData.applicationId}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <User size={18} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Applicant Name</p>
+                  <p className="font-bold text-slate-800">{applicationData.fullName}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <FileText size={18} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Service Type</p>
+                  <p className="font-bold text-slate-800">{applicationData.serviceName}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                  <CheckCircle size={18} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Status</p>
+                  <p className="font-bold text-green-600 capitalize">{applicationData.status}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                  <Calendar size={18} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Submitted On</p>
+                  <p className="font-bold text-slate-800">
+                    {formatDate(applicationData.submittedAt)}
+                  </p>
+                </div>
+              </div>
+
+              {applicationData.subType && (
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                  <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                    <FileText size={18} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600">Category</p>
+                    <p className="font-bold text-slate-800 capitalize">
+                      {applicationData.subType.replace('-', ' ')}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="text-center p-6 bg-blue-50 rounded-2xl">
-              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold">1</span>
-              </div>
-              <h3 className="font-semibold text-slate-800 mb-2">Document Verification</h3>
-              <p className="text-slate-600 text-sm">Our team will verify your submitted documents within 24 hours.</p>
+        {/* Next Steps */}
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8">
+          <h3 className="text-lg font-semibold text-blue-800 mb-4">What happens next?</h3>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">1</div>
+              <p className="text-blue-700">Our team will review your application within 24-48 hours</p>
             </div>
-
-            <div className="text-center p-6 bg-green-50 rounded-2xl">
-              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold">2</span>
-              </div>
-              <h3 className="font-semibold text-slate-800 mb-2">Application Review</h3>
-              <p className="text-slate-600 text-sm">Your application will be reviewed by our specialists.</p>
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">2</div>
+              <p className="text-blue-700">You'll receive a call or email for document verification</p>
             </div>
-
-            <div className="text-center p-6 bg-purple-50 rounded-2xl">
-              <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold">3</span>
-              </div>
-              <h3 className="font-semibold text-slate-800 mb-2">Final Approval</h3>
-              <p className="text-slate-600 text-sm">You'll receive approval notification within 48 hours.</p>
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">3</div>
+              <p className="text-blue-700">Final approval and processing will be completed</p>
             </div>
           </div>
+        </div>
 
-          {/* Contact Information */}
-          <div className="bg-slate-50 rounded-2xl p-6">
-            <h3 className="font-semibold text-slate-800 mb-4 text-center">Need Help? Contact Us</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-              <div className="flex items-center justify-center gap-2 text-slate-600">
-                <Phone size={16} />
-                <span>1800-123-4567</span>
-              </div>
-              <div className="flex items-center justify-center gap-2 text-slate-600">
-                <Mail size={16} />
-                <span>support@finloans.com</span>
-              </div>
-              <div className="flex items-center justify-center gap-2 text-slate-600">
-                <Calendar size={16} />
-                <span>Mon-Sat 9AM-6PM</span>
-              </div>
-            </div>
-          </div>
+        {/* Important Note */}
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-8">
+          <h3 className="text-lg font-semibold text-amber-800 mb-2">Important Note</h3>
+          <p className="text-amber-700">
+            Please keep your Application ID <strong>{applicationData.applicationId}</strong> safe for future reference.
+            You can use this ID to track your application status or contact our support team.
+          </p>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
             onClick={() => navigate('/')}
-            className="bg-gradient-to-r from-[#1e7a8c] to-[#0f4c59] text-white font-semibold py-3 px-8 rounded-xl hover:shadow-lg transition-all flex items-center justify-center gap-2"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#1e7a8c] to-[#0f4c59] text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-all"
           >
-            <Home size={20} />
+            <Home size={18} />
             Back to Home
           </button>
+
           <button
             onClick={() => navigate('/services')}
-            className="bg-white text-[#1e7a8c] border-2 border-[#1e7a8c] font-semibold py-3 px-8 rounded-xl hover:bg-[#1e7a8c] hover:text-white transition-all"
+            className="flex items-center justify-center gap-2 bg-white text-[#1e7a8c] border-2 border-[#1e7a8c] font-semibold py-3 px-6 rounded-lg hover:bg-[#1e7a8c] hover:text-white transition-all"
           >
             Explore More Services
+            <ArrowRight size={18} />
           </button>
         </div>
 
-        {/* Application Reference */}
-        <div className="mt-8 text-center">
-          <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-4 inline-block">
-            <p className="text-slate-600 text-sm mb-1">Application Reference ID</p>
-            <p className="font-mono font-bold text-slate-800 text-lg">
-              FL{serviceType?.toUpperCase().replace('-', '')}{Date.now().toString().slice(-6)}
-            </p>
-          </div>
+        {/* Contact Support */}
+        <div className="text-center mt-8 p-4 bg-white/50 rounded-lg">
+          <p className="text-slate-600 text-sm">
+            Need help? Contact our support team at{' '}
+            <a href="mailto:support@finloans.com" className="text-[#1e7a8c] font-semibold hover:underline">
+              support@finloans.com
+            </a>
+            {' '}or call{' '}
+            <a href="tel:+911234567890" className="text-[#1e7a8c] font-semibold hover:underline">
+              +91 12345 67890
+            </a>
+          </p>
         </div>
       </div>
     </div>
