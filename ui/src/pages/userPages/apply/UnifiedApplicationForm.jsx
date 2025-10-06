@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import Breadcrumb from '@/components/Breadcrumb';
 
-export default function UnifiedApplicationForm() {
+export default function UnifiedApplicationForm({ service }) {
     const { serviceType, subType } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
@@ -243,13 +243,15 @@ export default function UnifiedApplicationForm() {
     };
 
     // Render field helper function
-    const renderField = (fieldName, label, type = 'text', options = {}) => {
+    const renderField = (fieldName, label, type = 'text', options = {}, span = 1) => {
         const { placeholder, required = false, icon: Icon, maxLength, min, max, rows } = options;
 
+        const spanClass = span === 2 ? 'col-span-2' : span === 3 ? 'col-span-3' : span === 4 ? 'col-span-4' : 'col-span-1';
+
         return (
-            <div>
-                <label htmlFor={fieldName} className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
-                    {Icon && <Icon size={16} />}
+            <div className={spanClass}>
+                <label htmlFor={fieldName} className="flex items-center gap-1 text-xs font-semibold text-slate-700 mb-1">
+                    {Icon && <Icon size={12} />}
                     {label} {required && '*'}
                 </label>
                 {type === 'textarea' ? (
@@ -258,8 +260,8 @@ export default function UnifiedApplicationForm() {
                         value={formData[fieldName]}
                         onChange={(e) => handleInputChange(fieldName, e.target.value)}
                         placeholder={placeholder}
-                        rows={rows || 3}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#1e7a8c] focus:border-[#1e7a8c] outline-none transition-all text-lg bg-white/80 resize-none"
+                        rows={rows || 2}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#1e7a8c] focus:border-[#1e7a8c] outline-none transition-all text-sm bg-white/80 resize-none"
                         required={required}
                     />
                 ) : type === 'select' ? (
@@ -267,7 +269,7 @@ export default function UnifiedApplicationForm() {
                         id={fieldName}
                         value={formData[fieldName]}
                         onChange={(e) => handleInputChange(fieldName, e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#1e7a8c] focus:border-[#1e7a8c] outline-none transition-all text-lg bg-white/80"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#1e7a8c] focus:border-[#1e7a8c] outline-none transition-all text-sm bg-white/80"
                         required={required}
                     >
                         <option value="">{placeholder}</option>
@@ -282,7 +284,7 @@ export default function UnifiedApplicationForm() {
                         value={formData[fieldName]}
                         onChange={(e) => handleInputChange(fieldName, type === 'number' ? e.target.value : e.target.value)}
                         placeholder={placeholder}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#1e7a8c] focus:border-[#1e7a8c] outline-none transition-all text-lg bg-white/80"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#1e7a8c] focus:border-[#1e7a8c] outline-none transition-all text-sm bg-white/80"
                         maxLength={maxLength}
                         min={min}
                         max={max}
@@ -290,8 +292,8 @@ export default function UnifiedApplicationForm() {
                     />
                 )}
                 {errors[fieldName] && (
-                    <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle size={14} />
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle size={10} />
                         {errors[fieldName]}
                     </p>
                 )}
@@ -317,33 +319,33 @@ export default function UnifiedApplicationForm() {
                 ]}
             />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+            <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-4 relative z-10">
                 {/* Compact Header */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center g from-[#1e7a8c] to-[#0f4c59] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                        <ServiceIcon size={40} className="text-white" />
+                <div className="text-center mb-4">
+                    <div className="inline-flex items-center g from-[#1e7a8c] to-[#0f4c59] rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
+                        <ServiceIcon size={28} className="text-white" />
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
+                    <h1 className="text-xl md:text-2xl font-bold text-slate-800 mb-2">
                         Apply for {selectedCard ? selectedCard.name : currentService.name}
                     </h1>
-                    <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+                    <p className="text-sm text-slate-600 max-w-2xl mx-auto">
                         {selectedCard ? `Apply for ${selectedCard.name} from ${selectedCard.bank}` : currentService.description}
                     </p>
                     {passedData.preApproved && (
-                        <div className="mt-4 inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-semibold">
-                            <CheckCircle size={16} />
+                        <div className="mt-2 inline-flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
+                            <CheckCircle size={12} />
                             Pre-approved based on your CIBIL score of {passedData.creditScore}!
                         </div>
                     )}
                     {selectedCard && (
-                        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
-                            <div className="flex items-center gap-3">
+                        <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-2 max-w-md mx-auto">
+                            <div className="flex items-center gap-2">
                                 {selectedCard.image && (
-                                    <img src={selectedCard.image} alt={selectedCard.name} className="w-12 h-8 object-cover rounded" />
+                                    <img src={selectedCard.image} alt={selectedCard.name} className="w-8 h-6 object-cover rounded" />
                                 )}
                                 <div>
-                                    <h3 className="font-semibold text-slate-800">{selectedCard.name}</h3>
-                                    <p className="text-sm text-slate-600">{selectedCard.bank}</p>
+                                    <h3 className="font-semibold text-slate-800 text-sm">{selectedCard.name}</h3>
+                                    <p className="text-xs text-slate-600">{selectedCard.bank}</p>
                                     <p className="text-xs text-slate-500">Credit Limit: {selectedCard.limit}</p>
                                 </div>
                             </div>
@@ -352,25 +354,25 @@ export default function UnifiedApplicationForm() {
                 </div>
 
                 {/* Application Form */}
-                <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-white/20">
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Basic Information Section */}
-                        <div className="border-b border-slate-200 pb-6">
-                            <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                                <User size={20} />
+                        <div className="border-b border-slate-200 pb-3">
+                            <h3 className="text-base font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                                <User size={16} />
                                 Basic Information
                             </h3>
                         </div>
 
-                        {/* Full Name */}
-                        {renderField('fullName', 'Full Name (as per PAN)', 'text', {
-                            placeholder: 'Enter your full name',
-                            required: true,
-                            icon: User
-                        })}
 
-                        {/* PAN and Date of Birth */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            {/* Full Name */}
+                            {renderField('fullName', 'Full Name (as per PAN)', 'text', {
+                                placeholder: 'Enter your full name',
+                                required: true,
+                                icon: User
+                            })}
+                            {/* PAN and Date of Birth */}
                             {renderField('panNumber', 'PAN Number', 'text', {
                                 placeholder: 'ABCDE1234F',
                                 required: true,
@@ -382,10 +384,7 @@ export default function UnifiedApplicationForm() {
                                 required: true,
                                 icon: Calendar
                             })}
-                        </div>
-
-                        {/* Mobile and Aadhaar */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Mobile  */}
                             {renderField('mobileNumber', 'Mobile Number', 'tel', {
                                 placeholder: '9876543210',
                                 required: true,
@@ -393,40 +392,44 @@ export default function UnifiedApplicationForm() {
                                 maxLength: 10
                             })}
 
+                        </div>
+
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            {/* Aadhaar */}
                             {renderField('aadhaarNumber', 'Aadhaar Number', 'text', {
                                 placeholder: '1234 5678 9012',
                                 required: true,
                                 icon: FileText,
                                 maxLength: 12
                             })}
+                            {/* Location */}
+                            {renderField('location', 'Current Location', 'text', {
+                                placeholder: 'City, State',
+                                required: true,
+                                icon: MapPin
+                            })}
+
+                            {/* Current Address */}
+                            {renderField('currentAddress', 'Current Address', 'textarea', {
+                                placeholder: 'Enter your complete current address',
+                                required: true,
+                                icon: MapPin,
+                                rows: 1
+                            }, 2)}
                         </div>
-
-                        {/* Location */}
-                        {renderField('location', 'Current Location', 'text', {
-                            placeholder: 'City, State',
-                            required: true,
-                            icon: MapPin
-                        })}
-
-                        {/* Current Address */}
-                        {renderField('currentAddress', 'Current Address', 'textarea', {
-                            placeholder: 'Enter your complete current address',
-                            required: true,
-                            icon: MapPin,
-                            rows: 3
-                        })}
 
                         {/* Service Specific Fields */}
                         {serviceType === 'credit-card' && (
                             <>
-                                <div className="border-t border-slate-200 pt-6">
-                                    <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                                        <CreditCard size={20} />
+                                <div className="border-t border-slate-200 pt-3">
+                                    <h3 className="text-base font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                                        <CreditCard size={16} />
                                         Employment & Income Details
                                     </h3>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     {renderField('monthlyIncome', 'Monthly Income (₹)', 'number', {
                                         placeholder: 'Enter your monthly income',
                                         required: true,
@@ -444,9 +447,6 @@ export default function UnifiedApplicationForm() {
                                             { value: 'freelancer', label: 'Freelancer' }
                                         ]
                                     })}
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {renderField('companyName', 'Company/Organization Name', 'text', {
                                         placeholder: 'Enter company name',
                                         required: true,
@@ -464,14 +464,14 @@ export default function UnifiedApplicationForm() {
 
                         {serviceType === 'insurance' && (
                             <>
-                                <div className="border-t border-slate-200 pt-6">
-                                    <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                                        <ServiceIcon size={20} />
+                                <div className="border-t border-slate-200 pt-3">
+                                    <h3 className="text-base font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                                        <ServiceIcon size={16} />
                                         Insurance Details
                                     </h3>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {renderField('coverageAmount', 'Coverage Amount (₹)', 'number', {
                                         placeholder: 'Enter coverage amount',
                                         required: true,
@@ -488,11 +488,11 @@ export default function UnifiedApplicationForm() {
                                 {subType === 'health' && renderField('medicalHistory', 'Medical History (if any)', 'textarea', {
                                     placeholder: 'Please mention any pre-existing medical conditions',
                                     icon: Heart,
-                                    rows: 3
+                                    rows: 2
                                 })}
 
                                 {subType === 'vehicle' && (
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         {renderField('vehicleNumber', 'Vehicle Number', 'text', {
                                             placeholder: 'MH01AB1234',
                                             required: true,
@@ -516,7 +516,7 @@ export default function UnifiedApplicationForm() {
                                 )}
 
                                 {subType === 'property' && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {renderField('propertyType', 'Property Type', 'select', {
                                             placeholder: 'Select property type',
                                             required: true,
@@ -540,14 +540,14 @@ export default function UnifiedApplicationForm() {
 
                         {serviceType === 'loan' && (
                             <>
-                                <div className="border-t border-slate-200 pt-6">
-                                    <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                                        <ServiceIcon size={20} />
+                                <div className="border-t border-slate-200 pt-3">
+                                    <h3 className="text-base font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                                        <ServiceIcon size={16} />
                                         Loan Details
                                     </h3>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {renderField('loanAmount', 'Loan Amount (₹)', 'number', {
                                         placeholder: 'Enter loan amount',
                                         required: true,
@@ -569,7 +569,7 @@ export default function UnifiedApplicationForm() {
                                 })}
 
                                 {subType === 'business' && (
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         {renderField('businessType', 'Business Type', 'text', {
                                             placeholder: 'e.g., Manufacturing, Trading',
                                             required: true,
@@ -594,26 +594,26 @@ export default function UnifiedApplicationForm() {
                         )}
 
                         {errors.submit && (
-                            <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
-                                <AlertCircle size={20} className="text-red-500 flex-shrink-0" />
-                                <p className="text-red-700">{errors.submit}</p>
+                            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
+                                <p className="text-red-700 text-sm">{errors.submit}</p>
                             </div>
                         )}
 
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-gradient-to-r from-[#1e7a8c] to-[#0f4c59] text-white font-semibold py-4 px-6 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+                            className="w-full bg-gradient-to-r from-[#1e7a8c] to-[#0f4c59] text-white font-semibold py-3 px-4 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
                             {isLoading ? (
                                 <div className="flex items-center justify-center gap-2">
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                                     Processing Application...
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-center gap-2">
                                     Submit Application
-                                    <CheckCircle size={20} />
+                                    <CheckCircle size={16} />
                                 </div>
                             )}
                         </button>
