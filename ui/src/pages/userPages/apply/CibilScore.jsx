@@ -1,9 +1,10 @@
-import { TrendingUp, TrendingDown, CheckCircle, CreditCard, Shield, Award, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, CheckCircle, CreditCard, Shield, Award, Target, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import creditCardService from '../../../services/creditCardService';
-import ServiceApplicationButton from '../../../components/ServiceApplicationButton';
 
 export default function CibilScore() {
+  const navigate = useNavigate();
   const [showCards, setShowCards] = useState(false);
   const [animateScore, setAnimateScore] = useState(0);
   const [creditCards, setCreditCards] = useState([]);
@@ -307,18 +308,42 @@ export default function CibilScore() {
                         </ul>
                       </div>
 
-                      <ServiceApplicationButton
-                        serviceType="credit-card"
-                        subType={card.id || card.name.toLowerCase().replace(/\s+/g, '-')}
-                        data={{
-                          ...applicationData,
-                          preApproved: score >= 700,
-                          creditScore: score,
-                          selectedCard: card
+                      <button
+                        onClick={() => {
+                          console.log('Card clicked:', card);
+                          const subType = card.id || card.name?.toLowerCase().replace(/\s+/g, '-') || 'credit-card';
+                          console.log('SubType:', subType);
+                          console.log('Navigating to:', `/apply/credit-card/${subType}`);
+
+                          // Clean the card data to remove non-serializable properties (like React components)
+                          const cleanCard = {
+                            id: card.id,
+                            name: card.name,
+                            bank: card.bank,
+                            features: card.features,
+                            limit: card.limit,
+                            approval: card.approval,
+                            annualFee: card.annualFee,
+                            joiningFee: card.joiningFee,
+                            cibilRange: card.cibilRange,
+                            category: card.category,
+                            image: card.image,
+                            link: card.link
+                          };
+
+                          navigate(`/apply/credit-card/${subType}`, {
+                            state: {
+                              ...applicationData,
+                              preApproved: score >= 700,
+                              creditScore: score,
+                              selectedCard: cleanCard
+                            }
+                          });
                         }}
-                        label="Apply Now"
-                        className="w-full text-sm py-2"
-                      />
+                        className="w-full cursor-pointer bg-gradient-to-r from-[#2D9DB2] to-[#1e7a8c] text-white font-semibold py-2 px-4 rounded-lg hover:shadow-md transition-all flex items-center justify-center gap-2 text-sm"
+                      >
+                        Apply Now <ArrowRight size={14} />
+                      </button>
                     </div>
                   );
                 })}

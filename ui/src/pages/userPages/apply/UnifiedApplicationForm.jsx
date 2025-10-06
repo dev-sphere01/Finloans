@@ -317,10 +317,10 @@ export default function UnifiedApplicationForm() {
                 ]}
             />
 
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
-                {/* Header */}
-                <div className="text-center mb-12">
-                    <div className="w-20 h-20 bg-gradient-to-r from-[#1e7a8c] to-[#0f4c59] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+                {/* Compact Header */}
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center g from-[#1e7a8c] to-[#0f4c59] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                         <ServiceIcon size={40} className="text-white" />
                     </div>
                     <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
