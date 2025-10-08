@@ -23,8 +23,6 @@ router.post('/',
  */
 router.get('/:applicationId', applicationController.getApplication);
 
-// Protected routes (authentication required)
-
 /**
  * @route   GET /api/applications/test
  * @desc    Test endpoint to verify server is working
@@ -37,6 +35,8 @@ router.get('/test', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// Protected routes (authentication required)
 
 /**
  * @route   GET /api/applications/admin/list

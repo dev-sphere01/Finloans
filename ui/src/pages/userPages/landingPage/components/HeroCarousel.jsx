@@ -6,17 +6,17 @@ import { Link } from "react-router-dom";
 function HeroCarousel() {
   const slides = [
     {
-      title: "Loans made simple and fast 🚀",
+      title: "Loans made simple and fast",
       subtitle: "Quick approvals and flexible repayment options.",
       bg: "https://images.unsplash.com/photo-1563013544-824ae1b704d3",
     },
     {
-      title: "Check your CIBIL score instantly 📊",
+      title: "Check your CIBIL score instantly",
       subtitle: "Stay informed about your credit health anytime.",
       bg: "https://images.unsplash.com/photo-1605902711622-cfb43c4437b5",
     },
     {
-      title: "Insurance solutions for your future 🛡️",
+      title: "Insurance solutions for your future",
       subtitle: "Protect what matters most with smart coverage.",
       bg: "https://images.unsplash.com/photo-1521791136064-7986c2920216",
     },

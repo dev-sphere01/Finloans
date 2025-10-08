@@ -1,5 +1,6 @@
 const Application = require('../models/Application');
 const CreditCard = require('../models/CreditCards');
+const Insurance = require('../models/Insurance');
 const { validationResult } = require('express-validator');
 
 const applicationController = {
@@ -8,7 +9,7 @@ const applicationController = {
     try {
       // Log incoming data for debugging
       console.log('Incoming application data:', JSON.stringify(req.body, null, 2));
-      
+
       // Check for validation errors
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -22,12 +23,56 @@ const applicationController = {
 
       const applicationData = req.body;
 
+      // Additional validation for insurance applications
+      if (applicationData.serviceType === 'insurance') {
+        const insuranceType = applicationData.insuranceType || 'General';
+        const subType = applicationData.subType;
+
+        try {
+          const insurance = await Insurance.findOne({ 
+            insuranceType: { $regex: new RegExp(`^${insuranceType}$`, 'i') },
+            isActive: true 
+          });
+
+          if (!insurance) {
+            return res.status(400).json({
+              success: false,
+              message: `Invalid insurance type: ${insuranceType}`
+            });
+          }
+
+          const validSubType = insurance.subTypes.find(
+            st => st.name.toLowerCase() === subType.toLowerCase() && st.isActive
+          );
+
+          if (!validSubType) {
+            const availableSubTypes = insurance.subTypes
+              .filter(st => st.isActive)
+              .map(st => st.name)
+              .join(', ');
+            return res.status(400).json({
+              success: false,
+              message: `Invalid insurance subtype. Available subtypes for ${insuranceType}: ${availableSubTypes}`
+            });
+          }
+
+          // Normalize the subType to match the master data
+          applicationData.subType = validSubType.name;
+        } catch (error) {
+          console.error('Error validating insurance type:', error);
+          return res.status(500).json({
+            success: false,
+            message: 'Error validating insurance type'
+          });
+        }
+      }
+
       // Validate age (18-70)
       const birthDate = new Date(applicationData.dateOfBirth);
       const today = new Date();
       let age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
-      
+
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
         age--;
       }
@@ -82,13 +127,13 @@ const applicationController = {
 
     } catch (error) {
       console.error('Error submitting application:', error);
-      
+
       if (error.name === 'ValidationError') {
         const validationErrors = Object.values(error.errors).map(err => ({
           field: err.path,
           message: err.message
         }));
-        
+
         return res.status(400).json({
           success: false,
           message: 'Validation failed',
@@ -138,7 +183,7 @@ const applicationController = {
   getApplications: async (req, res) => {
     try {
       console.log('getApplications called with query:', req.query);
-      
+
       const {
         page = 1,
         limit = 10,

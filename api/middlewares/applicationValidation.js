@@ -1,4 +1,5 @@
 const { body } = require('express-validator');
+const Insurance = require('../models/Insurance');
 
 const applicationValidation = {
   // Basic validation rules for all applications
@@ -27,11 +28,11 @@ const applicationValidation = {
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
-        
+
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
           age--;
         }
-        
+
         if (age < 18 || age > 70) {
           throw new Error('Age must be between 18 and 70 years');
         }
@@ -116,12 +117,11 @@ const applicationValidation = {
       }),
 
     body('creditScore')
-      .if(body('serviceType').equals('credit-card'))
       .optional()
       .isNumeric()
       .withMessage('Credit score must be a number')
       .custom((value) => {
-        if (value < 300 || value > 900) {
+        if (value && (value < 300 || value > 900)) {
           throw new Error('Credit score must be between 300 and 900');
         }
         return true;
@@ -133,9 +133,41 @@ const applicationValidation = {
     body('subType')
       .if(body('serviceType').equals('insurance'))
       .notEmpty()
-      .withMessage('Insurance type is required')
-      .isIn(['life', 'health', 'vehicle', 'property'])
-      .withMessage('Invalid insurance type'),
+      .withMessage('Insurance subtype is required')
+      .custom(async (value, { req }) => {
+        if (req.body.serviceType === 'insurance') {
+          // Get the insurance type from the request (could be in insuranceType field or derived from subType)
+          const insuranceType = req.body.insuranceType || 'General'; // Default fallback
+          
+          try {
+            // Find the insurance type in masters
+            const insurance = await Insurance.findOne({ 
+              insuranceType: { $regex: new RegExp(`^${insuranceType}$`, 'i') },
+              isActive: true 
+            });
+
+            if (!insurance) {
+              throw new Error(`Invalid insurance type: ${insuranceType}`);
+            }
+
+            // Check if the subtype exists and is active
+            const validSubType = insurance.subTypes.find(
+              st => st.name.toLowerCase() === value.toLowerCase() && st.isActive
+            );
+
+            if (!validSubType) {
+              const availableSubTypes = insurance.subTypes
+                .filter(st => st.isActive)
+                .map(st => st.name)
+                .join(', ');
+              throw new Error(`Invalid insurance subtype. Available subtypes for ${insuranceType}: ${availableSubTypes}`);
+            }
+          } catch (error) {
+            throw new Error(error.message || 'Error validating insurance type and subtype');
+          }
+        }
+        return true;
+      }),
 
     body('coverageAmount')
       .if(body('serviceType').equals('insurance'))
@@ -241,8 +273,8 @@ const applicationValidation = {
       .isNumeric()
       .withMessage('Loan amount must be a number')
       .custom((value) => {
-        if (value < 50000) {
-          throw new Error('Loan amount must be at least ₹50,000');
+        if (value < 1) {
+          throw new Error('Loan amount must be at least ₹1');
         }
         return true;
       }),
@@ -262,8 +294,8 @@ const applicationValidation = {
       .isNumeric()
       .withMessage('Monthly income must be a number')
       .custom((value) => {
-        if (value < 15000) {
-          throw new Error('Monthly income must be at least ₹15,000 for loan applications');
+        if (value < 1) {
+          throw new Error('Monthly income is Required');
         }
         return true;
       }),
@@ -313,7 +345,7 @@ const applicationValidation = {
   ],
 
   // Combined validation for application submission
-  validateApplication: function() {
+  validateApplication: function () {
     return [
       ...this.basicValidation,
       ...this.creditCardValidation,

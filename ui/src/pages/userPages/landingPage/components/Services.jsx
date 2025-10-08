@@ -92,7 +92,7 @@ const Services = () => {
                             to={`/services/${service.route}`}
                             className="mt-6 inline-block px-5 py-2 rounded-lg bg-[#2D9DB2] hover:bg-[#1e7a8c] text-white text-sm font-medium transition-colors duration-300 shadow-md hover:shadow-lg cursor-pointer"
                         >
-                            Learn More
+                            Apply Now
                         </Link>
 
                         {/* Animated Border Glow */}

@@ -43,7 +43,7 @@ const InsuranceService = ({ onApply }) => {
         const transformedInsurance = response.items?.map(insurance => ({
           id: insurance._id,
           title: insurance.insuranceType,
-          description: `Comprehensive ${insurance.insuranceType.toLowerCase()} coverage with reliable protection`,
+          description: insurance.description || `Comprehensive ${insurance.insuranceType.toLowerCase()} coverage with reliable protection`,
           links: insurance.links,
           icon: getInsuranceIcon(insurance.insuranceType),
           premium: 'Affordable premiums',
@@ -54,8 +54,9 @@ const InsuranceService = ({ onApply }) => {
             '24/7 customer support',
             'Affordable premiums'
           ],
-          color: getInsuranceColor(insurance.insuranceType),
-          bgColor: 'bg-purple-50'
+          color: insurance.color || getInsuranceColor(insurance.insuranceType),
+          bgColor: 'bg-purple-50',
+          subTypes: insurance.subTypes || []
         })) || [];
 
         setInsuranceProducts(transformedInsurance);

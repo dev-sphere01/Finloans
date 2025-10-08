@@ -16,8 +16,8 @@ const applicationSchema = new mongoose.Schema({
     type: String,
     required: function() {
       return this.serviceType === 'insurance' || this.serviceType === 'loan';
-    },
-    enum: ['life', 'health', 'vehicle', 'property', 'personal', 'home', 'business', 'education']
+    }
+    // Removed hardcoded enum - will be validated dynamically against masters
   },
   status: {
     type: String,
@@ -98,9 +98,7 @@ const applicationSchema = new mongoose.Schema({
   },
   creditScore: {
     type: Number,
-    required: function() {
-      return this.serviceType === 'credit-card';
-    }
+    required: false // Made optional since it might not always be available
   },
   preApproved: {
     type: Boolean,

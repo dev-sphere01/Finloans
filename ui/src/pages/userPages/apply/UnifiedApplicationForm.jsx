@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
     Shield, Heart, Car, Home, AlertCircle, User, Calendar, Phone, FileText,
@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import Breadcrumb from '@/components/Breadcrumb';
 import applicationService from '@/services/applicationService';
+import insuranceTypesService from '@/services/insuranceTypesService';
+import notification from '@/services/NotificationService';
 
 export default function UnifiedApplicationForm({ service }) {
     const { serviceType, subType } = useParams();
@@ -15,6 +17,11 @@ export default function UnifiedApplicationForm({ service }) {
     // Get data passed from previous page (like CIBIL score page)
     const passedData = location.state || {};
     const selectedCard = passedData.selectedCard;
+    
+    // Debug URL params and location
+    console.log('URL Params:', { serviceType, subType });
+    console.log('Location pathname:', location.pathname);
+    console.log('Passed data:', passedData);
 
     const [formData, setFormData] = useState({
         // Basic Information
@@ -59,6 +66,10 @@ export default function UnifiedApplicationForm({ service }) {
 
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState({});
+    const [insuranceTypes, setInsuranceTypes] = useState([]);
+    const [availableSubTypes, setAvailableSubTypes] = useState([]);
+    const [loadingInsuranceTypes, setLoadingInsuranceTypes] = useState(false);
+    const notify = notification();
 
     // Service configurations
     const serviceConfigs = {
@@ -89,6 +100,16 @@ export default function UnifiedApplicationForm({ service }) {
             'vehicle': 'Vehicle Insurance',
             'property': 'Property Insurance'
         };
+        
+        // If type is an ObjectId, try to determine from URL path
+        if (type && type.match(/^[0-9a-fA-F]{24}$/)) {
+            const pathParts = location.pathname.split('/');
+            const insuranceTypeFromPath = pathParts.find(part => 
+                ['life', 'health', 'vehicle', 'property'].includes(part)
+            );
+            return names[insuranceTypeFromPath] || 'Life Insurance';
+        }
+        
         return names[type] || 'Insurance';
     }
 
@@ -109,6 +130,16 @@ export default function UnifiedApplicationForm({ service }) {
             'business': 'Business Loan',
             'education': 'Education Loan'
         };
+        
+        // If type is an ObjectId, try to determine from URL path
+        if (type && type.match(/^[0-9a-fA-F]{24}$/)) {
+            const pathParts = location.pathname.split('/');
+            const loanTypeFromPath = pathParts.find(part => 
+                ['personal', 'home', 'business', 'education'].includes(part)
+            );
+            return names[loanTypeFromPath] || 'Personal Loan';
+        }
+        
         return names[type] || 'Loan';
     }
 
@@ -143,12 +174,45 @@ export default function UnifiedApplicationForm({ service }) {
         return age >= 18 && age <= 70;
     };
 
+    // Load insurance types when component mounts
+    useEffect(() => {
+        if (serviceType === 'insurance') {
+            loadInsuranceTypes();
+        }
+    }, [serviceType]);
+
+    const loadInsuranceTypes = async () => {
+        try {
+            setLoadingInsuranceTypes(true);
+            const response = await insuranceTypesService.getInsuranceTypes();
+            setInsuranceTypes(response.items || []);
+            
+            // If we have a specific insurance type from URL, load its subtypes
+            if (subType) {
+                const matchingType = response.items?.find(type => 
+                    type.insuranceType.toLowerCase().includes(subType.toLowerCase()) ||
+                    type.subTypes?.some(st => st.name.toLowerCase() === subType.toLowerCase())
+                );
+                
+                if (matchingType) {
+                    setAvailableSubTypes(matchingType.subTypes || []);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading insurance types:', error);
+            notify.error('Failed to load insurance types');
+        } finally {
+            setLoadingInsuranceTypes(false);
+        }
+    };
+
     const handleInputChange = (field, value) => {
         setFormData(prev => ({
             ...prev,
             [field]: field === 'panNumber' ? value.toUpperCase() : value
         }));
 
+        // Clear field error when user starts typing
         if (errors[field]) {
             setErrors(prev => ({
                 ...prev,
@@ -182,15 +246,26 @@ export default function UnifiedApplicationForm({ service }) {
 
         if (serviceType === 'insurance') {
             if (!formData.coverageAmount) newErrors.coverageAmount = 'Coverage amount is required';
+            else if (Number(formData.coverageAmount) < 100000) newErrors.coverageAmount = 'Coverage amount must be at least ₹1,00,000';
             if (!formData.nomineeDetails.trim()) newErrors.nomineeDetails = 'Nominee details are required';
 
-            if (subType === 'vehicle') {
+            // Check if subType is vehicle (could be from URL params or determined subType)
+            const isVehicleInsurance = subType === 'vehicle' || 
+                                     location.pathname.includes('/vehicle') ||
+                                     passedData.insuranceType === 'vehicle';
+                                     
+            if (isVehicleInsurance) {
                 if (!formData.vehicleNumber.trim()) newErrors.vehicleNumber = 'Vehicle number is required';
                 if (!formData.vehicleModel.trim()) newErrors.vehicleModel = 'Vehicle model is required';
                 if (!formData.vehicleYear) newErrors.vehicleYear = 'Vehicle year is required';
             }
 
-            if (subType === 'property') {
+            // Check if subType is property (could be from URL params or determined subType)
+            const isPropertyInsurance = subType === 'property' || 
+                                      location.pathname.includes('/property') ||
+                                      passedData.insuranceType === 'property';
+                                      
+            if (isPropertyInsurance) {
                 if (!formData.propertyType.trim()) newErrors.propertyType = 'Property type is required';
                 if (!formData.propertyValue) newErrors.propertyValue = 'Property value is required';
             }
@@ -201,34 +276,152 @@ export default function UnifiedApplicationForm({ service }) {
             if (!formData.loanPurpose.trim()) newErrors.loanPurpose = 'Loan purpose is required';
             if (!formData.monthlyIncome) newErrors.monthlyIncome = 'Monthly income is required';
 
-            if (subType === 'business') {
+            // Check if subType is business (could be from URL params or determined subType)
+            const isBusinessLoan = subType === 'business' || 
+                                 location.pathname.includes('/business') ||
+                                 passedData.loanType === 'business';
+                                 
+            if (isBusinessLoan) {
                 if (!formData.businessType.trim()) newErrors.businessType = 'Business type is required';
                 if (!formData.businessAge) newErrors.businessAge = 'Business age is required';
                 if (!formData.annualTurnover) newErrors.annualTurnover = 'Annual turnover is required';
             }
         }
 
+        if (Object.keys(newErrors).length > 0) {
+            console.log('Validation errors:', newErrors);
+        }
+        
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        console.log('Submit button clicked, form data:', formData);
 
         if (!validateForm()) {
+            console.log('Form validation failed');
             return;
         }
+        
+        console.log('Form validation passed');
 
         setIsLoading(true);
         setErrors({}); // Clear any previous errors
 
         try {
+            console.log('Form submission started...');
+            console.log('Service Type:', serviceType);
+            console.log('Sub Type:', subType);
+            console.log('Is subType an ObjectId?', subType && subType.match(/^[0-9a-fA-F]{24}$/));
+            // Determine the actual subType based on service type and context
+            let actualSubType = null;
+            
+            if (serviceType === 'loan') {
+                // If subType is an ObjectId, try to determine loan type from URL path or passed data
+                if (subType && subType.match(/^[0-9a-fA-F]{24}$/)) {
+                    // Try to extract loan type from URL path
+                    const pathParts = location.pathname.split('/');
+                    const loanTypeFromPath = pathParts.find(part => 
+                        ['personal', 'home', 'business', 'education'].includes(part)
+                    );
+                    
+                    if (loanTypeFromPath) {
+                        actualSubType = loanTypeFromPath;
+                        console.log('Extracted loan type from path:', loanTypeFromPath);
+                    } else if (passedData.loanType) {
+                        actualSubType = passedData.loanType;
+                        console.log('Using loan type from passed data:', passedData.loanType);
+                    } else {
+                        // Default to personal loan if we can't determine
+                        actualSubType = 'personal';
+                        console.log('SubType is ObjectId, defaulting to personal loan');
+                    }
+                } else if (subType && ['personal', 'home', 'business', 'education'].includes(subType)) {
+                    actualSubType = subType;
+                }
+            } else if (serviceType === 'insurance') {
+                console.log('Processing insurance application, subType:', subType);
+                
+                // Try to determine the actual subType from available insurance types
+                if (subType && subType.match(/^[0-9a-fA-F]{24}$/)) {
+                    // Try to extract insurance type from URL path
+                    const pathParts = location.pathname.split('/');
+                    console.log('URL path parts for insurance:', pathParts);
+                    
+                    // Check against available subtypes from loaded insurance types
+                    const allSubTypes = insuranceTypes.flatMap(type => 
+                        type.subTypes?.map(st => st.name) || []
+                    );
+                    
+                    const insuranceTypeFromPath = pathParts.find(part => 
+                        allSubTypes.includes(part)
+                    );
+                    
+                    if (insuranceTypeFromPath) {
+                        actualSubType = insuranceTypeFromPath;
+                        console.log('Extracted insurance type from path:', insuranceTypeFromPath);
+                    } else if (passedData.insuranceType) {
+                        actualSubType = passedData.insuranceType;
+                        console.log('Using insurance type from passed data:', passedData.insuranceType);
+                    } else {
+                        // Default to first available subtype if we can't determine
+                        actualSubType = allSubTypes[0] || 'term';
+                        console.log('SubType is ObjectId, defaulting to:', actualSubType);
+                    }
+                } else if (subType) {
+                    // Validate subType against available insurance types
+                    const allSubTypes = insuranceTypes.flatMap(type => 
+                        type.subTypes?.map(st => st.name) || []
+                    );
+                    
+                    if (allSubTypes.includes(subType)) {
+                        actualSubType = subType;
+                        console.log('Using valid subType for insurance:', subType);
+                    } else {
+                        // Try to find a matching subtype (case insensitive)
+                        const matchingSubType = allSubTypes.find(st => 
+                            st.toLowerCase() === subType.toLowerCase()
+                        );
+                        
+                        if (matchingSubType) {
+                            actualSubType = matchingSubType;
+                            console.log('Found matching subType:', matchingSubType);
+                        } else {
+                            actualSubType = allSubTypes[0] || 'term';
+                            console.log('Invalid subType, defaulting to:', actualSubType);
+                        }
+                    }
+                } else {
+                    // If subType is undefined, try to determine from URL
+                    const pathParts = location.pathname.split('/');
+                    console.log('SubType undefined, checking URL path parts:', pathParts);
+                    
+                    const allSubTypes = insuranceTypes.flatMap(type => 
+                        type.subTypes?.map(st => st.name) || []
+                    );
+                    
+                    const insuranceTypeFromPath = pathParts.find(part => 
+                        allSubTypes.includes(part)
+                    );
+                    
+                    if (insuranceTypeFromPath) {
+                        actualSubType = insuranceTypeFromPath;
+                        console.log('Extracted insurance type from path (undefined case):', insuranceTypeFromPath);
+                    } else {
+                        actualSubType = allSubTypes[0] || 'term';
+                        console.log('Could not determine insurance type, defaulting to:', actualSubType);
+                    }
+                }
+            }
+
             // Prepare application data
             const applicationData = {
                 ...formData,
                 serviceType: serviceType,
-                // Only include subType if it's a valid string and not an ObjectId
-                ...(subType && typeof subType === 'string' && !subType.match(/^[0-9a-fA-F]{24}$/) && { subType: subType }),
+                // Include subType only if we have a valid one
+                ...(actualSubType && { subType: actualSubType }),
                 // Include credit card specific data if available
                 ...(passedData.creditScore && { creditScore: passedData.creditScore }),
                 ...(passedData.preApproved && { preApproved: passedData.preApproved }),
@@ -243,12 +436,18 @@ export default function UnifiedApplicationForm({ service }) {
                 })
             };
 
-            // Clean up empty string values that should be undefined for enum validation
+            // Clean up empty string values and convert number fields
             Object.keys(applicationData).forEach(key => {
                 if (applicationData[key] === '') {
                     delete applicationData[key];
+                } else if (['monthlyIncome', 'loanAmount', 'coverageAmount', 'propertyValue', 'vehicleYear', 'workExperience', 'businessAge', 'annualTurnover', 'creditScore'].includes(key)) {
+                    // Convert number fields from string to number
+                    applicationData[key] = Number(applicationData[key]);
                 }
             });
+
+            console.log('Final application data being submitted:', applicationData);
+            console.log('Actual subType being sent:', actualSubType);
 
             // Submit application to API
             const response = await applicationService.submitApplication(applicationData);
@@ -273,6 +472,12 @@ export default function UnifiedApplicationForm({ service }) {
 
         } catch (error) {
             console.error('Error submitting application:', error);
+            console.error('Error details:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+                config: error.config
+            });
             
             // Handle different types of errors
             if (error.response?.status === 400) {
@@ -308,8 +513,10 @@ export default function UnifiedApplicationForm({ service }) {
                 setErrors({ submit: error.response.data.message || 'You have already submitted a similar application recently.' });
             } else if (error.response?.status >= 500) {
                 setErrors({ submit: 'Server error. Please try again later or contact support.' });
+            } else if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
+                setErrors({ submit: 'Unable to connect to server. Please check if the server is running and try again.' });
             } else {
-                setErrors({ submit: 'Unable to process your request. Please check your connection and try again.' });
+                setErrors({ submit: `Unable to process your request: ${error.message}. Please try again.` });
             }
         } finally {
             setIsLoading(false);
@@ -559,9 +766,10 @@ export default function UnifiedApplicationForm({ service }) {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {renderField('coverageAmount', 'Coverage Amount (₹)', 'number', {
-                                        placeholder: 'Enter coverage amount',
+                                        placeholder: 'Enter coverage amount (minimum ₹1,00,000)',
                                         required: true,
-                                        icon: DollarSign
+                                        icon: DollarSign,
+                                        min: 100000
                                     })}
 
                                     {renderField('nomineeDetails', 'Nominee Details', 'text', {
@@ -712,6 +920,7 @@ export default function UnifiedApplicationForm({ service }) {
                         <button
                             type="submit"
                             disabled={isLoading}
+                            onClick={() => console.log('Submit button clicked directly')}
                             className="w-full bg-gradient-to-r from-[#1e7a8c] to-[#0f4c59] text-white font-semibold py-3 px-4 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
                             {isLoading ? (
