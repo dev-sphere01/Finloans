@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import applicationService from '@/services/applicationService';
 import TableService from '@/services/TableService';
+import * as XLSX from 'xlsx';
 
 export default function ApplicationsList() {
     const [applications, setApplications] = useState([]);
@@ -105,6 +106,56 @@ export default function ApplicationsList() {
     const handleRefresh = useCallback(() => {
         fetchApplications();
     }, [fetchApplications]);
+
+    // Simple Excel export function
+    const handleExportToExcel = useCallback(() => {
+        if (!applications || applications.length === 0) {
+            return;
+        }
+
+        try {
+            // Prepare data for export
+            const exportData = applications.map(app => ({
+                'Application ID': app.applicationId,
+                'Service Type': app.serviceType?.replace('-', ' ').toUpperCase(),
+                'Sub Type': app.subType?.toUpperCase() || '',
+                'Full Name': app.fullName,
+                'PAN Number': app.panNumber,
+                'Mobile Number': app.mobileNumber,
+                'Location': app.location,
+                'Monthly Income': app.monthlyIncome || '',
+                'Employment Type': app.employmentType?.toUpperCase() || '',
+                'Credit Score': app.creditScore || '',
+                'Status': app.status?.replace('-', ' ').toUpperCase(),
+                'Pre-approved': app.preApproved ? 'Yes' : 'No',
+                'Submitted Date': new Date(app.submittedAt).toLocaleDateString(),
+                'Created Date': new Date(app.createdAt).toLocaleDateString()
+            }));
+
+            // Create workbook and worksheet
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(exportData);
+
+            // Auto-adjust column widths
+            const colWidths = Object.keys(exportData[0]).map(key => ({
+                wch: Math.max(key.length, 15)
+            }));
+            ws['!cols'] = colWidths;
+
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Applications');
+
+            // Generate filename with current date
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const filename = `applications_${dateStr}.xlsx`;
+
+            // Save file
+            XLSX.writeFile(wb, filename);
+        } catch (error) {
+            console.error('Export error:', error);
+        }
+    }, [applications]);
 
     // Status update
     const updateStatus = async (applicationId, newStatus, note = '') => {
@@ -464,9 +515,13 @@ export default function ApplicationsList() {
                         <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
                         Refresh
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <button 
+                        onClick={handleExportToExcel}
+                        disabled={loading || applications.length === 0}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                         <Download size={16} />
-                        Export
+                        Export to Excel
                     </button>
                 </div>
             </div>
