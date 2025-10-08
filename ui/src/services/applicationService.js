@@ -38,7 +38,7 @@ const applicationService = {
   getApplications: async (params = {}) => {
     try {
       const queryParams = new URLSearchParams();
-      
+
       Object.keys(params).forEach(key => {
         if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
           queryParams.append(key, params[key]);
@@ -87,6 +87,46 @@ const applicationService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching application stats:', error);
+      throw error;
+    }
+  },
+
+  // Get loan requirements for document upload
+  getLoanRequirements: async (loanType) => {
+    try {
+      const response = await API.get(`/applications/loan-requirements/${loanType}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching loan requirements:', error);
+      throw error;
+    }
+  },
+
+  // Upload documents for an application
+  uploadDocuments: async (applicationId, files, documentTypes) => {
+    try {
+      const formData = new FormData();
+
+      // Add files to form data
+      files.forEach((file, index) => {
+        formData.append('documents', file);
+      });
+
+      // Add document types
+      if (documentTypes) {
+        documentTypes.forEach((type, index) => {
+          formData.append('documentTypes', type);
+        });
+      }
+
+      const response = await API.post(`/applications/${applicationId}/documents`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading documents:', error);
       throw error;
     }
   }

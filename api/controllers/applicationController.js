@@ -2,6 +2,8 @@ const Application = require('../models/Application');
 const CreditCard = require('../models/CreditCards');
 const Insurance = require('../models/Insurance');
 const { validationResult } = require('express-validator');
+const { uploadDocuments, handleUploadError } = require('../middlewares/fileUpload');
+const path = require('path');
 
 const applicationController = {
   // Submit a new application
@@ -368,6 +370,96 @@ const applicationController = {
       res.status(500).json({
         success: false,
         message: 'Internal server error while fetching statistics'
+      });
+    }
+  },
+
+  // Upload documents for an application
+  uploadDocuments: async (req, res) => {
+    try {
+      const { applicationId } = req.params;
+      const { documentTypes } = req.body; // Array of document types corresponding to files
+
+      // Find the application
+      const application = await Application.findOne({ applicationId });
+      if (!application) {
+        return res.status(404).json({
+          success: false,
+          message: 'Application not found'
+        });
+      }
+
+      // Process uploaded files
+      const uploadedDocuments = [];
+      if (req.files && req.files.length > 0) {
+        req.files.forEach((file, index) => {
+          const documentType = documentTypes ? documentTypes[index] : file.originalname;
+          uploadedDocuments.push({
+            name: file.originalname,
+            path: file.path,
+            documentType: documentType,
+            isRequired: true, // This can be determined based on loan requirements
+            uploadedAt: new Date()
+          });
+        });
+
+        // Add documents to application
+        application.documents.push(...uploadedDocuments);
+        await application.save();
+      }
+
+      res.json({
+        success: true,
+        message: 'Documents uploaded successfully',
+        data: {
+          applicationId: application.applicationId,
+          uploadedDocuments: uploadedDocuments.length,
+          documents: application.documents
+        }
+      });
+
+    } catch (error) {
+      console.error('Error uploading documents:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error while uploading documents'
+      });
+    }
+  },
+
+  // Get loan requirements for document upload
+  getLoanRequirements: async (req, res) => {
+    try {
+      const { loanType } = req.params;
+      const Loan = require('../models/Loans');
+      
+      const loan = await Loan.findOne({ 
+        loanType: new RegExp(loanType, 'i'),
+        isActive: true 
+      });
+
+      if (!loan) {
+        return res.status(404).json({
+          success: false,
+          message: 'Loan type not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          loanType: loan.loanType,
+          subType: loan.subType,
+          requiredDocuments: loan.requiredDocuments || [],
+          links: loan.links || []
+        }
+      });
+
+    } catch (error) {
+      console.error('Error fetching loan requirements:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error while fetching loan requirements'
       });
     }
   }

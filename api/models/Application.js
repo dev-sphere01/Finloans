@@ -225,10 +225,12 @@ const applicationSchema = new mongoose.Schema({
     }
   }],
   
-  // Documents (if any uploaded later)
+  // Documents (if any uploaded later) - Enhanced for loan requirements
   documents: [{
     name: String,
     path: String,
+    documentType: String, // Maps to loan requirement document name
+    isRequired: { type: Boolean, default: false },
     uploadedAt: {
       type: Date,
       default: Date.now

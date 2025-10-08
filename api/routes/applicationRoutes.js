@@ -103,4 +103,23 @@ router.get('/admin/stats',
   applicationController.getApplicationStats
 );
 
+/**
+ * @route   POST /api/applications/:applicationId/documents
+ * @desc    Upload documents for an application
+ * @access  Public
+ */
+const { uploadDocuments, handleUploadError } = require('../middlewares/fileUpload');
+router.post('/:applicationId/documents',
+  uploadDocuments,
+  handleUploadError,
+  applicationController.uploadDocuments
+);
+
+/**
+ * @route   GET /api/applications/loan-requirements/:loanType
+ * @desc    Get loan document requirements
+ * @access  Public
+ */
+router.get('/loan-requirements/:loanType', applicationController.getLoanRequirements);
+
 module.exports = router;

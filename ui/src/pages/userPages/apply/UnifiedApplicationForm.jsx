@@ -7,6 +7,7 @@ import {
 import Breadcrumb from '@/components/Breadcrumb';
 import applicationService from '@/services/applicationService';
 import insuranceTypesService from '@/services/insuranceTypesService';
+import loanService from '@/services/loanService';
 import notification from '@/services/NotificationService';
 
 export default function UnifiedApplicationForm({ service }) {
@@ -69,6 +70,8 @@ export default function UnifiedApplicationForm({ service }) {
     const [insuranceTypes, setInsuranceTypes] = useState([]);
     const [availableSubTypes, setAvailableSubTypes] = useState([]);
     const [loadingInsuranceTypes, setLoadingInsuranceTypes] = useState(false);
+    const [loanDetails, setLoanDetails] = useState(null);
+    const [loadingLoanDetails, setLoadingLoanDetails] = useState(false);
     const notify = notification();
 
     // Service configurations
@@ -178,8 +181,10 @@ export default function UnifiedApplicationForm({ service }) {
     useEffect(() => {
         if (serviceType === 'insurance') {
             loadInsuranceTypes();
+        } else if (serviceType === 'loan') {
+            loadLoanDetails();
         }
-    }, [serviceType]);
+    }, [serviceType, subType]);
 
     const loadInsuranceTypes = async () => {
         try {
@@ -203,6 +208,40 @@ export default function UnifiedApplicationForm({ service }) {
             notify.error('Failed to load insurance types');
         } finally {
             setLoadingInsuranceTypes(false);
+        }
+    };
+
+    const loadLoanDetails = async () => {
+        try {
+            setLoadingLoanDetails(true);
+            // Try to get loan details based on subType (loan ID) or loan type from URL
+            let loanType = subType;
+            
+            // If subType looks like an ObjectId, try to get loan by ID first
+            if (subType && subType.match(/^[0-9a-fA-F]{24}$/)) {
+                try {
+                    const loanResponse = await loanService.getLoanById(subType);
+                    if (loanResponse) {
+                        setLoanDetails(loanResponse);
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Could not fetch loan by ID, trying by type');
+                }
+            }
+            
+            // Fallback: try to get loan requirements by type
+            if (loanType) {
+                const response = await applicationService.getLoanRequirements(loanType);
+                if (response.success) {
+                    setLoanDetails(response.data);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading loan details:', error);
+            notify.error('Failed to load loan requirements');
+        } finally {
+            setLoadingLoanDetails(false);
         }
     };
 
