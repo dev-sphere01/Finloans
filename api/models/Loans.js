@@ -10,6 +10,11 @@ const loanSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    subType: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     links: {
       type: [String],
       default: [],
@@ -20,6 +25,29 @@ const loanSchema = new mongoose.Schema(
         message: "Links must be an array",
       },
     },
+    requiredDocuments: {
+      type: [{
+        name: {
+          type: String,
+          required: true,
+          trim: true
+        },
+        isRequired: {
+          type: Boolean,
+          default: true
+        },
+        description: {
+          type: String,
+          trim: true,
+          default: ''
+        }
+      }],
+      default: []
+    },
+    isActive: {
+      type: Boolean,
+      default: true
+    }
   },
   { timestamps: true }
 );

@@ -55,11 +55,62 @@ const AllLoans = ({ onEditLoan, onViewLoan }) => {
               className={`font-medium ${onViewLoan || onEditLoan ? 'text-blue-600 hover:underline cursor-pointer' : 'text-gray-900'}`}
               onClick={handleClick}
             >
-              {info.getValue()}
+              <div>{info.getValue()}</div>
+              {info.row.original.subType && (
+                <div className="text-sm text-gray-500">{info.row.original.subType}</div>
+              )}
             </div>
           );
         },
         enableColumnFilter: true,
+      }),
+      columnHelper.accessor('requiredDocuments', {
+        header: 'Required Documents',
+        cell: (info) => {
+          const docs = info.getValue() || [];
+          const requiredDocs = docs.filter(doc => doc.isRequired);
+          const optionalDocs = docs.filter(doc => !doc.isRequired);
+          
+          return (
+            <div className="max-w-xs">
+              {requiredDocs.length > 0 && (
+                <div className="mb-2">
+                  <div className="text-xs font-medium text-red-600 mb-1">Required ({requiredDocs.length})</div>
+                  <div className="text-xs text-gray-700">
+                    {requiredDocs.slice(0, 3).map((doc, idx) => (
+                      <div key={idx} className="truncate" title={doc.description || doc.name}>
+                        • {doc.name}
+                      </div>
+                    ))}
+                    {requiredDocs.length > 3 && (
+                      <div className="text-gray-500">... and {requiredDocs.length - 3} more</div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {optionalDocs.length > 0 && (
+                <div>
+                  <div className="text-xs font-medium text-blue-600 mb-1">Optional ({optionalDocs.length})</div>
+                  <div className="text-xs text-gray-700">
+                    {optionalDocs.slice(0, 2).map((doc, idx) => (
+                      <div key={idx} className="truncate" title={doc.description || doc.name}>
+                        • {doc.name}
+                      </div>
+                    ))}
+                    {optionalDocs.length > 2 && (
+                      <div className="text-gray-500">... and {optionalDocs.length - 2} more</div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {docs.length === 0 && (
+                <div className="text-xs text-gray-400">No documents defined</div>
+              )}
+            </div>
+          );
+        },
+        enableColumnFilter: false,
+        enableSorting: false,
       }),
       columnHelper.accessor('links', {
         header: 'Links',
@@ -135,6 +186,8 @@ const AllLoans = ({ onEditLoan, onViewLoan }) => {
       }
 
       const response = await loanService.getLoans(params)
+      console.log('Loans API response:', response); // Debug log
+      console.log('Loans data:', response.items); // Debug log
       setData(response.items || [])
       setTotalItems(response.pagination.total);
       setTotalPages(response.pagination.pages);
