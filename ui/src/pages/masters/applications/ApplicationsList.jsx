@@ -23,6 +23,7 @@ export default function ApplicationsList() {
     const [selectedApplication, setSelectedApplication] = useState(null);
     const [showDetails, setShowDetails] = useState(false);
     const isMountedRef = useRef(true);
+    const isInitialLoadRef = useRef(true);
 
     // Pagination state for server-side pagination
     const [pagination, setPagination] = useState({
@@ -34,8 +35,6 @@ export default function ApplicationsList() {
 
     // Fetch applications function
     const fetchApplications = useCallback(async (tableState) => {
-        if (!isMountedRef.current) return;
-
         try {
             setLoading(true);
             setError(null);
@@ -56,14 +55,10 @@ export default function ApplicationsList() {
                 });
             }
 
-            console.log('Fetching applications with params:', params);
             const response = await applicationService.getApplications(params);
 
-            console.log('Full API response:', response);
-
-            if (response.success && isMountedRef.current) {
+            if (response.success) {
                 const applicationsData = response.data || [];
-                console.log('Setting applications data:', applicationsData);
                 setApplications(applicationsData);
                 setPagination({
                     currentPage: response.pagination?.currentPage || 1,
@@ -71,30 +66,29 @@ export default function ApplicationsList() {
                     totalItems: response.pagination?.totalItems || 0,
                     itemsPerPage: response.pagination?.itemsPerPage || 10
                 });
-                console.log('Applications set successfully:', applicationsData.length, 'items');
-            } else if (isMountedRef.current) {
-                console.log('API call failed or no success flag:', response);
+            } else {
                 setError(response.message || 'Failed to fetch applications');
             }
         } catch (err) {
             console.error('Error fetching applications:', err);
-            if (isMountedRef.current) {
-                if (err.code === 'ERR_NETWORK' || err.code === 'ERR_INSUFFICIENT_RESOURCES') {
-                    setError('Cannot connect to server. Please ensure the API server is running on http://localhost:4000');
-                } else {
-                    setError('Failed to load applications. Please try again.');
-                }
+            if (err.code === 'ERR_NETWORK' || err.code === 'ERR_INSUFFICIENT_RESOURCES') {
+                setError('Cannot connect to server. Please ensure the API server is running on http://localhost:4000');
+            } else {
+                setError('Failed to load applications. Please try again.');
             }
         } finally {
-            if (isMountedRef.current) {
-                setLoading(false);
-            }
+            setLoading(false);
         }
     }, []); // Empty dependency array to prevent recreation
 
     // Handle table state changes
     const handleTableStateChange = useCallback((newState) => {
-        console.log('Table state changed:', newState);
+        // Skip the first table state change to prevent double loading
+        if (isInitialLoadRef.current) {
+            isInitialLoadRef.current = false;
+            return;
+        }
+        
         fetchApplications(newState);
     }, [fetchApplications]);
 
