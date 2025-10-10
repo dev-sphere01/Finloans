@@ -11,8 +11,8 @@ if (!fs.existsSync(uploadsDir)) {
 // Configure storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // Create application-specific folder
-        const applicationId = req.body.applicationId || 'temp';
+        // Create application-specific folder or temp folder for pre-upload
+        const applicationId = req.body.applicationId || req.params.applicationId || 'temp';
         const appDir = path.join(uploadsDir, applicationId);
         
         if (!fs.existsSync(appDir)) {
@@ -25,7 +25,8 @@ const storage = multer.diskStorage({
         // Generate unique filename with timestamp
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const ext = path.extname(file.originalname);
-        const name = file.fieldname + '-' + uniqueSuffix + ext;
+        const documentType = req.body.documentType || file.fieldname;
+        const name = documentType.replace(/\s+/g, '_') + '-' + uniqueSuffix + ext;
         cb(null, name);
     }
 });
@@ -63,6 +64,9 @@ const upload = multer({
 // Middleware for handling multiple document uploads
 const uploadDocuments = upload.array('documents', 20);
 
+// Middleware for handling single document upload during application process
+const uploadSingleDocument = upload.single('document');
+
 // Error handling middleware
 const handleUploadError = (error, req, res, next) => {
     if (error instanceof multer.MulterError) {
@@ -96,5 +100,6 @@ const handleUploadError = (error, req, res, next) => {
 
 module.exports = {
     uploadDocuments,
+    uploadSingleDocument,
     handleUploadError
 };

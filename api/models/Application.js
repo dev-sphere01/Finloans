@@ -4,8 +4,12 @@ const applicationSchema = new mongoose.Schema({
   // Application metadata
   applicationId: {
     type: String,
-    unique: true,
     required: false // Will be auto-generated in pre-save middleware
+  },
+  applicantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true // Will be populated from JWT token
   },
   serviceType: {
     type: String,
@@ -241,7 +245,8 @@ const applicationSchema = new mongoose.Schema({
 });
 
 // Indexes for performance
-applicationSchema.index({ applicationId: 1 });
+applicationSchema.index({ applicationId: 1 }, { unique: true });
+applicationSchema.index({ applicantId: 1 });
 applicationSchema.index({ serviceType: 1, status: 1 });
 applicationSchema.index({ panNumber: 1 });
 applicationSchema.index({ mobileNumber: 1 });

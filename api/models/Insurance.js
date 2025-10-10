@@ -6,8 +6,7 @@ const insuranceSchema = new mongoose.Schema(
     insuranceType: {
       type: String,
       required: true,
-      trim: true,
-      unique: true
+      trim: true
     },
     subTypes: [{
       name: {
@@ -60,7 +59,7 @@ const insuranceSchema = new mongoose.Schema(
 );
 
 // Index for better performance
-insuranceSchema.index({ insuranceType: 1 });
+insuranceSchema.index({ insuranceType: 1 }, { unique: true });
 insuranceSchema.index({ isActive: 1 });
 
 module.exports = mongoose.model("Insurance", insuranceSchema);

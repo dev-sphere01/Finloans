@@ -9,9 +9,10 @@ const auth = require('../middlewares/auth');
 /**
  * @route   POST /api/applications
  * @desc    Submit a new application
- * @access  Public
+ * @access  Private (requires authentication)
  */
 router.post('/', 
+  auth.authenticateToken,
   applicationValidation.validateApplication(),
   applicationController.submitApplication
 );
@@ -19,9 +20,9 @@ router.post('/',
 /**
  * @route   GET /api/applications/:applicationId
  * @desc    Get application by ID
- * @access  Public (users can check their own application status)
+ * @access  Private (users can check their own applications, admins can check any)
  */
-router.get('/:applicationId', applicationController.getApplication);
+router.get('/:applicationId', auth.authenticateToken, applicationController.getApplication);
 
 /**
  * @route   GET /api/applications/test
@@ -108,7 +109,7 @@ router.get('/admin/stats',
  * @desc    Upload documents for an application
  * @access  Public
  */
-const { uploadDocuments, handleUploadError } = require('../middlewares/fileUpload');
+const { uploadDocuments, uploadSingleDocument, handleUploadError } = require('../middlewares/fileUpload');
 router.post('/:applicationId/documents',
   uploadDocuments,
   handleUploadError,
@@ -121,5 +122,16 @@ router.post('/:applicationId/documents',
  * @access  Public
  */
 router.get('/loan-requirements/:loanType', applicationController.getLoanRequirements);
+
+/**
+ * @route   POST /api/applications/upload-document
+ * @desc    Upload single document during application process
+ * @access  Public
+ */
+router.post('/upload-document',
+  uploadSingleDocument,
+  handleUploadError,
+  applicationController.uploadSingleDocument
+);
 
 module.exports = router;

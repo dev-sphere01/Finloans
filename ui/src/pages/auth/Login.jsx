@@ -180,14 +180,14 @@ const Login = () => {
           </button>
         </div> */}
 
-        {/* <div className="mt-8 text-center">
+        <div className="mt-8 text-center">
           <p className="text-sm text-gray-600">
             Don&apos;t have an account?{" "}
             <Link to="/register" className="text-slate-600 hover:text-slate-500 font-medium">
               Sign up here
             </Link>
           </p>
-        </div> */}
+        </div>
       <div className="text-center mt-6">
         <p className="text-xs text-gray-500">
           © 2025 FinLoans. All rights reserved.

@@ -425,6 +425,43 @@ export default function ApplicationsList() {
             enableColumnFilter: false,
         },
         {
+            id: 'documents',
+            header: 'Documents',
+            cell: ({ row }) => (
+                <div>
+                    {row.original.documents && row.original.documents.length > 0 ? (
+                        <div className="text-sm">
+                            <div className="text-gray-900 font-medium">
+                                {row.original.documents.length} document{row.original.documents.length > 1 ? 's' : ''}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                                {row.original.documents.filter(doc => doc.isRequired).length} required
+                            </div>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                                {row.original.documents.slice(0, 2).map((doc, index) => (
+                                    <span key={index} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-800">
+                                        <FileText size={10} className="mr-1" />
+                                        {doc.documentType.length > 10 ? doc.documentType.substring(0, 10) + '...' : doc.documentType}
+                                    </span>
+                                ))}
+                                {row.original.documents.length > 2 && (
+                                    <span className="text-xs text-gray-500">
+                                        +{row.original.documents.length - 2} more
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-sm text-gray-500">
+                            No documents
+                        </div>
+                    )}
+                </div>
+            ),
+            enableSorting: false,
+            enableColumnFilter: false,
+        },
+        {
             id: 'status',
             header: 'Status',
             accessorKey: 'status',
@@ -697,6 +734,76 @@ function ApplicationDetailsModal({ application, onClose, onStatusUpdate }) {
                                         {application.annualTurnover && <div><strong>Annual Turnover:</strong> ₹{application.annualTurnover.toLocaleString()}</div>}
                                     </>
                                 )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Documents Section */}
+                    {application.documents && application.documents.length > 0 && (
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                <FileText size={20} />
+                                Uploaded Documents ({application.documents.length})
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {application.documents.map((doc, index) => (
+                                    <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <FileText size={16} className="text-blue-600 flex-shrink-0" />
+                                                <div>
+                                                    <h4 className="font-medium text-gray-900 text-sm">
+                                                        {doc.documentType}
+                                                    </h4>
+                                                    <p className="text-xs text-gray-500">
+                                                        {doc.name}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                doc.isRequired 
+                                                    ? 'bg-red-100 text-red-700' 
+                                                    : 'bg-blue-100 text-blue-700'
+                                            }`}>
+                                                {doc.isRequired ? 'Required' : 'Optional'}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="text-xs text-gray-500 mb-3">
+                                            Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()}
+                                        </div>
+                                        
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    // Create a link to view the document
+                                                    const link = document.createElement('a');
+                                                    link.href = `http://localhost:4000/uploads/${doc.path}`;
+                                                    link.target = '_blank';
+                                                    link.rel = 'noopener noreferrer';
+                                                    link.click();
+                                                }}
+                                                className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                                            >
+                                                <Eye size={12} />
+                                                View
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    // Create a link to download the document
+                                                    const link = document.createElement('a');
+                                                    link.href = `http://localhost:4000/uploads/${doc.path}`;
+                                                    link.download = doc.name;
+                                                    link.click();
+                                                }}
+                                                className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                                            >
+                                                <Download size={12} />
+                                                Download
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}

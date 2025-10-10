@@ -108,13 +108,13 @@ const applicationService = {
       const formData = new FormData();
 
       // Add files to form data
-      files.forEach((file, index) => {
+      files.forEach((file) => {
         formData.append('documents', file);
       });
 
       // Add document types
       if (documentTypes) {
-        documentTypes.forEach((type, index) => {
+        documentTypes.forEach((type) => {
           formData.append('documentTypes', type);
         });
       }
@@ -127,6 +127,21 @@ const applicationService = {
       return response.data;
     } catch (error) {
       console.error('Error uploading documents:', error);
+      throw error;
+    }
+  },
+
+  // Upload single document during application process
+  uploadDocument: async (formData) => {
+    try {
+      const response = await API.post('/applications/upload-document', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading document:', error);
       throw error;
     }
   }

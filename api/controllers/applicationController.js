@@ -86,12 +86,12 @@ const applicationController = {
         });
       }
 
-      // Check for duplicate applications (same PAN + service type within 30 days)
+      // Check for duplicate applications (same user + service type within 30 days)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const existingApplication = await Application.findOne({
-        panNumber: applicationData.panNumber,
+        applicantId: req.user._id,
         serviceType: applicationData.serviceType,
         subType: applicationData.subType || { $exists: false },
         submittedAt: { $gte: thirtyDaysAgo },
@@ -105,6 +105,9 @@ const applicationController = {
           applicationId: existingApplication.applicationId
         });
       }
+
+      // Add applicant ID from JWT token
+      applicationData.applicantId = req.user._id;
 
       // Create new application
       const application = new Application(applicationData);
@@ -214,6 +217,7 @@ const applicationController = {
       // Execute query
       const [applications, total] = await Promise.all([
         Application.find(filter)
+          .populate('applicantId', 'firstName lastName email phone')
           .populate('selectedCard.cardId', 'creditCardName')
           .populate('reviewedBy', 'firstName lastName')
           .sort(sortOptions)
@@ -460,6 +464,52 @@ const applicationController = {
       res.status(500).json({
         success: false,
         message: 'Internal server error while fetching loan requirements'
+      });
+    }
+  },
+
+  // Upload single document during application process
+  uploadSingleDocument: async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No file uploaded'
+        });
+      }
+
+      const { documentType, isRequired } = req.body;
+
+      if (!documentType) {
+        return res.status(400).json({
+          success: false,
+          message: 'Document type is required'
+        });
+      }
+
+      // Return file information with relative path
+      const path = require('path');
+      const uploadsDir = path.join(__dirname, '../uploads');
+      const relativePath = path.relative(uploadsDir, req.file.path).replace(/\\/g, '/');
+      
+      res.json({
+        success: true,
+        message: 'Document uploaded successfully',
+        data: {
+          filename: req.file.filename,
+          originalName: req.file.originalname,
+          path: relativePath,
+          size: req.file.size,
+          documentType: documentType,
+          isRequired: isRequired === 'true'
+        }
+      });
+
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error while uploading document'
       });
     }
   }

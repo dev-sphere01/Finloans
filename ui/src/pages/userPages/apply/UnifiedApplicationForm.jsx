@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
     Shield, Heart, Car, Home, AlertCircle, User, Calendar, Phone, FileText,
-    CheckCircle, MapPin, DollarSign, CreditCard, Building, Briefcase
+    CheckCircle, MapPin, DollarSign, CreditCard, Building, Briefcase, Upload, X
 } from 'lucide-react';
 import Breadcrumb from '@/components/Breadcrumb';
 import applicationService from '@/services/applicationService';
@@ -72,6 +72,8 @@ export default function UnifiedApplicationForm({ service }) {
     const [loadingInsuranceTypes, setLoadingInsuranceTypes] = useState(false);
     const [loanDetails, setLoanDetails] = useState(null);
     const [loadingLoanDetails, setLoadingLoanDetails] = useState(false);
+    const [uploadedDocuments, setUploadedDocuments] = useState([]);
+    const [uploadingFiles, setUploadingFiles] = useState({});
     const notify = notification();
 
     // Service configurations
@@ -380,6 +382,24 @@ export default function UnifiedApplicationForm({ service }) {
                 } else if (subType && ['personal', 'home', 'business', 'education'].includes(subType)) {
                     actualSubType = subType;
                 }
+                
+                // Validate required documents for loans
+                if (loanDetails && loanDetails.requiredDocuments) {
+                    const requiredDocs = loanDetails.requiredDocuments.filter(doc => doc.required);
+                    const uploadedRequiredDocs = uploadedDocuments.filter(doc => 
+                        requiredDocs.some(reqDoc => reqDoc.name === doc.documentType)
+                    );
+                    
+                    if (uploadedRequiredDocs.length < requiredDocs.length) {
+                        const missingDocs = requiredDocs.filter(reqDoc => 
+                            !uploadedDocuments.some(doc => doc.documentType === reqDoc.name)
+                        );
+                        setErrors({ 
+                            documents: `Please upload the following required documents: ${missingDocs.map(doc => doc.name).join(', ')}` 
+                        });
+                        return;
+                    }
+                }
             } else if (serviceType === 'insurance') {
                 console.log('Processing insurance application, subType:', subType);
                 
@@ -472,6 +492,10 @@ export default function UnifiedApplicationForm({ service }) {
                         limit: selectedCard.limit,
                         approval: selectedCard.approval
                     }
+                }),
+                // Include uploaded documents for loans
+                ...(serviceType === 'loan' && uploadedDocuments.length > 0 && { 
+                    documents: uploadedDocuments 
                 })
             };
 
@@ -628,6 +652,147 @@ export default function UnifiedApplicationForm({ service }) {
                         <AlertCircle size={10} />
                         {errors[fieldName]}
                     </p>
+                )}
+            </div>
+        );
+    };
+
+    // Document upload functions
+    const handleFileUpload = async (file, documentType, isRequired) => {
+        if (!file) return;
+
+        // Validate file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+            notify.error('File size must be less than 5MB');
+            return;
+        }
+
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+        if (!allowedTypes.includes(file.type)) {
+            notify.error('Only JPG, PNG, and PDF files are allowed');
+            return;
+        }
+
+        setUploadingFiles(prev => ({ ...prev, [documentType]: true }));
+
+        try {
+            const formData = new FormData();
+            formData.append('document', file);
+            formData.append('documentType', documentType);
+            formData.append('isRequired', isRequired);
+
+            const response = await applicationService.uploadDocument(formData);
+
+            if (response.success) {
+                const newDocument = {
+                    name: file.name,
+                    path: response.data.path,
+                    documentType: documentType,
+                    isRequired: isRequired,
+                    uploadedAt: new Date()
+                };
+
+                setUploadedDocuments(prev => {
+                    // Remove any existing document of the same type
+                    const filtered = prev.filter(doc => doc.documentType !== documentType);
+                    return [...filtered, newDocument];
+                });
+
+                notify.success(`${documentType} uploaded successfully`);
+            } else {
+                notify.error(response.message || 'Failed to upload document');
+            }
+        } catch (error) {
+            console.error('Document upload error:', error);
+            notify.error('Failed to upload document. Please try again.');
+        } finally {
+            setUploadingFiles(prev => ({ ...prev, [documentType]: false }));
+        }
+    };
+
+    const removeDocument = (documentType) => {
+        setUploadedDocuments(prev => prev.filter(doc => doc.documentType !== documentType));
+        notify.success('Document removed');
+    };
+
+    const renderDocumentUpload = (documentType, description, isRequired) => {
+        const uploadedDoc = uploadedDocuments.find(doc => doc.documentType === documentType);
+        const isUploading = uploadingFiles[documentType];
+
+        return (
+            <div key={documentType} className="border border-slate-200 rounded-lg p-4">
+                <div className="flex items-start justify-between mb-2">
+                    <div>
+                        <h4 className="font-medium text-slate-800 flex items-center gap-2">
+                            <FileText size={16} />
+                            {documentType}
+                            {isRequired && <span className="text-red-500 text-sm">*</span>}
+                        </h4>
+                        {description && (
+                            <p className="text-sm text-slate-600 mt-1">{description}</p>
+                        )}
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        isRequired 
+                            ? 'bg-red-100 text-red-700' 
+                            : 'bg-blue-100 text-blue-700'
+                    }`}>
+                        {isRequired ? 'Required' : 'Optional'}
+                    </span>
+                </div>
+
+                {uploadedDoc ? (
+                    <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
+                        <div className="flex items-center gap-2">
+                            <CheckCircle size={16} className="text-green-600" />
+                            <span className="text-sm text-green-800 font-medium">{uploadedDoc.name}</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => removeDocument(documentType)}
+                            className="text-red-500 hover:text-red-700 transition-colors"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                ) : (
+                    <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center relative">
+                        {isUploading ? (
+                            <div className="flex items-center justify-center gap-2">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                <span className="text-sm text-slate-600">Uploading...</span>
+                            </div>
+                        ) : (
+                            <>
+                                <Upload size={24} className="mx-auto text-slate-400 mb-2" />
+                                <p className="text-sm text-slate-600 mb-2">
+                                    Click to upload or drag and drop
+                                </p>
+                                <p className="text-xs text-slate-500 mb-3">
+                                    JPG, PNG, PDF (max 5MB)
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const input = document.createElement('input');
+                                        input.type = 'file';
+                                        input.accept = '.jpg,.jpeg,.png,.pdf';
+                                        input.onchange = (e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                                handleFileUpload(file, documentType, isRequired);
+                                            }
+                                        };
+                                        input.click();
+                                    }}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                                >
+                                    Choose File
+                                </button>
+                            </>
+                        )}
+                    </div>
                 )}
             </div>
         );
@@ -922,6 +1087,34 @@ export default function UnifiedApplicationForm({ service }) {
                                             icon: DollarSign
                                         })}
                                     </div>
+                                )}
+
+                                {/* Document Upload Section for Loans */}
+                                {loanDetails && loanDetails.requiredDocuments && loanDetails.requiredDocuments.length > 0 && (
+                                    <>
+                                        <div className="border-t border-slate-200 pt-3 mt-4">
+                                            <h3 className="text-base font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                                                <FileText size={16} />
+                                                Document Requirements
+                                            </h3>
+                                            <p className="text-sm text-slate-600 mb-4">
+                                                Please upload the following documents to complete your loan application.
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {loanDetails.requiredDocuments.map(doc => 
+                                                renderDocumentUpload(doc.name, doc.description, doc.required)
+                                            )}
+                                        </div>
+
+                                        {errors.documents && (
+                                            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                                <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
+                                                <p className="text-red-700 text-sm">{errors.documents}</p>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </>
                         )}

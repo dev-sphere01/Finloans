@@ -36,6 +36,29 @@ const userSchema = new mongoose.Schema({
     trim: true,
     maxlength: [50, 'Last name cannot exceed 50 characters']
   },
+  phone: {
+    type: String,
+    trim: true,
+    match: [/^[6-9][0-9]{9}$/, 'Invalid phone number format']
+  },
+  address: {
+    type: String,
+    trim: true
+  },
+  dateOfBirth: {
+    type: Date
+  },
+  panNumber: {
+    type: String,
+    trim: true,
+    uppercase: true,
+    match: [/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format']
+  },
+  aadhaarNumber: {
+    type: String,
+    trim: true,
+    match: [/^[0-9]{12}$/, 'Invalid Aadhaar format']
+  },
   roleId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Role',
@@ -95,6 +118,9 @@ const userSchema = new mongoose.Schema({
 // Indexes for performance
 userSchema.index({ roleId: 1 });
 userSchema.index({ isActive: 1 });
+userSchema.index({ email: 1 });
+userSchema.index({ phone: 1 });
+userSchema.index({ panNumber: 1 });
 
 // Virtual for account lock status
 userSchema.virtual('isLocked').get(function() {

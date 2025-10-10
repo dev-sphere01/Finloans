@@ -35,6 +35,7 @@ import ChangePassword from "@/pages/auth/ChangePassword";
 //authenticated pages imports
 import Dashboard from "@/pages/dashboard/Dashboard";
 import UserProfile from "@/pages/Profile/UserProfile";
+import UserProfilePage from "@/pages/userPages/profile/UserProfile";
 import Settings from "@/pages/settings/Settings";
 import CreditCards from "@/pages/masters/creditcards/CreditCards";
 import Insurance from "@/pages/masters/insurance/Insurance";
@@ -115,11 +116,12 @@ function App() {
               <Route path="/services/:serviceType" element={<ServicesPage />} />
               <Route path="/cibil-score" element={<CibilScore />} />
               <Route path="/cibil-check" element={<CibilCheck />} />
-              
+              <Route path="/profile" element={<UserProfilePage />} />
+
               {/* Unified Application Form Routes */}
               <Route path="/apply/:serviceType/:subType" element={<UnifiedApplicationForm />} />
               <Route path="/apply/:serviceType" element={<UnifiedApplicationForm />} />
-              
+
               <Route path="/application-success" element={<ApplicationSuccess />} />
               {/* Add more protected routes here as needed */}
             </Route>

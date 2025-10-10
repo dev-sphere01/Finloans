@@ -142,6 +142,41 @@ const validatePasswordReset = [
   handleValidationErrors
 ];
 
+// Public registration validation (simpler than admin user registration)
+const validateRegistration = [
+  body('firstName')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('First name is required and cannot exceed 50 characters')
+    .matches(/^[a-zA-Z\s]+$/)
+    .withMessage('First name can only contain letters and spaces'),
+  
+  body('lastName')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Last name is required and cannot exceed 50 characters')
+    .matches(/^[a-zA-Z\s]+$/)
+    .withMessage('Last name can only contain letters and spaces'),
+  
+  body('email')
+    .trim()
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email address'),
+  
+  body('phone')
+    .optional()
+    .trim()
+    .matches(/^[6-9][0-9]{9}$/)
+    .withMessage('Please provide a valid 10-digit phone number'),
+  
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long'),
+  
+  handleValidationErrors
+];
+
 // Role validation rules
 const validateRoleCreation = [
   body('name')
@@ -250,6 +285,7 @@ module.exports = {
   validateLogin,
   validatePasswordChange,
   validatePasswordReset,
+  validateRegistration,
   validateRoleCreation,
   validateRoleUpdate,
   validateMongoId,
