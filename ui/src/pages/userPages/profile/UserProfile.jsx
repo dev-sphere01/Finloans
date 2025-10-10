@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { 
-    User, 
-    Mail, 
-    Phone, 
-    MapPin, 
-    Calendar, 
-    Edit3, 
-    Save, 
-    X, 
-    Eye, 
+import {
+    User,
+    Mail,
+    Phone,
+    MapPin,
+    Calendar,
+    Edit3,
+    Save,
+    X,
+    Eye,
     EyeOff,
     Shield,
     CreditCard,
@@ -28,7 +28,7 @@ export default function UserProfile() {
     const [showPassword, setShowPassword] = useState(false);
     const [applications, setApplications] = useState([]);
     const [loadingApplications, setLoadingApplications] = useState(true);
-    
+
     const user = useAuthStore((state) => state.user);
     const updateUser = useAuthStore((state) => state.updateUser);
     const notify = notification();
@@ -70,42 +70,25 @@ export default function UserProfile() {
 
     // Load user applications
     useEffect(() => {
-        console.log('useEffect for loadUserApplications triggered');
-        console.log('User exists:', !!user);
         if (user) {
-            console.log('User found, loading applications...');
             loadUserApplications();
-        } else {
-            console.log('No user found, skipping application load');
         }
     }, [user]);
 
     const loadUserApplications = async () => {
-        console.log('loadUserApplications function called');
-        
         if (!user) {
-            console.log('No user available, cannot load applications');
             setLoadingApplications(false);
             return;
         }
 
         try {
             setLoadingApplications(true);
-            console.log('Loading user applications...');
-            console.log('Current user:', user);
-            console.log('Auth token:', sessionStorage.getItem('authToken'));
-            
             const response = await userService.getUserApplications();
-            console.log('Applications response:', response);
             if (response.success) {
-                console.log('Applications data:', response.data);
                 setApplications(response.data || []);
-            } else {
-                console.log('Response not successful:', response);
             }
         } catch (error) {
             console.error('Error loading applications:', error);
-            console.error('Error details:', error.response?.data);
         } finally {
             setLoadingApplications(false);
         }
@@ -133,7 +116,7 @@ export default function UserProfile() {
         if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
         if (!formData.email.trim()) newErrors.email = 'Email is required';
         else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Invalid email format';
-        
+
         if (formData.phone && !/^[6-9][0-9]{9}$/.test(formData.phone)) {
             newErrors.phone = 'Invalid phone number format';
         }
@@ -186,7 +169,7 @@ export default function UserProfile() {
             }
 
             const response = await userService.updateProfile(updateData);
-            
+
             if (response.success) {
                 updateUser(response.data);
                 notify.success('Profile updated successfully');
@@ -202,7 +185,6 @@ export default function UserProfile() {
                 notify.error(response.message || 'Failed to update profile');
             }
         } catch (error) {
-            console.error('Error updating profile:', error);
             notify.error('Failed to update profile. Please try again.');
         } finally {
             setLoading(false);
@@ -289,7 +271,7 @@ export default function UserProfile() {
                                             <User size={20} />
                                             Personal Information
                                         </h3>
-                                        
+
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                                 First Name *
@@ -299,9 +281,8 @@ export default function UserProfile() {
                                                 value={formData.firstName}
                                                 onChange={(e) => handleInputChange('firstName', e.target.value)}
                                                 disabled={!isEditing}
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                    !isEditing ? 'bg-gray-50' : 'bg-white'
-                                                } ${errors.firstName ? 'border-red-300' : 'border-gray-300'}`}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!isEditing ? 'bg-gray-50' : 'bg-white'
+                                                    } ${errors.firstName ? 'border-red-300' : 'border-gray-300'}`}
                                             />
                                             {errors.firstName && (
                                                 <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>
@@ -317,9 +298,8 @@ export default function UserProfile() {
                                                 value={formData.lastName}
                                                 onChange={(e) => handleInputChange('lastName', e.target.value)}
                                                 disabled={!isEditing}
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                    !isEditing ? 'bg-gray-50' : 'bg-white'
-                                                } ${errors.lastName ? 'border-red-300' : 'border-gray-300'}`}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!isEditing ? 'bg-gray-50' : 'bg-white'
+                                                    } ${errors.lastName ? 'border-red-300' : 'border-gray-300'}`}
                                             />
                                             {errors.lastName && (
                                                 <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>
@@ -335,9 +315,8 @@ export default function UserProfile() {
                                                 value={formData.dateOfBirth}
                                                 onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
                                                 disabled={!isEditing}
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                    !isEditing ? 'bg-gray-50' : 'bg-white'
-                                                } ${errors.dateOfBirth ? 'border-red-300' : 'border-gray-300'}`}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!isEditing ? 'bg-gray-50' : 'bg-white'
+                                                    } ${errors.dateOfBirth ? 'border-red-300' : 'border-gray-300'}`}
                                             />
                                         </div>
                                     </div>
@@ -358,9 +337,8 @@ export default function UserProfile() {
                                                 value={formData.email}
                                                 onChange={(e) => handleInputChange('email', e.target.value)}
                                                 disabled={!isEditing}
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                    !isEditing ? 'bg-gray-50' : 'bg-white'
-                                                } ${errors.email ? 'border-red-300' : 'border-gray-300'}`}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!isEditing ? 'bg-gray-50' : 'bg-white'
+                                                    } ${errors.email ? 'border-red-300' : 'border-gray-300'}`}
                                             />
                                             {errors.email && (
                                                 <p className="mt-1 text-xs text-red-600">{errors.email}</p>
@@ -377,9 +355,8 @@ export default function UserProfile() {
                                                 onChange={(e) => handleInputChange('phone', e.target.value)}
                                                 disabled={!isEditing}
                                                 placeholder="9876543210"
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                    !isEditing ? 'bg-gray-50' : 'bg-white'
-                                                } ${errors.phone ? 'border-red-300' : 'border-gray-300'}`}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!isEditing ? 'bg-gray-50' : 'bg-white'
+                                                    } ${errors.phone ? 'border-red-300' : 'border-gray-300'}`}
                                             />
                                             {errors.phone && (
                                                 <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
@@ -395,9 +372,8 @@ export default function UserProfile() {
                                                 onChange={(e) => handleInputChange('address', e.target.value)}
                                                 disabled={!isEditing}
                                                 rows={3}
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${
-                                                    !isEditing ? 'bg-gray-50' : 'bg-white'
-                                                } ${errors.address ? 'border-red-300' : 'border-gray-300'}`}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${!isEditing ? 'bg-gray-50' : 'bg-white'
+                                                    } ${errors.address ? 'border-red-300' : 'border-gray-300'}`}
                                             />
                                         </div>
                                     </div>
@@ -408,7 +384,7 @@ export default function UserProfile() {
                                             <Shield size={20} />
                                             Identity Information
                                         </h3>
-                                        
+
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -421,9 +397,8 @@ export default function UserProfile() {
                                                     disabled={!isEditing}
                                                     placeholder="ABCDE1234F"
                                                     maxLength={10}
-                                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                        !isEditing ? 'bg-gray-50' : 'bg-white'
-                                                    } ${errors.panNumber ? 'border-red-300' : 'border-gray-300'}`}
+                                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!isEditing ? 'bg-gray-50' : 'bg-white'
+                                                        } ${errors.panNumber ? 'border-red-300' : 'border-gray-300'}`}
                                                 />
                                                 {errors.panNumber && (
                                                     <p className="mt-1 text-xs text-red-600">{errors.panNumber}</p>
@@ -441,9 +416,8 @@ export default function UserProfile() {
                                                     disabled={!isEditing}
                                                     placeholder="1234 5678 9012"
                                                     maxLength={12}
-                                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                        !isEditing ? 'bg-gray-50' : 'bg-white'
-                                                    } ${errors.aadhaarNumber ? 'border-red-300' : 'border-gray-300'}`}
+                                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!isEditing ? 'bg-gray-50' : 'bg-white'
+                                                        } ${errors.aadhaarNumber ? 'border-red-300' : 'border-gray-300'}`}
                                                 />
                                                 {errors.aadhaarNumber && (
                                                     <p className="mt-1 text-xs text-red-600">{errors.aadhaarNumber}</p>
@@ -458,7 +432,7 @@ export default function UserProfile() {
                                             <h3 className="text-lg font-semibold text-gray-900">
                                                 Change Password (Optional)
                                             </h3>
-                                            
+
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -469,9 +443,8 @@ export default function UserProfile() {
                                                             type={showPassword ? 'text' : 'password'}
                                                             value={formData.currentPassword}
                                                             onChange={(e) => handleInputChange('currentPassword', e.target.value)}
-                                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10 ${
-                                                                errors.currentPassword ? 'border-red-300' : 'border-gray-300'
-                                                            }`}
+                                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10 ${errors.currentPassword ? 'border-red-300' : 'border-gray-300'
+                                                                }`}
                                                         />
                                                         <button
                                                             type="button"
@@ -494,9 +467,8 @@ export default function UserProfile() {
                                                         type={showPassword ? 'text' : 'password'}
                                                         value={formData.newPassword}
                                                         onChange={(e) => handleInputChange('newPassword', e.target.value)}
-                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                            errors.newPassword ? 'border-red-300' : 'border-gray-300'
-                                                        }`}
+                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.newPassword ? 'border-red-300' : 'border-gray-300'
+                                                            }`}
                                                     />
                                                     {errors.newPassword && (
                                                         <p className="mt-1 text-xs text-red-600">{errors.newPassword}</p>
@@ -511,9 +483,8 @@ export default function UserProfile() {
                                                         type={showPassword ? 'text' : 'password'}
                                                         value={formData.confirmPassword}
                                                         onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                            errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                                                        }`}
+                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                                                            }`}
                                                     />
                                                     {errors.confirmPassword && (
                                                         <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p>
@@ -556,7 +527,7 @@ export default function UserProfile() {
                                 <FileText size={20} />
                                 My Applications
                             </h3>
-                            
+
                             {loadingApplications ? (
                                 <div className="space-y-3">
                                     {[1, 2, 3].map(i => (
