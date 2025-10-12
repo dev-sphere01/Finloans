@@ -4,6 +4,7 @@ import userService from '@/services/userService'
 import roleService from '@/services/roleService'
 import notification from '@/services/NotificationService'
 import { FiUser, FiEdit3, FiSave, FiX, FiMail, FiCalendar, FiShield } from 'react-icons/fi'
+import { ActionButton, PermissionGuard } from '@/components/permissions'
 
 const UserProfile = () => {
     const { user: authUser } = useAuthStore()
@@ -248,18 +249,19 @@ const UserProfile = () => {
                         <div className="flex space-x-2">
                             {isEditing ? (
                                 <>
-                                    <button
+                                    <ActionButton
+                                        module="users"
+                                        action="update"
+                                        label={saving ? 'Saving...' : 'Save'}
+                                        icon={saving ? (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+                                        ) : (
+                                            <FiSave className="w-4 h-4 mr-1" />
+                                        )}
                                         onClick={handleSave}
                                         disabled={saving}
-                                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 disabled:opacity-50"
-                                    >
-                                        {saving ? (
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                        ) : (
-                                            <FiSave className="w-4 h-4" />
-                                        )}
-                                        <span>{saving ? 'Saving...' : 'Save'}</span>
-                                    </button>
+                                        className="bg-green-600 hover:bg-green-700"
+                                    />
                                     <button
                                         onClick={handleCancel}
                                         disabled={saving}
@@ -270,13 +272,14 @@ const UserProfile = () => {
                                     </button>
                                 </>
                             ) : (
-                                <button
+                                <ActionButton
+                                    module="users"
+                                    action="update"
+                                    label="Edit Profile"
+                                    icon={<FiEdit3 className="w-4 h-4 mr-1" />}
                                     onClick={handleEdit}
-                                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-md flex items-center space-x-2"
-                                >
-                                    <FiEdit3 className="w-4 h-4" />
-                                    <span>Edit Profile</span>
-                                </button>
+                                    className="bg-white/20 hover:bg-white/30 text-white"
+                                />
                             )}
                         </div>
                     </div>

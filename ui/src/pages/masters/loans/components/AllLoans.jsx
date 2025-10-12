@@ -3,6 +3,7 @@ import loanService from '@/services/loanService'
 import TableService from '@/services/TableService'
 import { createColumnHelper } from '@tanstack/react-table'
 import notification from '@/services/NotificationService'
+import { ActionButton } from '@/components/permissions'
 
 const AllLoans = ({ onEditLoan, onViewLoan }) => {
   const { success: notifySuccess, error: notifyError } = notification()
@@ -139,28 +140,26 @@ const AllLoans = ({ onEditLoan, onViewLoan }) => {
         id: 'actions',
         header: 'Actions',
         cell: (info) => (
-          <div className="flex items-center gap-2">
-            <button
+          <div className="flex items-center gap-1">
+            <ActionButton
+              module="loans"
+              action="read"
+              size="sm"
               onClick={() => onViewLoan && onViewLoan(info.row.original)}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="View Loan"
-            >
-              View
-            </button>
-            <button
+            />
+            <ActionButton
+              module="loans"
+              action="update"
+              size="sm"
               onClick={() => onEditLoan && onEditLoan(info.row.original)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="Edit Loan"
-            >
-              Edit
-            </button>
-            <button
+            />
+            <ActionButton
+              module="loans"
+              action="delete"
+              label="Delete"
+              size="sm"
               onClick={() => handleDeleteClick(info.row.original)}
-              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="Delete Loan"
-            >
-              Delete
-            </button>
+            />
           </div>
         ),
       }),

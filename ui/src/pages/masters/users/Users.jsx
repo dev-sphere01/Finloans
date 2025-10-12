@@ -3,6 +3,7 @@ import AddUser from './components/AddUser'
 import AllUsers from './components/AllUsers'
 import EditUser from './components/EditUser'
 import ViewUser from './components/ViewUser'
+import { ActionButton, PermissionGuard } from '@/components/permissions'
 
 const Users = () => {
   const [activeTab, setActiveTab] = useState('all')
@@ -49,49 +50,59 @@ const Users = () => {
   }
 
   return (
-    <div className="space-y-0">
-      {/* Tabs */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
-        <nav className="-mb-px flex space-x-8">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${activeTab === tab.id
-                ? `border-blue-500 text-blue-600`
-                : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
-                }`}
-            >
-              <span className="mr-2">{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
-          {editingUser && (
-            <button
-              onClick={() => setActiveTab('edit')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${activeTab === 'edit'
-                ? `border-blue-500 text-blue-600`
-                : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
-                }`}
-            >
-              <span className="mr-2">✏️</span>
-              Edit User
-            </button>
-          )}
-          {viewingUser && (
-            <button
-              onClick={() => setActiveTab('view')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${activeTab === 'view'
-                ? `border-blue-500 text-blue-600`
-                : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
-                }`}
-            >
-              <span className="mr-2">👁️</span>
-              View User
-            </button>
-          )}
-        </nav>
-      </div>
+    <PermissionGuard module="users" showMessage>
+      <div className="space-y-0">
+        {/* Tabs */}
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between p-4">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab('all')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${activeTab === 'all'
+                  ? `border-blue-500 text-blue-600`
+                  : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
+                  }`}
+              >
+                <span className="mr-2">👥</span>
+                All Users
+              </button>
+              {editingUser && (
+                <button
+                  onClick={() => setActiveTab('edit')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${activeTab === 'edit'
+                    ? `border-blue-500 text-blue-600`
+                    : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
+                    }`}
+                >
+                  <span className="mr-2">✏️</span>
+                  Edit User
+                </button>
+              )}
+              {viewingUser && (
+                <button
+                  onClick={() => setActiveTab('view')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${activeTab === 'view'
+                    ? `border-blue-500 text-blue-600`
+                    : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
+                    }`}
+                >
+                  <span className="mr-2">👁️</span>
+                  View User
+                </button>
+              )}
+            </nav>
+            
+            <div className="flex items-center gap-2">
+              <ActionButton
+                module="users"
+                action="create"
+                label="Add User"
+                onClick={() => setActiveTab('add')}
+                className={activeTab === 'add' ? 'bg-green-600' : ''}
+              />
+            </div>
+          </div>
+        </div>
 
       {/* Tab Content */}
       <div className="mt-6">
@@ -120,7 +131,8 @@ const Users = () => {
           />
         )}
       </div>
-    </div>
+      </div>
+    </PermissionGuard>
   )
 }
 

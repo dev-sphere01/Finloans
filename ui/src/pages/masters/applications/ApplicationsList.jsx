@@ -16,6 +16,7 @@ import {
 import applicationService from '@/services/applicationService';
 import TableService from '@/services/TableService';
 import * as XLSX from 'xlsx';
+import { ActionButton, PermissionGuard } from '@/components/permissions';
 
 export default function ApplicationsList() {
     const [applications, setApplications] = useState([]);
@@ -89,7 +90,7 @@ export default function ApplicationsList() {
             isInitialLoadRef.current = false;
             return;
         }
-        
+
         fetchApplications(newState);
     }, [fetchApplications]);
 
@@ -240,7 +241,7 @@ export default function ApplicationsList() {
 
     // Define table columns
     const columns = useMemo(() => [
-      
+
         {
             id: 'serviceType',
             header: 'Service Type',
@@ -502,17 +503,26 @@ export default function ApplicationsList() {
             header: 'Actions',
             cell: ({ row }) => (
                 <div className="flex flex-col gap-2">
-                    <button
+                    <ActionButton
+                        module="applications"
+                        action="read"
+                        label="View"
+                        size="sm"
                         onClick={(e) => {
                             e.stopPropagation();
                             viewDetails(row.original.applicationId);
                         }}
-                        className="text-blue-600 hover:text-blue-900 p-1 rounded flex items-center gap-1"
-                        title="View Details"
-                    >
-                        <Eye size={14} />
-                        <span className="text-xs">View</span>
-                    </button>
+                    />
+                    <ActionButton
+                        module="applications"
+                        action="update"
+                        label="Update Status"
+                        size="sm"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            // You can implement a status update modal here
+                        }}
+                    />
                     <select
                         value={row.original.status}
                         onChange={(e) => {
@@ -536,74 +546,77 @@ export default function ApplicationsList() {
     ], []);
 
     return (
-        <div className="p-6">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Applications Management</h1>
-                    <p className="text-gray-600">Manage and review all application submissions</p>
-                </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={handleRefresh}
-                        disabled={loading}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                    >
-                        <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                        Refresh
-                    </button>
-                    <button 
-                        onClick={handleExportToExcel}
-                        disabled={loading || applications.length === 0}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <Download size={16} />
-                        Export to Excel
-                    </button>
-                </div>
-            </div>
-
-            {/* Applications Table */}
-            <div className="bg-white rounded-lg shadow-sm  overflow-hidden">
-                {error ? (
-                    <div className="flex flex-col justify-center items-center py-12">
-                        <AlertCircle size={48} className="text-red-500 mb-4" />
-                        <span className="text-red-600 text-center max-w-md mb-4">{error}</span>
+        <PermissionGuard module="applications" showMessage>
+            <div className="p-6">
+                {/* Header */}
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Applications Management</h1>
+                        <p className="text-gray-600">Manage and review all application submissions</p>
+                    </div>
+                    <div className="flex gap-2">
                         <button
                             onClick={handleRefresh}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            disabled={loading}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                         >
-                            Try Again
+                            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                            Refresh
                         </button>
+                        <ActionButton
+                            module="applications"
+                            action="read"
+                            label="Export to Excel"
+                            icon={<Download size={16} className="mr-1" />}
+                            onClick={handleExportToExcel}
+                            disabled={loading || applications.length === 0}
+                            className="bg-green-600 hover:bg-green-700"
+                        />
                     </div>
-                ) : (
-                    <TableService
-                        columns={columns}
-                        data={applications}
-                        loading={loading}
-                        serverPagination={true}
-                        pageCount={pagination.totalPages}
-                        totalItems={pagination.totalItems}
-                        totalPages={pagination.totalPages}
-                        currentPage={pagination.currentPage}
-                        onStateChange={handleTableStateChange}
-                        onRowClick={handleRowClick}
-                        initialPageSize={10}
+                </div>
+
+                {/* Applications Table */}
+                <div className="bg-white rounded-lg shadow-sm  overflow-hidden">
+                    {error ? (
+                        <div className="flex flex-col justify-center items-center py-12">
+                            <AlertCircle size={48} className="text-red-500 mb-4" />
+                            <span className="text-red-600 text-center max-w-md mb-4">{error}</span>
+                            <button
+                                onClick={handleRefresh}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                Try Again
+                            </button>
+                        </div>
+                    ) : (
+                        <TableService
+                            columns={columns}
+                            data={applications}
+                            loading={loading}
+                            serverPagination={true}
+                            pageCount={pagination.totalPages}
+                            totalItems={pagination.totalItems}
+                            totalPages={pagination.totalPages}
+                            currentPage={pagination.currentPage}
+                            onStateChange={handleTableStateChange}
+                            onRowClick={handleRowClick}
+                            initialPageSize={10}
+                        />
+                    )}
+                </div>
+
+                {/* Application Details Modal */}
+                {showDetails && selectedApplication && (
+                    <ApplicationDetailsModal
+                        application={selectedApplication}
+                        onClose={() => setShowDetails(false)}
+                        onStatusUpdate={(status, note) => {
+                            updateStatus(selectedApplication.applicationId, status, note);
+                        }}
                     />
                 )}
             </div>
-
-            {/* Application Details Modal */}
-            {showDetails && selectedApplication && (
-                <ApplicationDetailsModal
-                    application={selectedApplication}
-                    onClose={() => setShowDetails(false)}
-                    onStatusUpdate={(status, note) => {
-                        updateStatus(selectedApplication.applicationId, status, note);
-                    }}
-                />
-            )}
-        </div>
+        </PermissionGuard>
     );
 }
 
@@ -760,19 +773,18 @@ function ApplicationDetailsModal({ application, onClose, onStatusUpdate }) {
                                                     </p>
                                                 </div>
                                             </div>
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                                doc.isRequired 
-                                                    ? 'bg-red-100 text-red-700' 
-                                                    : 'bg-blue-100 text-blue-700'
-                                            }`}>
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${doc.isRequired
+                                                ? 'bg-red-100 text-red-700'
+                                                : 'bg-blue-100 text-blue-700'
+                                                }`}>
                                                 {doc.isRequired ? 'Required' : 'Optional'}
                                             </span>
                                         </div>
-                                        
+
                                         <div className="text-xs text-gray-500 mb-3">
                                             Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()}
                                         </div>
-                                        
+
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => {

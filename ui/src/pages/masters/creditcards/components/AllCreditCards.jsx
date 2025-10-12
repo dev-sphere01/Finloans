@@ -3,6 +3,7 @@ import creditCardService from '@/services/creditCardService'
 import TableService from '@/services/TableService'
 import { createColumnHelper } from '@tanstack/react-table'
 import notification from '@/services/NotificationService'
+import { ActionButton } from '@/components/permissions'
 
 const AllCreditCards = ({ onEditCreditCard, onViewCreditCard }) => {
   const { success: notifySuccess, error: notifyError } = notification()
@@ -108,28 +109,28 @@ const AllCreditCards = ({ onEditCreditCard, onViewCreditCard }) => {
         id: 'actions',
         header: 'Actions',
         cell: (info) => (
-          <div className="flex items-center gap-2">
-            <button
+          <div className="flex items-center gap-1">
+            <ActionButton
+              module="credit-cards"
+              action="read"
+              label="View"
+              size="sm"
               onClick={() => onViewCreditCard && onViewCreditCard(info.row.original)}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="View Card"
-            >
-              View
-            </button>
-            <button
+            />
+            <ActionButton
+              module="credit-cards"
+              action="update"
+              label="Edit"
+              size="sm"
               onClick={() => onEditCreditCard && onEditCreditCard(info.row.original)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="Edit Card"
-            >
-              Edit
-            </button>
-            <button
+            />
+            <ActionButton
+              module="credit-cards"
+              action="delete"
+              label="Delete"
+              size="sm"
               onClick={() => handleDeleteClick(info.row.original)}
-              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="Delete Card"
-            >
-              Delete
-            </button>
+            />
           </div>
         ),
       }),

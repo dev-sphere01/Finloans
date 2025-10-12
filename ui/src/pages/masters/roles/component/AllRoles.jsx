@@ -4,6 +4,7 @@ import TableService from '@/services/TableService';
 import roleService from '@/services/roleService';
 import notification from '@/services/NotificationService';
 import { createColumnHelper } from '@tanstack/react-table';
+import { ActionButton } from '@/components/permissions';
 
 
 const AllRoles = ({ onEditRole }) => {
@@ -166,22 +167,31 @@ const AllRoles = ({ onEditRole }) => {
       id: 'actions',
       header: 'Actions',
       cell: info => (
-        <div className="flex items-center space-x-2">
-          <button
+        <div className="flex items-center gap-1">
+          <ActionButton
+            module="roles"
+            action="read"
+            label="View"
+            size="sm"
             onClick={() => onEditRole(info.row.original)}
-            className="text-blue-600 hover:text-blue-900"
-          >
-            Edit
-          </button>
-          {/* {!info.row.original.isSystem && (
-            <button
-              onClick={() => handleDeleteRole(info.row.original._id, info.row.original.RoleName)}
+          />
+          <ActionButton
+            module="roles"
+            action="update"
+            label="Edit"
+            size="sm"
+            onClick={() => onEditRole(info.row.original)}
+          />
+          {!info.row.original.isSystem && (
+            <ActionButton
+              module="roles"
+              action="delete"
+              label="Delete"
+              size="sm"
               disabled={deleteLoading === info.row.original._id}
-              className={`text-red-600 hover:text-red-900 ${deleteLoading === info.row.original._id ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {deleteLoading === info.row.original._id ? 'Deleting...' : 'Delete'}
-            </button>
-          )} */}
+              onClick={() => handleDeleteRole(info.row.original._id, info.row.original.name)}
+            />
+          )}
         </div>
       ),
       enableSorting: false,

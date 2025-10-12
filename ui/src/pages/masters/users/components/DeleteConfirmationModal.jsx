@@ -1,4 +1,5 @@
 import React from 'react';
+import { ActionButton } from '@/components/permissions';
 
 const DeleteConfirmationModal = ({ onConfirm, onCancel, userName }) => {
   return (
@@ -6,13 +7,16 @@ const DeleteConfirmationModal = ({ onConfirm, onCancel, userName }) => {
       <div className="bg-white p-8 rounded-lg w-full max-w-md">
         <h2 className="text-2xl font-bold mb-4">Confirm Deletion</h2>
         <p>Are you sure you want to delete the user <strong>{userName}</strong>? This action cannot be undone.</p>
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-end mt-4 gap-2">
           <button onClick={onCancel} className="bg-gray-500 text-white px-4 py-2 rounded mr-2">
             Cancel
           </button>
-          <button onClick={onConfirm} className="bg-red-500 text-white px-4 py-2 rounded">
-            Delete
-          </button>
+          <ActionButton 
+            module="users" 
+            action="delete" 
+            label="Delete"
+            onClick={onConfirm}
+          />
         </div>
       </div>
     </div>

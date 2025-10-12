@@ -1,4 +1,5 @@
 import React from 'react'
+import { ActionButton } from '@/components/permissions'
 
 const ViewUser = ({ user, onClose, onEdit }) => {
   if (!user) {
@@ -37,12 +38,12 @@ const ViewUser = ({ user, onClose, onEdit }) => {
 
         <div className="flex items-center space-x-2">
           {onEdit && (
-            <button
+            <ActionButton
+              module="users"
+              action="update"
+              label="Edit User"
               onClick={() => onEdit(user)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Edit User
-            </button>
+            />
           )}
           <button
             onClick={onClose}

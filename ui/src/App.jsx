@@ -22,6 +22,7 @@ import ProtectedRoutes from "@/routes/ProtectedRoutes";
 // services imports
 import NotificationContainer from "@/components/NotificationContainer";
 import ConfirmationProvider from "@/components/ConfirmationProvider";
+import { PermissionProvider } from "@/components/permissions";
 
 // auth store
 import useAuthStore from "@/store/authStore";
@@ -80,8 +81,9 @@ function App() {
       <NotificationContainer />
       {/* ✅ Mount confirmation modal globally — outside Routes */}
       <ConfirmationProvider />
-
-      {isInitialized && (
+      {/* ✅ Mount permission provider globally */}
+      <PermissionProvider>
+        {isInitialized && (
         <Routes>
           {/* Redirect root to login */}
           <Route path="/" element={<Navigate to="/login" />} />
@@ -153,7 +155,8 @@ function App() {
           {/* Catch all route - redirect to login */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
-      )}
+        )}
+      </PermissionProvider>
     </Router>
   );
 }

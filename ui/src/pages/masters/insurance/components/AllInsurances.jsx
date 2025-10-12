@@ -3,6 +3,7 @@ import insuranceService from '@/services/insuranceService'
 import TableService from '@/services/TableService'
 import { createColumnHelper } from '@tanstack/react-table'
 import notification from '@/services/NotificationService'
+import { ActionButton } from '@/components/permissions'
 
 const AllInsurances = ({ onEditInsurance, onViewInsurance }) => {
   const { success: notifySuccess, error: notifyError } = notification()
@@ -230,27 +231,27 @@ const AllInsurances = ({ onEditInsurance, onViewInsurance }) => {
         header: 'Actions',
         cell: (info) => (
           <div className="flex items-center gap-1">
-            <button
+            <ActionButton
+              module="insurance"
+              action="read"
+              label="View"
+              size="sm"
               onClick={() => onViewInsurance && onViewInsurance(info.row.original)}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs transition-colors"
-              title="View Insurance"
-            >
-              View
-            </button>
-            <button
+            />
+            <ActionButton
+              module="insurance"
+              action="update"
+              label="Edit"
+              size="sm"
               onClick={() => onEditInsurance && onEditInsurance(info.row.original)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs transition-colors"
-              title="Edit Insurance"
-            >
-              Edit
-            </button>
-            <button
+            />
+            <ActionButton
+              module="insurance"
+              action="delete"
+              label="Delete"
+              size="sm"
               onClick={() => handleDeleteClick(info.row.original)}
-              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors"
-              title="Delete Insurance"
-            >
-              Delete
-            </button>
+            />
           </div>
         ),
       }),

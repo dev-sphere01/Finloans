@@ -13,6 +13,7 @@ import {
   DollarSign,
   CheckCircle,
 } from "lucide-react";
+import { ActionButton, PermissionGuard } from '@/components/permissions';
 
 export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState({
@@ -222,9 +223,29 @@ const formatNumber = (num) => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-2 text-green-600">
-              <Activity className="h-4 w-4" />
-              <span className="text-sm font-medium">Live</span>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 text-green-600">
+                <Activity className="h-4 w-4" />
+                <span className="text-sm font-medium">Live</span>
+              </div>
+              
+              {/* Quick Action Buttons */}
+              <div className="flex items-center gap-2">
+                <ActionButton
+                  module="applications"
+                  action="read"
+                  label="Applications"
+                  size="sm"
+                  onClick={() => window.location.href = '/dashboard/applications'}
+                />
+                <ActionButton
+                  module="users"
+                  action="read"
+                  label="Users"
+                  size="sm"
+                  onClick={() => window.location.href = '/dashboard/users'}
+                />
+              </div>
             </div>
           </div>
         </div>
