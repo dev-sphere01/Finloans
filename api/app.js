@@ -3,11 +3,20 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
+const autoSwagger = require("express-auto-swagger");
 
 // Import config
 const config = require("./config");
 
 const app = express();
+autoSwagger(app);
+
+// Your routes...
+
+app.get("/api/test", (req, res) => {
+    res.json({ message: "Test endpoint" });
+});
+
 
 // Import routes
 const authRoutes = require("./routes/authRoutes");
@@ -17,6 +26,7 @@ const creditCardRoutes = require("./routes/creditCardRoutes");
 const insuranceRoutes = require("./routes/insuranceRoutes");
 const loanRoutes = require("./routes/loanRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
+const callingRoutes = require("./routes/callingRoutes");
 
 // Rate limiting (use config)
 const limiter = rateLimit({
@@ -51,6 +61,7 @@ app.use("/api/credit-cards", creditCardRoutes);
 app.use("/api/insurances", insuranceRoutes);
 app.use("/api/loans", loanRoutes);
 app.use("/api/applications", applicationRoutes);
+app.use("/api/calling", callingRoutes);
 app.use("/uploads", express.static("uploads"));
 
 // Health check endpoint

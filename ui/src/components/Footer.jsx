@@ -11,7 +11,7 @@ const Footer = () => {
     >
       <div className="flex flex-col md:flex-row items-center justify-between space-y-2 md:space-y-0">
         <div className="flex items-center space-x-4 text-sm text-gray-600">
-          <span>© 2025 FinLoans | Quick Template</span>
+          <span>© 2025 FinLoans</span>
         </div>
         <div className="version">
           <span className="hidden md:inline text-slate-700 bg-slate-100 p-2 rounded">Version {import.meta.env.VITE_APP_VERSION}</span>

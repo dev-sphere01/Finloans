@@ -46,6 +46,11 @@ import UserFormPage from "@/pages/masters/users/UserFormPage";
 import Role from "@/pages/masters/roles/Role";
 import ApplicationsList from "@/pages/masters/applications/ApplicationsList";
 
+// Calling module imports
+import CallingManagement from "@/pages/masters/calling/CallingManagement";
+import EmployeeCalling from "@/pages/calling/EmployeeCalling";
+import LeadDetails from "@/pages/calling/LeadDetails";
+
 import LandingPage from "@/pages/userPages/landingPage/LandingPage";
 import ServicesPage from "@/pages/userPages/services/Servicespage";
 import ApplicationSuccess from "./pages/userPages/apply/ApplicationSuccess";
@@ -84,77 +89,82 @@ function App() {
       {/* ✅ Mount permission provider globally */}
       <PermissionProvider>
         {isInitialized && (
-        <Routes>
-          {/* Redirect root to login */}
-          <Route path="/" element={<Navigate to="/login" />} />
+          <Routes>
+            {/* Redirect root to login */}
+            <Route path="/" element={<Navigate to="/login" />} />
 
-          {/* Guest Routes with OuterLayout */}
-          <Route
-            element={
-              <GuestRoutes>
-                <OuterLayout />
-              </GuestRoutes>
-            }
-          >
-            {/* Auth routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/change-password" element={<ChangePassword />} />
-            {/* Add more guest routes here */}
-          </Route>
-
-          {/* User routes - only accessible by users with "user" role */}
-          {role === "user" && (
+            {/* Guest Routes with OuterLayout */}
             <Route
               element={
-                <ProtectedRoutes requiredRole="user">
-                  <UserLayout />
-                </ProtectedRoutes>
+                <GuestRoutes>
+                  <OuterLayout />
+                </GuestRoutes>
               }
             >
-              <Route path="/dashboard" element={<LandingPage />} />
-              <Route path="/services" element={<ServicesPage />} />
-              <Route path="/services/:serviceType" element={<ServicesPage />} />
-              <Route path="/cibil-score" element={<CibilScore />} />
-              <Route path="/cibil-check" element={<CibilCheck />} />
-              <Route path="/profile" element={<UserProfilePage />} />
-
-              {/* Unified Application Form Routes */}
-              <Route path="/apply/:serviceType/:subType" element={<UnifiedApplicationForm />} />
-              <Route path="/apply/:serviceType" element={<UnifiedApplicationForm />} />
-
-              <Route path="/application-success" element={<ApplicationSuccess />} />
-              {/* Add more protected routes here as needed */}
+              {/* Auth routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/change-password" element={<ChangePassword />} />
+              {/* Add more guest routes here */}
             </Route>
-          )}
 
-          {/* Admin/Staff routes - only accessible by authenticated users with valid admin/staff roles */}
-          {role && role !== "user" && (
-            <Route
-              element={
-                <ProtectedRoutes>
-                  <InnerLayout />
-                </ProtectedRoutes>
-              }
-            >
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/dashboard/loans" element={<Loans />} />
-              <Route path="/dashboard/credit-cards" element={<CreditCards />} />
-              <Route path="/dashboard/insurance" element={<Insurance />} />
-              <Route path="/dashboard/applications" element={<ApplicationsList />} />
-              <Route path="/profile" element={<UserProfile />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/dashboard/users" element={<Users />} />
-              <Route path="/dashboard/users/add" element={<UserFormPage />} />
-              <Route path="/dashboard/users/edit/:userId" element={<UserFormPage />} />
-              <Route path="/dashboard/roles" element={<Role />} />
-            </Route>
-          )}
+            {/* User routes - only accessible by users with "user" role */}
+            {role === "user" && (
+              <Route
+                element={
+                  <ProtectedRoutes requiredRole="user">
+                    <UserLayout />
+                  </ProtectedRoutes>
+                }
+              >
+                <Route path="/dashboard" element={<LandingPage />} />
+                <Route path="/services" element={<ServicesPage />} />
+                <Route path="/services/:serviceType" element={<ServicesPage />} />
+                <Route path="/cibil-score" element={<CibilScore />} />
+                <Route path="/cibil-check" element={<CibilCheck />} />
+                <Route path="/profile" element={<UserProfilePage />} />
 
-          {/* Catch all route - redirect to login */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
+                {/* Unified Application Form Routes */}
+                <Route path="/apply/:serviceType/:subType" element={<UnifiedApplicationForm />} />
+                <Route path="/apply/:serviceType" element={<UnifiedApplicationForm />} />
+
+                <Route path="/application-success" element={<ApplicationSuccess />} />
+                {/* Add more protected routes here as needed */}
+              </Route>
+            )}
+
+            {/* Admin/Staff routes - only accessible by authenticated users with valid admin/staff roles */}
+            {role && role !== "user" && (
+              <Route
+                element={
+                  <ProtectedRoutes>
+                    <InnerLayout />
+                  </ProtectedRoutes>
+                }
+              >
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard/loans" element={<Loans />} />
+                <Route path="/dashboard/credit-cards" element={<CreditCards />} />
+                <Route path="/dashboard/insurance" element={<Insurance />} />
+                <Route path="/dashboard/applications" element={<ApplicationsList />} />
+                <Route path="/profile" element={<UserProfile />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/dashboard/users" element={<Users />} />
+                <Route path="/dashboard/users/add" element={<UserFormPage />} />
+                <Route path="/dashboard/users/edit/:userId" element={<UserFormPage />} />
+                <Route path="/dashboard/roles" element={<Role />} />
+
+                {/* Calling module routes */}
+                <Route path="/dashboard/calling-management" element={<CallingManagement />} />
+                <Route path="/dashboard/my-calls" element={<EmployeeCalling />} />
+                <Route path="/calling/lead/:leadId" element={<LeadDetails />} />
+              </Route>
+            )}
+
+            {/* Catch all route - redirect to login */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
         )}
       </PermissionProvider>
     </Router>

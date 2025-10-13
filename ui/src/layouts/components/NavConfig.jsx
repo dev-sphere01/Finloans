@@ -12,7 +12,9 @@ import {
   HandCoins ,
   ShieldUser, 
   Users,
-  Shield
+  Shield,
+  Phone,
+  PhoneCall
 } from "lucide-react";
 
 const allMenuItems = [
@@ -35,6 +37,10 @@ const allMenuItems = [
   { id: "users", name: "Users", icon: <Users size={18} />, type: "item", path: "/dashboard/users", roleId: [1] },
   { id: "roles", name: "Roles", icon: <Shield size={18} />, type: "item", path: "/dashboard/roles", roleId: [1] },
 
+  // Calling Section
+  { id: "calling", name: "Calling", type: "heading", roleId: [1, 2] },
+  { id: "calling-management", name: "Lead Management", icon: <Phone size={18} />, type: "item", path: "/dashboard/calling-management", roleId: [1] },
+  { id: "my-calls", name: "My Calling Queue", icon: <PhoneCall size={18} />, type: "item", path: "/dashboard/my-calls", roleId: [2] },
 
   // Demo Pages
   // { id: "demo", name: "Demo Pages (Dev)", type: "heading", roleId: [1] },
