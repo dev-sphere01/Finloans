@@ -27,6 +27,7 @@ const insuranceRoutes = require("./routes/insuranceRoutes");
 const loanRoutes = require("./routes/loanRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
 const callingRoutes = require("./routes/callingRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 // Rate limiting (use config)
 const limiter = rateLimit({
@@ -62,6 +63,7 @@ app.use("/api/insurances", insuranceRoutes);
 app.use("/api/loans", loanRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/calling", callingRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.use("/uploads", express.static("uploads"));
 
 // Health check endpoint
