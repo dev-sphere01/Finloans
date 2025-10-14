@@ -294,9 +294,6 @@ const EmployeeCalling = () => {
             <div className="px-3 py-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-full">
               {stats.total} Total
             </div>
-            <div className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-              {stats.assigned} Assigned
-            </div>
             <div className="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full">
               {stats.pending} Pending
             </div>
