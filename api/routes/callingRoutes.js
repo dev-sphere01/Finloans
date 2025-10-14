@@ -107,6 +107,13 @@ router.get('/service-providers', callingController.getServiceProviders);
 router.get('/staff', requireAdmin, callingController.getStaff);
 
 /**
+ * @route   GET /api/calling/my-stats
+ * @desc    Get current user's calling stats
+ * @access  Private
+ */
+router.get('/my-stats', callingController.getMyStats);
+
+/**
  * @route   GET /api/calling/reports
  * @desc    Get calling reports and analytics
  * @access  Private (Admin only)

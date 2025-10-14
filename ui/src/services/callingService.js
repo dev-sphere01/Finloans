@@ -163,6 +163,17 @@ const callingService = {
     }
   },
 
+  // Get calling stats for current user
+  getMyStats: async () => {
+    try {
+      const response = await API.get('/calling/my-stats');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching calling stats:', error);
+      throw error;
+    }
+  },
+
   // Reports and analytics
   getCallReports: async (params = {}) => {
     try {

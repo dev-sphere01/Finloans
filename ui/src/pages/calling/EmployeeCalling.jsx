@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCallingStore from '@/store/callingStore';
 import callingService from '@/services/callingService';
 import TableService from '@/services/TableService';
 import { FaPhone, FaEye, FaClock, FaUser } from 'react-icons/fa';
-import { useMemo } from 'react';
 
 const EmployeeCalling = () => {
   const navigate = useNavigate();
@@ -18,23 +17,130 @@ const EmployeeCalling = () => {
     sessionData
   } = useCallingStore();
 
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+    totalItems: 0,
+    totalPages: 0
+  });
+  const [stats, setStats] = useState({
+    total: 0,
+    assigned: 0,
+    pending: 0,
+    completed: 0,
+    failed: 0
+  });
+  const isLoadingRef = useRef(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const lastParamsRef = useRef(null);
+  const debounceTimeoutRef = useRef(null);
+
   useEffect(() => {
     // Restore any active calling session on page load
     restoreSession();
-    loadAssignedLeads();
+    loadInitialData();
   }, []);
 
-  const loadAssignedLeads = async () => {
+  const loadInitialData = async () => {
+    if (isLoadingRef.current) return;
+
     try {
+      isLoadingRef.current = true;
       setLoading(true);
-      // Get leads assigned to current user
-      const data = await callingService.getLeads({ assignedToMe: true });
-      setLeads(data.leads || []);
+      
+      // Load both leads and stats in parallel
+      const [leadsData, statsData] = await Promise.all([
+        callingService.getLeads({
+          assignedToMe: true,
+          page: 1,
+          limit: 10
+        }),
+        callingService.getMyStats()
+      ]);
+      
+      setLeads(leadsData.leads || []);
+      setPagination({
+        pageIndex: 0,
+        pageSize: 10,
+        totalItems: leadsData.pagination?.total || leadsData.totalItems || 0,
+        totalPages: leadsData.pagination?.pages || leadsData.totalPages || 0
+      });
+      setStats(statsData);
+      setIsInitialized(true);
     } catch (error) {
       console.error('Error loading assigned leads:', error);
+      setLeads([]);
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
+  };
+
+  const handleTableStateChange = async (params = {}) => {
+    // Only handle state changes after initial load
+    if (!isInitialized || isLoadingRef.current) {
+      return;
+    }
+
+    // Clear any existing debounce timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Prevent duplicate calls with same parameters
+    const paramsString = JSON.stringify(params);
+    if (lastParamsRef.current === paramsString) {
+      return;
+    }
+
+    // Debounce the API call
+    debounceTimeoutRef.current = setTimeout(async () => {
+      lastParamsRef.current = paramsString;
+
+      try {
+        isLoadingRef.current = true;
+        setLoading(true);
+
+        // Build query parameters with safe defaults
+        const queryParams = {
+          assignedToMe: true, // Always filter for current user
+          page: (params.pagination?.pageIndex ?? 0) + 1,
+          limit: params.pagination?.pageSize ?? 10,
+          search: params.globalFilter || '',
+          sortBy: params.sorting?.[0]?.id || '',
+          sortOrder: params.sorting?.[0]?.desc ? 'desc' : 'asc'
+        };
+
+        // Add column filters
+        if (params.columnFilters && Array.isArray(params.columnFilters)) {
+          params.columnFilters.forEach(filter => {
+            if (filter.id && filter.value !== undefined && filter.value !== null && filter.value !== '') {
+              queryParams[filter.id] = filter.value;
+            }
+          });
+        }
+
+        const data = await callingService.getLeads(queryParams);
+        setLeads(data.leads || []);
+        setPagination({
+          pageIndex: (data.pagination?.page || data.currentPage || 1) - 1,
+          pageSize: data.pagination?.limit || data.limit || 10,
+          totalItems: data.pagination?.total || data.totalItems || 0,
+          totalPages: data.pagination?.pages || data.totalPages || 0
+        });
+      } catch (error) {
+        console.error('Error loading leads:', error);
+        setLeads([]);
+        setPagination(prev => ({
+          ...prev,
+          totalItems: 0,
+          totalPages: 0
+        }));
+      } finally {
+        setLoading(false);
+        isLoadingRef.current = false;
+      }
+    }, 300); // 300ms debounce
   };
 
   const getStatusBadge = (status) => {
@@ -172,29 +278,36 @@ const EmployeeCalling = () => {
     handleViewDetails(row.original);
   };
 
-  const getLeadsByStatus = () => {
-    const statusCounts = leads.reduce((acc, lead) => {
-      acc[lead.status] = (acc[lead.status] || 0) + 1;
-      return acc;
-    }, {});
 
-    return {
-      total: leads.length,
-      assigned: statusCounts.assigned || 0,
-      pending: statusCounts.pending || 0,
-      completed: statusCounts.completed || 0,
-      failed: statusCounts.failed || 0
-    };
-  };
-
-  const stats = getLeadsByStatus();
 
   return (
     <div className="p-6">
-      {/* Header */}
+      {/* Header with Stats Chips */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">My Calling Queue</h1>
-        <p className="text-gray-600 mt-1">Manage your assigned leads and calling activities</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">My Calling Queue</h1>
+            <p className="text-gray-600 mt-1">Manage your assigned leads and calling activities</p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <div className="px-3 py-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-full">
+              {stats.total} Total
+            </div>
+            <div className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+              {stats.assigned} Assigned
+            </div>
+            <div className="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full">
+              {stats.pending} Pending
+            </div>
+            <div className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+              {stats.completed} Completed
+            </div>
+            <div className="px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
+              {stats.failed} Failed
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Active Session Alert */}
@@ -217,44 +330,23 @@ const EmployeeCalling = () => {
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-          <div className="text-sm text-gray-600">Total Leads</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="text-2xl font-bold text-blue-600">{stats.assigned}</div>
-          <div className="text-sm text-gray-600">Assigned</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-          <div className="text-sm text-gray-600">Pending</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
-          <div className="text-sm text-gray-600">Completed</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="text-2xl font-bold text-red-600">{stats.failed}</div>
-          <div className="text-sm text-gray-600">Failed</div>
-        </div>
-      </div>
+
 
       {/* Leads Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">
-            Assigned Leads ({leads.length})
-          </h2>
-        </div>
-
         <TableService
           columns={columns}
           data={leads}
           loading={isLoading}
           onRowClick={handleRowClick}
+          onStateChange={isInitialized ? handleTableStateChange : undefined}
           initialPageSize={10}
+          serverPagination={true}
+          serverFiltering={true}
+          serverSorting={true}
+          pageCount={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          currentPage={pagination.pageIndex + 1}
         />
       </div>
     </div>

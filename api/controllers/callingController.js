@@ -20,32 +20,97 @@ exports.getLeads = async (req, res) => {
         { path: 'updatedBy', select: 'firstName lastName' }
       ],
       customFilters: async (filters, baseFilter) => {
+        console.log('Processing filters:', filters);
+
         // Handle assignedToMe filter for employee view
         if (filters.assignedToMe === 'true') {
           baseFilter.assignedTo = req.userId;
           delete filters.assignedToMe;
         }
-        
+
         // Handle status filter
         if (filters.status && filters.status !== 'all') {
           baseFilter.status = filters.status;
+          delete filters.status;
         }
-        
+
         // Handle assignedTo filter
         if (filters.assignedTo) {
           baseFilter.assignedTo = filters.assignedTo;
+          delete filters.assignedTo;
         }
-        
-        // Handle service filter
+
+        // Handle service filter (both 'service' and 'selectedService')
         if (filters.service) {
           baseFilter.selectedService = { $regex: filters.service, $options: 'i' };
+          delete filters.service;
         }
-        
+        if (filters.selectedService) {
+          baseFilter.selectedService = { $regex: filters.selectedService, $options: 'i' };
+          delete filters.selectedService;
+        }
+
+        // Handle name filter - CASE INSENSITIVE
+        if (filters.name) {
+          baseFilter.name = { $regex: filters.name, $options: 'i' };
+          delete filters.name;
+        }
+
+        // Handle contactNo filter
+        if (filters.contactNo) {
+          baseFilter.contactNo = { $regex: filters.contactNo, $options: 'i' };
+          delete filters.contactNo;
+        }
+
+        // Handle email filter
+        if (filters.email) {
+          baseFilter.email = { $regex: filters.email, $options: 'i' };
+          delete filters.email;
+        }
+
+        // Handle assignedToName filter - need to join with User collection
+        if (filters.assignedToName) {
+          // Get user IDs that match the name filter
+          const matchingUsers = await User.find({
+            $or: [
+              { firstName: { $regex: filters.assignedToName, $options: 'i' } },
+              { lastName: { $regex: filters.assignedToName, $options: 'i' } },
+              {
+                $expr: {
+                  $regexMatch: {
+                    input: { $concat: ['$firstName', ' ', '$lastName'] },
+                    regex: filters.assignedToName,
+                    options: 'i'
+                  }
+                }
+              }
+            ]
+          }).select('_id');
+
+          if (matchingUsers.length > 0) {
+            baseFilter.assignedTo = { $in: matchingUsers.map(u => u._id) };
+          } else {
+            // No matching users found, return no results
+            baseFilter.assignedTo = null;
+          }
+          delete filters.assignedToName;
+        }
+
+        // Handle createdAt filter
+        if (filters.createdAt) {
+          // Assume it's a date string, convert to date range
+          const date = new Date(filters.createdAt);
+          const nextDay = new Date(date);
+          nextDay.setDate(date.getDate() + 1);
+          baseFilter.createdAt = { $gte: date, $lt: nextDay };
+          delete filters.createdAt;
+        }
+
         // Handle date range filter
         if (filters.dateRange) {
           const now = new Date();
           let startDate;
-          
+
           switch (filters.dateRange) {
             case 'today':
               startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -76,12 +141,14 @@ exports.getLeads = async (req, res) => {
               baseFilter.createdAt = { $gte: lastMonthStart, $lt: lastMonthEnd };
               break;
           }
-          
+
           if (filters.dateRange === 'today') {
             baseFilter.createdAt = { $gte: startDate };
           }
+          delete filters.dateRange;
         }
-        
+
+        console.log('Final baseFilter:', baseFilter);
         return baseFilter;
       }
     };
@@ -97,7 +164,7 @@ exports.getLeads = async (req, res) => {
       return leadObj;
     });
 
-    console.log('Returning leads:', leadsWithNames.length);
+    console.log('Returning leads:', leadsWithNames.length, 'Total:', pagination.total);
     res.json({
       leads: leadsWithNames,
       pagination
@@ -139,14 +206,14 @@ exports.createLead = async (req, res) => {
     };
 
     // Check for duplicate contact number
-    const existingLead = await Lead.findOne({ 
+    const existingLead = await Lead.findOne({
       contactNo: leadData.contactNo,
-      isActive: true 
+      isActive: true
     });
 
     if (existingLead) {
-      return res.status(400).json({ 
-        error: 'A lead with this contact number already exists' 
+      return res.status(400).json({
+        error: 'A lead with this contact number already exists'
       });
     }
 
@@ -178,13 +245,13 @@ exports.createLead = async (req, res) => {
 
   } catch (error) {
     console.error('Create lead error:', error);
-    
+
     if (error.code === 11000) {
       return res.status(400).json({
         error: 'Lead with this contact number already exists'
       });
     }
-    
+
     res.status(500).json({ error: 'Failed to create lead' });
   }
 };
@@ -302,7 +369,7 @@ exports.bulkImportLeads = async (req, res) => {
     for (let i = 0; i < data.length; i++) {
       try {
         const row = data[i];
-        
+
         // Map Excel columns to lead fields
         const leadData = {
           name: row.Name || row.name,
@@ -325,9 +392,9 @@ exports.bulkImportLeads = async (req, res) => {
         }
 
         // Check for duplicate
-        const existingLead = await Lead.findOne({ 
+        const existingLead = await Lead.findOne({
           contactNo: leadData.contactNo,
-          isActive: true 
+          isActive: true
         });
 
         if (existingLead) {
@@ -398,10 +465,36 @@ exports.assignLeads = async (req, res) => {
       return res.status(400).json({ error: 'Invalid or inactive staff member' });
     }
 
-    // Update leads
+    // Check which leads are already assigned
+    const existingLeads = await Lead.find({
+      _id: { $in: leadIds },
+      isActive: true
+    }).select('_id name assignedTo status');
+
+    const alreadyAssignedLeads = existingLeads.filter(lead => 
+      lead.assignedTo && lead.status !== 'unassigned'
+    );
+
+    const unassignedLeadIds = existingLeads
+      .filter(lead => !lead.assignedTo || lead.status === 'unassigned')
+      .map(lead => lead._id);
+
+    if (unassignedLeadIds.length === 0) {
+      return res.status(400).json({ 
+        error: 'All selected leads are already assigned to staff members',
+        alreadyAssignedCount: alreadyAssignedLeads.length,
+        assignedLeads: alreadyAssignedLeads.map(lead => ({
+          id: lead._id,
+          name: lead.name,
+          status: lead.status
+        }))
+      });
+    }
+
+    // Update only unassigned leads
     const result = await Lead.updateMany(
       { 
-        _id: { $in: leadIds },
+        _id: { $in: unassignedLeadIds },
         isActive: true 
       },
       {
@@ -421,19 +514,33 @@ exports.assignLeads = async (req, res) => {
       action: 'LEADS_ASSIGN',
       resource: 'leads',
       details: {
-        leadIds,
+        requestedLeadIds: leadIds,
+        assignedLeadIds: unassignedLeadIds,
         assignedTo: `${staff.firstName} ${staff.lastName}`,
-        assignedCount: result.modifiedCount
+        assignedCount: result.modifiedCount,
+        skippedCount: alreadyAssignedLeads.length
       },
       ipAddress: req.ip,
       userAgent: req.get('User-Agent'),
       success: true
     });
 
-    res.json({
+    const response = {
       message: `${result.modifiedCount} leads assigned successfully`,
       assignedCount: result.modifiedCount
-    });
+    };
+
+    if (alreadyAssignedLeads.length > 0) {
+      response.warning = `${alreadyAssignedLeads.length} leads were already assigned and were skipped`;
+      response.skippedCount = alreadyAssignedLeads.length;
+      response.skippedLeads = alreadyAssignedLeads.map(lead => ({
+        id: lead._id,
+        name: lead.name,
+        status: lead.status
+      }));
+    }
+
+    res.json(response);
 
   } catch (error) {
     console.error('Assign leads error:', error);
@@ -554,7 +661,7 @@ exports.getServiceSubcategories = async (req, res) => {
 exports.getServiceProviders = async (req, res) => {
   try {
     const { serviceId } = req.query;
-    
+
     let query = { isActive: true };
     if (serviceId) {
       query.services = serviceId;
@@ -577,13 +684,13 @@ exports.getServiceProviders = async (req, res) => {
 exports.getStaff = async (req, res) => {
   try {
     // Get users with calling permissions (role-based)
-    const staff = await User.find({ 
+    const staff = await User.find({
       isActive: true,
       // Add role-based filtering here based on your role system
     })
-    .populate('roleId', 'name')
-    .select('firstName lastName email roleId')
-    .sort({ firstName: 1, lastName: 1 });
+      .populate('roleId', 'name')
+      .select('firstName lastName email roleId')
+      .sort({ firstName: 1, lastName: 1 });
 
     // Add current leads count for each staff member
     const staffWithCounts = await Promise.all(
@@ -612,19 +719,69 @@ exports.getStaff = async (req, res) => {
   }
 };
 
+// Get current user's calling stats
+exports.getMyStats = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // Get stats for leads assigned to current user
+    const stats = await Lead.aggregate([
+      {
+        $match: {
+          assignedTo: new mongoose.Types.ObjectId(userId),
+          isActive: true
+        }
+      },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Get total count
+    const totalCount = await Lead.countDocuments({
+      assignedTo: new mongoose.Types.ObjectId(userId),
+      isActive: true
+    });
+
+    // Format stats
+    const formattedStats = {
+      total: totalCount,
+      assigned: 0,
+      pending: 0,
+      completed: 0,
+      failed: 0
+    };
+
+    stats.forEach(stat => {
+      if (formattedStats.hasOwnProperty(stat._id)) {
+        formattedStats[stat._id] = stat.count;
+      }
+    });
+
+    res.json(formattedStats);
+
+  } catch (error) {
+    console.error('Get my stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+};
+
 // Get calling reports and analytics
 exports.getCallReports = async (req, res) => {
   try {
     const { startDate, endDate, staffId } = req.query;
-    
+
     let matchFilter = { isActive: true };
-    
+
     if (startDate || endDate) {
       matchFilter.createdAt = {};
       if (startDate) matchFilter.createdAt.$gte = new Date(startDate);
       if (endDate) matchFilter.createdAt.$lte = new Date(endDate);
     }
-    
+
     if (staffId) {
       matchFilter.assignedTo = mongoose.Types.ObjectId(staffId);
     }

@@ -21,7 +21,7 @@ const BulkImportModal = ({ onImport, onClose }) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
       if (validateFile(file)) {
@@ -45,17 +45,17 @@ const BulkImportModal = ({ onImport, onClose }) => {
       'application/vnd.ms-excel',
       'text/csv'
     ];
-    
+
     if (!allowedTypes.includes(file.type)) {
       alert('Please select a valid Excel file (.xlsx, .xls) or CSV file');
       return false;
     }
-    
+
     if (file.size > 10 * 1024 * 1024) { // 10MB limit
       alert('File size should be less than 10MB');
       return false;
     }
-    
+
     return true;
   };
 
@@ -95,8 +95,8 @@ Mike Johnson,9876543212,mike@example.com,Insurance,Health insurance inquiry`;
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-lg mx-4">
+    <div className="fixed inset-0 backdrop-blur-[2px] flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg w-full max-w-lg mx-4 shadow-2xl border border-gray-200">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Bulk Import Leads</h2>
           <button
@@ -132,13 +132,12 @@ Mike Johnson,9876543212,mike@example.com,Insurance,Health insurance inquiry`;
 
           {/* File Upload Area */}
           <div
-            className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-              dragActive
-                ? 'border-blue-500 bg-blue-50'
-                : selectedFile
+            className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive
+              ? 'border-blue-500 bg-blue-50'
+              : selectedFile
                 ? 'border-green-500 bg-green-50'
                 : 'border-gray-300 hover:border-gray-400'
-            }`}
+              }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
