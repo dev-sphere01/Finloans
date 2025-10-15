@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Phone,
+  PhoneOff,
   Clock,
   CreditCard,
   Building,
@@ -78,9 +79,15 @@ export default function Dashboard() {
     const leads = dashboardData.stats.leads;
     return {
       total: leads.total || 0,
-      new: leads.byStatus?.new || 0,
-      contacted: leads.byStatus?.contacted || 0,
-      converted: leads.byStatus?.converted || 0
+      pending: leads.byStatus?.pending || 0,
+      assigned: leads.byStatus?.assigned || 0,
+      called: leads.byStatus?.called || 0,
+      interested: leads.byStatus?.interested || 0,
+      completed: leads.byStatus?.completed || 0,
+      failed: leads.byStatus?.failed || 0,
+      callStats: leads.callStats || {},
+      todayStats: leads.todayStats || {},
+      agentPerformance: leads.agentPerformance || []
     };
   };
 
@@ -232,34 +239,93 @@ export default function Dashboard() {
         bgColor: "bg-cyan-50",
         details: [
           {
-            title: "New Leads",
-            value: leadTotals.new,
-            icon: Phone,
-            color: "text-blue-600",
-            bg: "bg-blue-100",
-            description: "Fresh inquiries",
-            percentage: leadTotals.total ? Math.round((leadTotals.new / leadTotals.total) * 100) : 0,
-          },
-          {
-            title: "Contacted",
-            value: leadTotals.contacted,
-            icon: PhoneCall,
+            title: "Pending",
+            value: leadTotals.pending,
+            icon: Clock,
             color: "text-orange-600",
             bg: "bg-orange-100",
-            description: "Follow-up done",
-            percentage: leadTotals.total ? Math.round((leadTotals.contacted / leadTotals.total) * 100) : 0,
+            description: "Awaiting action",
+            percentage: leadTotals.total ? Math.round((leadTotals.pending / leadTotals.total) * 100) : 0,
           },
           {
-            title: "Converted",
-            value: leadTotals.converted,
+            title: "Called",
+            value: leadTotals.called,
+            icon: PhoneCall,
+            color: "text-blue-600",
+            bg: "bg-blue-100",
+            description: "Contact attempted",
+            percentage: leadTotals.total ? Math.round((leadTotals.called / leadTotals.total) * 100) : 0,
+          },
+          {
+            title: "Interested",
+            value: leadTotals.interested,
+            icon: Target,
+            color: "text-purple-600",
+            bg: "bg-purple-100",
+            description: "Showing interest",
+            percentage: leadTotals.total ? Math.round((leadTotals.interested / leadTotals.total) * 100) : 0,
+          },
+          {
+            title: "Completed",
+            value: leadTotals.completed,
             icon: CheckCircle,
             color: "text-green-600",
             bg: "bg-green-100",
-            description: "Successful conversions",
-            percentage: leadTotals.total ? Math.round((leadTotals.converted / leadTotals.total) * 100) : 0,
+            description: "Successfully closed",
+            percentage: leadTotals.total ? Math.round((leadTotals.completed / leadTotals.total) * 100) : 0,
           },
         ],
       });
+
+      // Call Statistics section
+      if (leadTotals.callStats.totalCalls > 0) {
+        groups.push({
+          id: "calling",
+          title: "Call Statistics",
+          subtitle: "Calling performance",
+          icon: Phone,
+          gradient: "from-green-500 to-emerald-500",
+          bgColor: "bg-green-50",
+          details: [
+            {
+              title: "Total Calls",
+              value: leadTotals.callStats.totalCalls,
+              icon: Phone,
+              color: "text-blue-600",
+              bg: "bg-blue-100",
+              description: "All calls made",
+              percentage: 100,
+            },
+            {
+              title: "Answered",
+              value: leadTotals.callStats.totalPickedCalls,
+              icon: CheckCircle,
+              color: "text-green-600",
+              bg: "bg-green-100",
+              description: `${leadTotals.callStats.successRate}% success rate`,
+              percentage: leadTotals.callStats.totalCalls ? Math.round((leadTotals.callStats.totalPickedCalls / leadTotals.callStats.totalCalls) * 100) : 0,
+            },
+            {
+              title: "Not Answered",
+              value: leadTotals.callStats.totalNotPickedCalls,
+              icon: PhoneOff,
+              color: "text-red-600",
+              bg: "bg-red-100",
+              description: "Missed calls",
+              percentage: leadTotals.callStats.totalCalls ? Math.round((leadTotals.callStats.totalNotPickedCalls / leadTotals.callStats.totalCalls) * 100) : 0,
+            },
+            {
+              title: "Avg Duration",
+              value: leadTotals.callStats.totalCalls ? Math.round(leadTotals.callStats.totalCallDuration / leadTotals.callStats.totalCalls) : 0,
+              icon: Clock,
+              color: "text-purple-600",
+              bg: "bg-purple-100",
+              description: "Seconds per call",
+              percentage: leadTotals.callStats.avgCallsPerLead ? Math.round(leadTotals.callStats.avgCallsPerLead * 10) : 0,
+            },
+          ],
+        });
+      }
     }
 
     return groups;
@@ -424,23 +490,106 @@ const formatNumber = (num) => {
           )}
 
           {dashboardData.allowedSections.includes('leads') && (
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs sm:text-sm text-gray-600 font-medium">
-                    Lead Conversion
-                  </p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {leadTotals.total ? ((leadTotals.converted / leadTotals.total) * 100).toFixed(1) : 0}%
-                  </p>
-                </div>
-                <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                  <Target className="h-5 w-5 text-indigo-600" />
+            <>
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                      Total Leads
+                    </p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                      {leadTotals.total}
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <Users className="h-5 w-5 text-indigo-600" />
+                  </div>
                 </div>
               </div>
-            </div>
+
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                      Call Success Rate
+                    </p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                      {leadTotals.callStats.successRate || 0}%
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Phone className="h-5 w-5 text-green-600" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                      Today's Calls
+                    </p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                      {leadTotals.todayStats.totalTodayCalls || 0}
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <PhoneCall className="h-5 w-5 text-orange-600" />
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
+
+        {/* Agent Performance Section */}
+        {dashboardData.allowedSections.includes('leads') && leadTotals.agentPerformance.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Target className="h-5 w-5 mr-2 text-blue-600" />
+              Top Performing Agents
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {leadTotals.agentPerformance.slice(0, 6).map((agent, index) => (
+                <div key={agent._id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                        index === 0 ? 'bg-yellow-500' : 
+                        index === 1 ? 'bg-gray-400' : 
+                        index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {agent._id ? `${agent._id.firstName} ${agent._id.lastName}` : 'Unknown Agent'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-green-600">{agent.successRate.toFixed(1)}%</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs text-gray-600">
+                    <div className="text-center">
+                      <p className="font-medium">{agent.totalCalls}</p>
+                      <p>Calls</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium">{agent.successfulCalls}</p>
+                      <p>Success</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium">{agent.leadsHandled}</p>
+                      <p>Leads</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Detailed Groups */}
         {mainGroups.length > 0 ? (

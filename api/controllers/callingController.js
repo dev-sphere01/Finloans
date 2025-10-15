@@ -262,6 +262,8 @@ exports.updateLead = async (req, res) => {
     const leadId = req.params.id;
     const updates = req.body;
 
+    console.log('Updating lead:', leadId, 'with data:', updates);
+
     const lead = await Lead.findById(leadId);
     if (!lead) {
       return res.status(404).json({ error: 'Lead not found' });
@@ -270,9 +272,30 @@ exports.updateLead = async (req, res) => {
     // Store old data for audit log
     const oldData = lead.toObject();
 
-    // Update lead
-    Object.assign(lead, updates);
+    // Validate status if status is being updated (no transition restrictions)
+    if (updates.status && !Lead.AVAILABLE_STATUSES.includes(updates.status)) {
+      return res.status(400).json({ 
+        error: `Invalid status: '${updates.status}'`,
+        availableStatuses: Lead.AVAILABLE_STATUSES
+      });
+    }
+
+    // Clean up updates - handle empty strings for ObjectId fields
+    const cleanUpdates = { ...updates };
+    
+    // Convert empty strings to null for ObjectId fields
+    if (cleanUpdates.serviceProvider === '') {
+      cleanUpdates.serviceProvider = null;
+    }
+    if (cleanUpdates.assignedTo === '') {
+      cleanUpdates.assignedTo = null;
+    }
+
+    // Update lead fields
+    Object.assign(lead, cleanUpdates);
     lead.updatedBy = req.userId;
+    
+    console.log('Saving lead with status:', lead.status);
     await lead.save();
 
     await lead.populate([
@@ -290,21 +313,41 @@ exports.updateLead = async (req, res) => {
         leadName: lead.name,
         updatedFields: Object.keys(updates),
         oldStatus: oldData.status,
-        newStatus: lead.status
+        newStatus: lead.status,
+        statusTransition: oldData.status !== lead.status ? `${oldData.status} → ${lead.status}` : null
       },
       ipAddress: req.ip,
       userAgent: req.get('User-Agent'),
       success: true
     });
 
+    console.log('Lead updated successfully:', lead.status);
+
     res.json({
       message: 'Lead updated successfully',
-      lead
+      lead,
+      statusTransition: oldData.status !== lead.status ? {
+        from: oldData.status,
+        to: lead.status,
+        description: Lead.getStatusDescription(lead.status)
+      } : null
     });
 
   } catch (error) {
     console.error('Update lead error:', error);
-    res.status(500).json({ error: 'Failed to update lead' });
+    
+    // Handle validation errors specifically
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        error: error.message,
+        validationErrors: error.errors
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to update lead',
+      details: error.message 
+    });
   }
 };
 
@@ -556,7 +599,10 @@ exports.startCall = async (req, res) => {
       return res.status(404).json({ error: 'Lead not found' });
     }
 
-    await lead.startCall(req.userId);
+    // Start call - this will auto-set status to 'called' and add to call history
+    console.log('Calling lead.startCall...');
+    const updatedLead = await lead.startCall(req.userId);
+    console.log('startCall completed. CallHistory length:', updatedLead.callHistory.length);
 
     // Log call start
     await AuditLog.logAction({
@@ -567,7 +613,8 @@ exports.startCall = async (req, res) => {
       details: {
         leadName: lead.name,
         contactNo: lead.contactNo,
-        callAttempt: lead.callAttempts
+        callAttempt: lead.callAttempts,
+        newStatus: lead.status
       },
       ipAddress: req.ip,
       userAgent: req.get('User-Agent'),
@@ -576,7 +623,8 @@ exports.startCall = async (req, res) => {
 
     res.json({
       message: 'Call session started',
-      lead
+      lead,
+      callStats: lead.getCallStats()
     });
 
   } catch (error) {
@@ -587,41 +635,87 @@ exports.startCall = async (req, res) => {
 
 // End call session
 exports.endCall = async (req, res) => {
+  let lead = null;
   try {
-    const lead = await Lead.findById(req.params.id);
+    console.log('endCall called with params:', req.params);
+    console.log('endCall called with body:', req.body);
+    console.log('endCall called with userId:', req.userId);
+
+    lead = await Lead.findById(req.params.id);
     if (!lead) {
+      console.log('Lead not found with ID:', req.params.id);
       return res.status(404).json({ error: 'Lead not found' });
     }
 
-    const callData = req.body;
-    await lead.endCall(callData, req.userId);
+    console.log('Found lead:', { id: lead._id, status: lead.status, name: lead.name });
 
-    // Log call end
+    const callData = req.body;
+    console.log('Ending call with data:', callData);
+
+    // Store old status for logging
+    const oldStatus = lead.status;
+
+    // Use the model's endCall method which includes status validation
+    console.log('Calling lead.endCall...');
+    await lead.endCall(callData, req.userId);
+    console.log('lead.endCall completed successfully');
+
+    // Populate related data for response
+    await lead.populate([
+      { path: 'assignedTo', select: 'firstName lastName email' },
+      { path: 'serviceProvider', select: 'name website contactEmail contactPhone' }
+    ]);
+
+    // Log call activity
     await AuditLog.logAction({
       userId: req.userId,
-      action: 'CALL_END',
+      action: 'CALL_COMPLETED',
       resource: 'leads',
       resourceId: lead._id,
       details: {
         leadName: lead.name,
         contactNo: lead.contactNo,
         callPicked: callData.callPicked,
+        statusTransition: oldStatus !== lead.status ? `${oldStatus} → ${lead.status}` : null,
         finalStatus: lead.status,
-        duration: callData.duration
+        remarks: lead.remarks
       },
       ipAddress: req.ip,
       userAgent: req.get('User-Agent'),
       success: true
     });
 
+    console.log('Call ended successfully, final status:', lead.status);
+
     res.json({
-      message: 'Call session ended',
-      lead
+      message: 'Call completed and lead updated',
+      lead,
+      statusTransition: oldStatus !== lead.status ? {
+        from: oldStatus,
+        to: lead.status,
+        description: Lead.getStatusDescription(lead.status)
+      } : null
     });
 
   } catch (error) {
     console.error('End call error:', error);
-    res.status(500).json({ error: 'Failed to end call' });
+    console.error('Error stack:', error.stack);
+    
+    // Handle validation errors specifically
+    if (error.message && error.message.includes('Invalid status')) {
+      return res.status(400).json({ 
+        error: error.message,
+        currentStatus: lead?.status,
+        availableStatuses: Lead.AVAILABLE_STATUSES
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to end call',
+      details: error.message,
+      leadFound: !!lead,
+      userId: req.userId
+    });
   }
 };
 
@@ -716,6 +810,106 @@ exports.getStaff = async (req, res) => {
   } catch (error) {
     console.error('Get staff error:', error);
     res.status(500).json({ error: 'Failed to fetch staff' });
+  }
+};
+
+// Get available status transitions for a lead
+exports.getLeadStatusTransitions = async (req, res) => {
+  try {
+    const lead = await Lead.findById(req.params.id);
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    const transitions = lead.getNextPossibleStatuses();
+    const currentStatusInfo = {
+      value: lead.status,
+      label: lead.status.replace('_', ' ').charAt(0).toUpperCase() + lead.status.replace('_', ' ').slice(1),
+      description: Lead.getStatusDescription(lead.status)
+    };
+
+    res.json({
+      currentStatus: currentStatusInfo,
+      availableTransitions: transitions,
+      availableStatuses: Lead.AVAILABLE_STATUSES
+    });
+
+  } catch (error) {
+    console.error('Get status transitions error:', error);
+    res.status(500).json({ error: 'Failed to get status transitions' });
+  }
+};
+
+// Get call history and statistics for a lead
+exports.getLeadCallHistory = async (req, res) => {
+  try {
+    console.log('Getting call history for lead:', req.params.id);
+    
+    const lead = await Lead.findById(req.params.id)
+      .populate('callHistory.calledBy', 'firstName lastName email');
+    
+    if (!lead) {
+      console.log('Lead not found');
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    console.log('Lead found:', {
+      id: lead._id,
+      name: lead.name,
+      callHistoryLength: lead.callHistory?.length || 0,
+      callHistory: lead.callHistory
+    });
+
+    const callStats = lead.getCallStats();
+    console.log('Call stats:', callStats);
+
+    res.json({
+      leadId: lead._id,
+      leadName: lead.name,
+      contactNo: lead.contactNo,
+      currentStatus: lead.status,
+      callStats
+    });
+
+  } catch (error) {
+    console.error('Get call history error:', error);
+    res.status(500).json({ error: 'Failed to get call history' });
+  }
+};
+
+// Test endpoint to manually add call history
+exports.testAddCallHistory = async (req, res) => {
+  try {
+    const lead = await Lead.findById(req.params.id);
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    // Manually add a test call entry
+    if (!lead.callHistory) {
+      lead.callHistory = [];
+    }
+
+    lead.callHistory.push({
+      callTime: new Date(),
+      callEndTime: new Date(Date.now() + 60000), // 1 minute later
+      duration: 60,
+      picked: true,
+      outcome: 'picked',
+      notes: 'Test call entry',
+      calledBy: req.userId
+    });
+
+    await lead.save();
+
+    res.json({
+      message: 'Test call history added',
+      callHistory: lead.callHistory
+    });
+
+  } catch (error) {
+    console.error('Test add call history error:', error);
+    res.status(500).json({ error: 'Failed to add test call history' });
   }
 };
 

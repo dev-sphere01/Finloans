@@ -34,7 +34,6 @@ const leadSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['unassigned', 'assigned', 'pending', 'completed', 'failed'],
     default: 'unassigned'
   },
   assignedTo: {
@@ -58,6 +57,34 @@ const leadSchema = new mongoose.Schema({
   callPicked: {
     type: Boolean
   },
+  callHistory: [{
+    callTime: {
+      type: Date,
+      default: Date.now
+    },
+    callEndTime: {
+      type: Date
+    },
+    duration: {
+      type: Number, // in seconds
+      default: 0
+    },
+    picked: {
+      type: Boolean
+    },
+    outcome: {
+      type: String
+      // No enum restriction - can be any status
+    },
+    notes: {
+      type: String,
+      trim: true
+    },
+    calledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  }],
   remarks: {
     type: String,
     trim: true,
@@ -152,51 +179,230 @@ leadSchema.methods.assignToStaff = function(staffId, assignedBy) {
   return this.save();
 };
 
-// Method to start call session
-leadSchema.methods.startCall = function(userId) {
-  this.lastCallAt = new Date();
+// Method to start call session - automatically sets status to 'called'
+leadSchema.methods.startCall = async function(userId) {
+  console.log('startCall method called for lead:', this._id, 'by user:', userId);
+  console.log('Current callHistory before:', this.callHistory);
+  
+  const callStartTime = new Date();
+  this.lastCallAt = callStartTime;
   this.callAttempts = (this.callAttempts || 0) + 1;
+  
+  // Initialize callHistory if it doesn't exist
+  if (!this.callHistory) {
+    this.callHistory = [];
+    console.log('Initialized empty callHistory array');
+  }
+  
+  // Add new call entry to history
+  const newCallEntry = {
+    callTime: callStartTime,
+    calledBy: userId
+  };
+  
+  this.callHistory.push(newCallEntry);
+  console.log('Added call entry to history:', newCallEntry);
+  console.log('Total call history entries after push:', this.callHistory.length);
+  console.log('Full callHistory array:', this.callHistory);
+  
+  // Auto-set status to 'called' when call is initiated (no restrictions)
+  this.status = 'called';
+  console.log('Auto-set status to "called" when call started');
+  
   this.updatedBy = userId;
-  return this.save();
+  
+  // Mark the callHistory field as modified to ensure it saves
+  this.markModified('callHistory');
+  
+  console.log('Saving lead with call history...');
+  try {
+    const savedLead = await this.save();
+    console.log('Lead saved successfully. CallHistory length:', savedLead.callHistory.length);
+    return savedLead;
+  } catch (error) {
+    console.error('Error saving lead:', error);
+    throw error;
+  }
 };
 
-// Method to end call session
+// Available Lead Statuses (no hierarchy - flexible transitions)
+leadSchema.statics.AVAILABLE_STATUSES = [
+  'unassigned',    // Initial state - lead not assigned to anyone
+  'assigned',      // Lead assigned to staff member
+  'called',        // Call attempted (auto-set when call starts)
+  'not_picked',    // Call not picked up / not connected
+  'picked',        // Call picked up, conversation happened
+  'interested',    // Customer showed interest
+  'in_progress',   // Work in progress / actively working on lead
+  'applied',       // Customer applied for service
+  'completed',     // Deal closed successfully
+  'failed',        // Failed to convert / not interested
+  'follow_up'      // Requires follow-up call
+];
+
+// Method to validate status (no restrictions - any string allowed)
+leadSchema.methods.canTransitionTo = function(newStatus) {
+  return true; // Allow any status
+};
+
+// Method to get status description
+leadSchema.statics.getStatusDescription = function(status) {
+  const descriptions = {
+    unassigned: 'Lead not assigned to any staff member',
+    assigned: 'Lead assigned to staff member, awaiting contact',
+    called: 'Call attempted, waiting for outcome',
+    not_picked: 'Call not answered or not connected',
+    picked: 'Call answered, conversation in progress',
+    interested: 'Customer showed interest in service',
+    in_progress: 'Work in progress, actively working on lead',
+    applied: 'Customer applied for the service',
+    completed: 'Deal closed successfully',
+    failed: 'Failed to convert or customer not interested',
+    follow_up: 'Requires follow-up call or action'
+  };
+  return descriptions[status] || 'Unknown status';
+};
+
+// Method to get all available statuses (no restrictions)
+leadSchema.methods.getNextPossibleStatuses = function() {
+  return leadSchema.statics.AVAILABLE_STATUSES.map(status => ({
+    value: status,
+    label: status.replace('_', ' ').charAt(0).toUpperCase() + status.replace('_', ' ').slice(1),
+    description: leadSchema.statics.getStatusDescription(status)
+  }));
+};
+
+// Method to get call statistics
+leadSchema.methods.getCallStats = function() {
+  console.log('getCallStats called, callHistory:', this.callHistory);
+  
+  const callHistoryArray = this.callHistory || [];
+  const totalCalls = callHistoryArray.length;
+  const pickedCalls = callHistoryArray.filter(call => call.picked === true).length;
+  const notPickedCalls = callHistoryArray.filter(call => call.picked === false).length;
+  const totalDuration = callHistoryArray.reduce((sum, call) => sum + (call.duration || 0), 0);
+  const avgDuration = totalCalls > 0 ? Math.round(totalDuration / totalCalls) : 0;
+  
+  const stats = {
+    totalCalls,
+    pickedCalls,
+    notPickedCalls,
+    totalDuration, // in seconds
+    avgDuration, // in seconds
+    lastCallTime: this.lastCallAt,
+    callHistory: callHistoryArray.map(call => ({
+      callTime: call.callTime,
+      callEndTime: call.callEndTime,
+      duration: call.duration,
+      picked: call.picked,
+      outcome: call.outcome,
+      notes: call.notes,
+      calledBy: call.calledBy
+    }))
+  };
+  
+  console.log('Returning call stats:', stats);
+  return stats;
+};
+
+// Pre-save middleware for status validation (just check if valid status - no transition restrictions)
+leadSchema.pre('save', function(next) {
+  // Only check if status is in the valid list, no transition restrictions
+  if (this.isModified('status')) {
+    if (!leadSchema.statics.AVAILABLE_STATUSES.includes(this.status)) {
+      const error = new Error(`Invalid status: '${this.status}'. Must be one of: ${leadSchema.statics.AVAILABLE_STATUSES.join(', ')}`);
+      error.name = 'ValidationError';
+      return next(error);
+    }
+  }
+  next();
+});
+
+// Method to end call session with status validation
 leadSchema.methods.endCall = function(callData, userId) {
-  if (callData.callPicked !== undefined) {
-    this.callPicked = callData.callPicked;
-  }
+  console.log('Lead.endCall called with:', { callData, userId, currentStatus: this.status });
   
-  if (callData.selectedService) {
-    this.selectedService = callData.selectedService;
+  try {
+    const callEndTime = new Date();
+    
+    // Update the latest call entry in history
+    if (this.callHistory.length > 0) {
+      const latestCall = this.callHistory[this.callHistory.length - 1];
+      latestCall.callEndTime = callEndTime;
+      
+      // Calculate call duration in seconds
+      if (latestCall.callTime) {
+        latestCall.duration = Math.floor((callEndTime - latestCall.callTime) / 1000);
+      }
+      
+      // Set call outcome
+      if (callData.callPicked !== undefined) {
+        latestCall.picked = callData.callPicked;
+        this.callPicked = callData.callPicked; // Keep for backward compatibility
+      }
+      
+      // Set call notes
+      if (callData.remarks) {
+        latestCall.notes = callData.remarks;
+      }
+    }
+    
+    if (callData.selectedService) {
+      this.selectedService = callData.selectedService;
+    }
+    
+    if (callData.serviceSubcategory) {
+      this.serviceSubcategory = callData.serviceSubcategory;
+    }
+    
+    if (callData.serviceProvider) {
+      this.serviceProvider = callData.serviceProvider === '' ? null : callData.serviceProvider;
+    }
+    
+    if (callData.remarks) {
+      this.remarks = callData.remarks;
+    }
+    
+    // Handle status update (no restrictions)
+    let finalStatus = callData.status;
+    
+    // Auto-determine status based on call outcome if not explicitly set
+    if (!finalStatus) {
+      if (callData.callPicked === false) {
+        finalStatus = 'not_picked';
+      } else if (callData.callPicked === true) {
+        finalStatus = 'picked';
+      }
+    }
+    
+    if (finalStatus && finalStatus !== this.status) {
+      console.log(`Updating status: ${this.status} -> ${finalStatus}`);
+      
+      // Just check if it's a valid status (no transition restrictions)
+      if (leadSchema.statics.AVAILABLE_STATUSES.includes(finalStatus)) {
+        this.status = finalStatus;
+        
+        // Update call outcome in history
+        if (this.callHistory.length > 0) {
+          this.callHistory[this.callHistory.length - 1].outcome = finalStatus;
+        }
+        
+        console.log('Status updated successfully');
+      } else {
+        const error = new Error(`Invalid status: '${finalStatus}'. Must be one of: ${leadSchema.statics.AVAILABLE_STATUSES.join(', ')}`);
+        console.error('Status update failed:', error.message);
+        throw error;
+      }
+    }
+    
+    this.updatedBy = userId;
+    console.log('Saving lead with final status:', this.status);
+    return this.save();
+    
+  } catch (error) {
+    console.error('Error in Lead.endCall:', error);
+    throw error;
   }
-  
-  if (callData.serviceSubcategory) {
-    this.serviceSubcategory = callData.serviceSubcategory;
-  }
-  
-  if (callData.serviceProvider) {
-    this.serviceProvider = callData.serviceProvider;
-  }
-  
-  if (callData.status) {
-    this.status = callData.status;
-  }
-  
-  if (callData.remarks) {
-    this.remarks = callData.remarks;
-  }
-  
-  if (callData.callNotes) {
-    this.callNotes = callData.callNotes;
-  }
-  
-  // If call wasn't picked, keep status as pending
-  if (this.callPicked === false && this.status !== 'failed') {
-    this.status = 'pending';
-  }
-  
-  this.updatedBy = userId;
-  return this.save();
 };
 
 module.exports = mongoose.model('Lead', leadSchema);

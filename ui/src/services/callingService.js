@@ -163,6 +163,28 @@ const callingService = {
     }
   },
 
+  // Get available status transitions for a lead
+  getLeadStatusTransitions: async (leadId) => {
+    try {
+      const response = await API.get(`/calling/leads/${leadId}/status-transitions`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching status transitions:', error);
+      throw error;
+    }
+  },
+
+  // Get call history for a lead
+  getLeadCallHistory: async (leadId) => {
+    try {
+      const response = await API.get(`/calling/leads/${leadId}/call-history`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching call history:', error);
+      throw error;
+    }
+  },
+
   // Get calling stats for current user
   getMyStats: async () => {
     try {

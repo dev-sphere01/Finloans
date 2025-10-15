@@ -153,6 +153,7 @@ const dashboardController = {
       // Fetch leads statistics (if Lead model exists)
       if (hasLeadsPermission) {
         try {
+          // Basic lead stats by status
           const leadStats = await Lead.aggregate([
             {
               $group: {
@@ -162,22 +163,246 @@ const dashboardController = {
             }
           ]);
 
+          // Lead stats by service type
+          const leadsByService = await Lead.aggregate([
+            {
+              $group: {
+                _id: '$selectedService',
+                count: { $sum: 1 }
+              }
+            }
+          ]);
+
+          // Lead stats by priority
+          const leadsByPriority = await Lead.aggregate([
+            {
+              $group: {
+                _id: '$priority',
+                count: { $sum: 1 }
+              }
+            }
+          ]);
+
+          // Call statistics
+          const callStats = await Lead.aggregate([
+            {
+              $match: {
+                'callHistory': { $exists: true, $ne: [] }
+              }
+            },
+            {
+              $project: {
+                totalCalls: { $size: '$callHistory' },
+                pickedCalls: {
+                  $size: {
+                    $filter: {
+                      input: '$callHistory',
+                      cond: { $eq: ['$$this.picked', true] }
+                    }
+                  }
+                },
+                notPickedCalls: {
+                  $size: {
+                    $filter: {
+                      input: '$callHistory',
+                      cond: { $eq: ['$$this.picked', false] }
+                    }
+                  }
+                },
+                totalDuration: {
+                  $sum: '$callHistory.duration'
+                },
+                hasCallHistory: 1
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                totalLeadsWithCalls: { $sum: 1 },
+                totalCalls: { $sum: '$totalCalls' },
+                totalPickedCalls: { $sum: '$pickedCalls' },
+                totalNotPickedCalls: { $sum: '$notPickedCalls' },
+                totalCallDuration: { $sum: '$totalDuration' },
+                avgCallsPerLead: { $avg: '$totalCalls' }
+              }
+            }
+          ]);
+
+          // Today's call activity
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+
+          const todayCallStats = await Lead.aggregate([
+            {
+              $match: {
+                'callHistory.callTime': {
+                  $gte: today,
+                  $lt: tomorrow
+                }
+              }
+            },
+            {
+              $project: {
+                todayCalls: {
+                  $filter: {
+                    input: '$callHistory',
+                    cond: {
+                      $and: [
+                        { $gte: ['$$this.callTime', today] },
+                        { $lt: ['$$this.callTime', tomorrow] }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            {
+              $project: {
+                callCount: { $size: '$todayCalls' },
+                pickedCount: {
+                  $size: {
+                    $filter: {
+                      input: '$todayCalls',
+                      cond: { $eq: ['$$this.picked', true] }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                totalTodayCalls: { $sum: '$callCount' },
+                totalTodayPicked: { $sum: '$pickedCount' }
+              }
+            }
+          ]);
+
+          // Recent leads with call activity
           const recentLeads = await Lead.find()
-            .sort({ createdAt: -1 })
-            .limit(5)
-            .select('name contactNo email selectedService status createdAt')
+            .sort({ updatedAt: -1 })
+            .limit(10)
+            .select('name contactNo email selectedService status priority createdAt updatedAt callHistory')
             .populate('assignedTo', 'firstName lastName');
+
+          // Top performing agents (by call success rate)
+          const agentPerformance = await Lead.aggregate([
+            {
+              $match: {
+                assignedTo: { $exists: true },
+                'callHistory': { $exists: true, $ne: [] }
+              }
+            },
+            {
+              $project: {
+                assignedTo: 1,
+                totalCalls: { $size: '$callHistory' },
+                successfulCalls: {
+                  $size: {
+                    $filter: {
+                      input: '$callHistory',
+                      cond: { $eq: ['$$this.picked', true] }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              $group: {
+                _id: '$assignedTo',
+                totalCalls: { $sum: '$totalCalls' },
+                successfulCalls: { $sum: '$successfulCalls' },
+                leadsHandled: { $sum: 1 }
+              }
+            },
+            {
+              $match: {
+                totalCalls: { $gte: 5 } // Only agents with at least 5 calls
+              }
+            },
+            {
+              $project: {
+                totalCalls: 1,
+                successfulCalls: 1,
+                leadsHandled: 1,
+                successRate: {
+                  $multiply: [
+                    { $divide: ['$successfulCalls', '$totalCalls'] },
+                    100
+                  ]
+                }
+              }
+            },
+            {
+              $sort: { successRate: -1 }
+            },
+            {
+              $limit: 5
+            }
+          ]);
+
+          // Populate agent names
+          const populatedAgentPerformance = await Lead.populate(agentPerformance, {
+            path: '_id',
+            select: 'firstName lastName'
+          });
 
           const formattedLeadStats = {
             byStatus: {},
+            byService: {},
+            byPriority: {},
             total: 0,
-            recent: recentLeads
+            recent: recentLeads,
+            callStats: callStats[0] || {
+              totalLeadsWithCalls: 0,
+              totalCalls: 0,
+              totalPickedCalls: 0,
+              totalNotPickedCalls: 0,
+              totalCallDuration: 0,
+              avgCallsPerLead: 0
+            },
+            todayStats: todayCallStats[0] || {
+              totalTodayCalls: 0,
+              totalTodayPicked: 0
+            },
+            agentPerformance: populatedAgentPerformance
           };
 
+          // Format status stats
           leadStats.forEach(status => {
             formattedLeadStats.byStatus[status._id] = status.count;
             formattedLeadStats.total += status.count;
           });
+
+          // Format service stats
+          leadsByService.forEach(service => {
+            formattedLeadStats.byService[service._id] = service.count;
+          });
+
+          // Format priority stats
+          leadsByPriority.forEach(priority => {
+            formattedLeadStats.byPriority[priority._id] = priority.count;
+          });
+
+          // Calculate success rate
+          if (formattedLeadStats.callStats.totalCalls > 0) {
+            formattedLeadStats.callStats.successRate = (
+              (formattedLeadStats.callStats.totalPickedCalls / formattedLeadStats.callStats.totalCalls) * 100
+            ).toFixed(1);
+          } else {
+            formattedLeadStats.callStats.successRate = 0;
+          }
+
+          // Calculate today's success rate
+          if (formattedLeadStats.todayStats.totalTodayCalls > 0) {
+            formattedLeadStats.todayStats.successRate = (
+              (formattedLeadStats.todayStats.totalTodayPicked / formattedLeadStats.todayStats.totalTodayCalls) * 100
+            ).toFixed(1);
+          } else {
+            formattedLeadStats.todayStats.successRate = 0;
+          }
 
           dashboardData.stats.leads = formattedLeadStats;
           dashboardData.allowedSections.push('leads');

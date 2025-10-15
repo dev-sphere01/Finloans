@@ -79,6 +79,27 @@ router.post('/leads/:id/end-call', validateMongoId('id'), callingController.endC
 router.put('/leads/:id/status', validateMongoId('id'), callingController.updateLead);
 
 /**
+ * @route   GET /api/calling/leads/:id/status-transitions
+ * @desc    Get available status transitions for a lead
+ * @access  Private
+ */
+router.get('/leads/:id/status-transitions', validateMongoId('id'), callingController.getLeadStatusTransitions);
+
+/**
+ * @route   GET /api/calling/leads/:id/call-history
+ * @desc    Get call history and statistics for a lead
+ * @access  Private
+ */
+router.get('/leads/:id/call-history', validateMongoId('id'), callingController.getLeadCallHistory);
+
+/**
+ * @route   POST /api/calling/leads/:id/test-call-history
+ * @desc    Test endpoint to add call history
+ * @access  Private
+ */
+router.post('/leads/:id/test-call-history', validateMongoId('id'), callingController.testAddCallHistory);
+
+/**
  * @route   GET /api/calling/services
  * @desc    Get all services
  * @access  Private

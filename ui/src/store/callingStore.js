@@ -61,19 +61,18 @@ const useCallingStore = create((set, get) => ({
   // Current lead management
   setCurrentLead: (lead) => set({ currentLead: lead }),
   
-  // Calling session management
+  // UI-only call session management (no backend integration)
   startCallSession: (leadId) => {
     const state = get();
-    const lead = state.leads.find(l => l.id === leadId) || state.currentLead;
+    const lead = state.currentLead;
     
     if (!lead) return;
     
-    // Store session data in both Zustand and sessionStorage
+    // Store session data only for UI state management
     const sessionData = {
       leadId,
       startTime: new Date().toISOString(),
-      originalData: { ...lead },
-      currentData: { ...lead }
+      isActive: true
     };
     
     sessionStorage.setItem('callingSession', JSON.stringify(sessionData));
@@ -83,40 +82,18 @@ const useCallingStore = create((set, get) => ({
       sessionData,
       hasUnsavedChanges: false
     });
-    
-    // Add beforeunload listener to prevent accidental tab closure
-    window.addEventListener('beforeunload', get().handleBeforeUnload);
   },
   
   updateSessionData: (updates) => {
     const state = get();
-    if (!state.isCallSessionActive || !state.sessionData) return;
+    if (!state.isCallSessionActive) return;
     
-    const updatedSessionData = {
-      ...state.sessionData,
-      currentData: { ...state.sessionData.currentData, ...updates }
-    };
-    
-    sessionStorage.setItem('callingSession', JSON.stringify(updatedSessionData));
-    
-    set({
-      sessionData: updatedSessionData,
-      hasUnsavedChanges: true
-    });
+    set({ hasUnsavedChanges: true });
   },
   
-  endCallSession: (saveChanges = true) => {
-    const state = get();
-    if (!state.isCallSessionActive || !state.sessionData) return;
-    
-    if (saveChanges && state.hasUnsavedChanges) {
-      // Update the lead with session data
-      get().updateLead(state.sessionData.leadId, state.sessionData.currentData);
-    }
-    
-    // Clean up
+  endCallSession: () => {
+    // Clean up UI session state only
     sessionStorage.removeItem('callingSession');
-    window.removeEventListener('beforeunload', get().handleBeforeUnload);
     
     set({
       isCallSessionActive: false,
