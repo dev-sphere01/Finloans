@@ -3,13 +3,13 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
-const autoSwagger = require("express-auto-swagger");
+// const autoSwagger = require("express-auto-swagger");
 
 // Import config
 const config = require("./config");
 
 const app = express();
-autoSwagger(app);
+// autoSwagger(app);
 
 // Your routes...
 
@@ -41,9 +41,12 @@ const limiter = rateLimit({
 // Middleware
 app.use(limiter);
 
+// Log CORS configuration for debugging
+console.log('CORS Origins:', [config.CORS_ORIGIN, config.CORS_PORT]);
+
 app.use(
   cors({
-    origin: [config.CORS_ORIGIN, config.CORS_PORT],// now controlled by config.js
+    origin: [config.CORS_ORIGIN, config.CORS_PORT],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
