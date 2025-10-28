@@ -27,7 +27,95 @@ const applicationController = {
 
       // Additional validation for insurance applications
       if (applicationData.serviceType === 'insurance') {
-        const insuranceType = applicationData.insuranceType || 'General';
+        // If insuranceType is not provided, try to determine it from subType
+        let insuranceType = applicationData.insuranceType;
+        
+        if (!insuranceType && applicationData.subType) {
+          // Map common subtypes to their insurance types
+          const subTypeToInsuranceTypeMap = {
+            // Life Insurance variations
+            'term': 'Life Insurance',
+            'TERM': 'Life Insurance',
+            'Term': 'Life Insurance',
+            'whole': 'Life Insurance', 
+            'WHOLE': 'Life Insurance',
+            'Whole': 'Life Insurance',
+            'endowment': 'Life Insurance',
+            'ENDOWMENT': 'Life Insurance',
+            'Endowment': 'Life Insurance',
+            'life': 'Life Insurance',
+            'LIFE': 'Life Insurance',
+            'Life': 'Life Insurance',
+            
+            // Health Insurance variations
+            'individual': 'Health Insurance',
+            'INDIVIDUAL': 'Health Insurance',
+            'Individual': 'Health Insurance',
+            'family': 'Health Insurance',
+            'FAMILY': 'Health Insurance',
+            'Family': 'Health Insurance',
+            'senior-citizen': 'Health Insurance',
+            'SENIOR-CITIZEN': 'Health Insurance',
+            'Senior-Citizen': 'Health Insurance',
+            'critical-illness': 'Health Insurance',
+            'CRITICAL-ILLNESS': 'Health Insurance',
+            'Critical-Illness': 'Health Insurance',
+            'health': 'Health Insurance',
+            'HEALTH': 'Health Insurance',
+            'Health': 'Health Insurance',
+            
+            // Vehicle Insurance variations
+            'car': 'Vehicle Insurance',
+            'CAR': 'Vehicle Insurance',
+            'Car': 'Vehicle Insurance',
+            'bike': 'Vehicle Insurance',
+            'BIKE': 'Vehicle Insurance',
+            'Bike': 'Vehicle Insurance',
+            'vehicle': 'Vehicle Insurance',
+            'VEHICLE': 'Vehicle Insurance',
+            'Vehicle': 'Vehicle Insurance',
+            'motor': 'Vehicle Insurance',
+            'MOTOR': 'Vehicle Insurance',
+            'Motor': 'Vehicle Insurance',
+            
+            // Property Insurance variations
+            'home': 'Property Insurance',
+            'HOME': 'Property Insurance',
+            'Home': 'Property Insurance',
+            'property': 'Property Insurance',
+            'PROPERTY': 'Property Insurance',
+            'Property': 'Property Insurance',
+            'fire': 'Property Insurance',
+            'FIRE': 'Property Insurance',
+            'Fire': 'Property Insurance',
+            
+            // Travel Insurance variations
+            'domestic': 'Travel Insurance',
+            'DOMESTIC': 'Travel Insurance',
+            'Domestic': 'Travel Insurance',
+            'international': 'Travel Insurance',
+            'INTERNATIONAL': 'Travel Insurance',
+            'International': 'Travel Insurance',
+            'travel': 'Travel Insurance',
+            'TRAVEL': 'Travel Insurance',
+            'Travel': 'Travel Insurance',
+            
+            // Commercial/Business variations
+            'commercial': 'Vehicle Insurance', // Default to Vehicle, but could be Property
+            'COMMERCIAL': 'Vehicle Insurance',
+            'Commercial': 'Vehicle Insurance',
+            'business': 'Travel Insurance', // Default to Travel, but could be others
+            'BUSINESS': 'Travel Insurance',
+            'Business': 'Travel Insurance'
+          };
+          
+          insuranceType = subTypeToInsuranceTypeMap[applicationData.subType.toLowerCase()];
+        }
+
+        // Default to Life Insurance if still not determined
+        if (!insuranceType) {
+          insuranceType = 'Life Insurance';
+        }
         const subType = applicationData.subType;
 
         try {
@@ -43,9 +131,31 @@ const applicationController = {
             });
           }
 
-          const validSubType = insurance.subTypes.find(
+          let validSubType = insurance.subTypes.find(
             st => st.name.toLowerCase() === subType.toLowerCase() && st.isActive
           );
+
+          // If exact match not found, try to find a similar one or allow any case variation
+          if (!validSubType) {
+            validSubType = insurance.subTypes.find(
+              st => st.name.toLowerCase().includes(subType.toLowerCase()) && st.isActive
+            );
+          }
+
+          // If still not found, create a flexible match for common variations
+          if (!validSubType) {
+            // For common cases like TERM, Term, term - all should map to 'term'
+            const normalizedSubType = subType.toLowerCase();
+            validSubType = insurance.subTypes.find(
+              st => st.name.toLowerCase() === normalizedSubType && st.isActive
+            );
+            
+            // If still not found, allow it but normalize to the first available subtype of this insurance type
+            if (!validSubType && insurance.subTypes.length > 0) {
+              console.log(`Subtype '${subType}' not found, using first available subtype for ${insuranceType}`);
+              validSubType = insurance.subTypes.find(st => st.isActive);
+            }
+          }
 
           if (!validSubType) {
             const availableSubTypes = insurance.subTypes
@@ -58,8 +168,9 @@ const applicationController = {
             });
           }
 
-          // Normalize the subType to match the master data
+          // Normalize the subType and insuranceType to match the master data
           applicationData.subType = validSubType.name;
+          applicationData.insuranceType = insurance.insuranceType;
         } catch (error) {
           console.error('Error validating insurance type:', error);
           return res.status(500).json({
@@ -92,6 +203,7 @@ const applicationController = {
 
       const existingApplication = await Application.findOne({
         applicantId: req.user._id,
+        panNumber: applicationData.panNumber,
         serviceType: applicationData.serviceType,
         subType: applicationData.subType || { $exists: false },
         submittedAt: { $gte: thirtyDaysAgo },

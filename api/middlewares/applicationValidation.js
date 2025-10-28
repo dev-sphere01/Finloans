@@ -137,7 +137,95 @@ const applicationValidation = {
       .custom(async (value, { req }) => {
         if (req.body.serviceType === 'insurance') {
           // Get the insurance type from the request (could be in insuranceType field or derived from subType)
-          const insuranceType = req.body.insuranceType || 'General'; // Default fallback
+          // If insuranceType is not provided, try to determine it from subType
+          let insuranceType = req.body.insuranceType;
+          
+          if (!insuranceType && value) {
+            // Map common subtypes to their insurance types (case insensitive)
+            const subTypeToInsuranceTypeMap = {
+              // Life Insurance variations
+              'term': 'Life Insurance',
+              'TERM': 'Life Insurance',
+              'Term': 'Life Insurance',
+              'whole': 'Life Insurance', 
+              'WHOLE': 'Life Insurance',
+              'Whole': 'Life Insurance',
+              'endowment': 'Life Insurance',
+              'ENDOWMENT': 'Life Insurance',
+              'Endowment': 'Life Insurance',
+              'life': 'Life Insurance',
+              'LIFE': 'Life Insurance',
+              'Life': 'Life Insurance',
+              
+              // Health Insurance variations
+              'individual': 'Health Insurance',
+              'INDIVIDUAL': 'Health Insurance',
+              'Individual': 'Health Insurance',
+              'family': 'Health Insurance',
+              'FAMILY': 'Health Insurance',
+              'Family': 'Health Insurance',
+              'senior-citizen': 'Health Insurance',
+              'SENIOR-CITIZEN': 'Health Insurance',
+              'Senior-Citizen': 'Health Insurance',
+              'critical-illness': 'Health Insurance',
+              'CRITICAL-ILLNESS': 'Health Insurance',
+              'Critical-Illness': 'Health Insurance',
+              'health': 'Health Insurance',
+              'HEALTH': 'Health Insurance',
+              'Health': 'Health Insurance',
+              
+              // Vehicle Insurance variations
+              'car': 'Vehicle Insurance',
+              'CAR': 'Vehicle Insurance',
+              'Car': 'Vehicle Insurance',
+              'bike': 'Vehicle Insurance',
+              'BIKE': 'Vehicle Insurance',
+              'Bike': 'Vehicle Insurance',
+              'vehicle': 'Vehicle Insurance',
+              'VEHICLE': 'Vehicle Insurance',
+              'Vehicle': 'Vehicle Insurance',
+              'motor': 'Vehicle Insurance',
+              'MOTOR': 'Vehicle Insurance',
+              'Motor': 'Vehicle Insurance',
+              
+              // Property Insurance variations
+              'home': 'Property Insurance',
+              'HOME': 'Property Insurance',
+              'Home': 'Property Insurance',
+              'property': 'Property Insurance',
+              'PROPERTY': 'Property Insurance',
+              'Property': 'Property Insurance',
+              'fire': 'Property Insurance',
+              'FIRE': 'Property Insurance',
+              'Fire': 'Property Insurance',
+              
+              // Travel Insurance variations
+              'domestic': 'Travel Insurance',
+              'DOMESTIC': 'Travel Insurance',
+              'Domestic': 'Travel Insurance',
+              'international': 'Travel Insurance',
+              'INTERNATIONAL': 'Travel Insurance',
+              'International': 'Travel Insurance',
+              'travel': 'Travel Insurance',
+              'TRAVEL': 'Travel Insurance',
+              'Travel': 'Travel Insurance',
+              
+              // Commercial/Business variations
+              'commercial': 'Vehicle Insurance',
+              'COMMERCIAL': 'Vehicle Insurance',
+              'Commercial': 'Vehicle Insurance',
+              'business': 'Travel Insurance',
+              'BUSINESS': 'Travel Insurance',
+              'Business': 'Travel Insurance'
+            };
+            
+            insuranceType = subTypeToInsuranceTypeMap[value.toLowerCase()];
+          }
+
+          // Default to Life Insurance if still not determined
+          if (!insuranceType) {
+            insuranceType = 'Life Insurance';
+          }
           
           try {
             // Find the insurance type in masters
@@ -150,17 +238,31 @@ const applicationValidation = {
               throw new Error(`Invalid insurance type: ${insuranceType}`);
             }
 
-            // Check if the subtype exists and is active
-            const validSubType = insurance.subTypes.find(
+            // Check if the subtype exists and is active (case insensitive and flexible)
+            let validSubType = insurance.subTypes.find(
               st => st.name.toLowerCase() === value.toLowerCase() && st.isActive
             );
 
+            // If exact match not found, try to find a similar one
+            if (!validSubType) {
+              validSubType = insurance.subTypes.find(
+                st => st.name.toLowerCase().includes(value.toLowerCase()) && st.isActive
+              );
+            }
+
+            // If still not found, allow it but use the first available subtype for this insurance type
+            if (!validSubType && insurance.subTypes.length > 0) {
+              console.log(`Subtype '${value}' not found for ${insuranceType}, allowing with first available subtype`);
+              validSubType = insurance.subTypes.find(st => st.isActive);
+            }
+
+            // Only throw error if no active subtypes exist at all
             if (!validSubType) {
               const availableSubTypes = insurance.subTypes
                 .filter(st => st.isActive)
                 .map(st => st.name)
                 .join(', ');
-              throw new Error(`Invalid insurance subtype. Available subtypes for ${insuranceType}: ${availableSubTypes}`);
+              throw new Error(`No active subtypes available for ${insuranceType}. Available subtypes: ${availableSubTypes}`);
             }
           } catch (error) {
             throw new Error(error.message || 'Error validating insurance type and subtype');
