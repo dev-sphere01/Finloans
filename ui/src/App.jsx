@@ -31,7 +31,6 @@ import useAuthStore from "@/store/authStore";
 import Login from "@/pages/auth/Login";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import Register from "@/pages/auth/Register";
-import PartnerRegistration from "@/pages/auth/PartnerRegistration";
 import ChangePassword from "@/pages/auth/ChangePassword";
 
 //authenticated pages imports
@@ -108,7 +107,6 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/change-password" element={<ChangePassword />} />
-              <Route path="/partner-registration" element={<PartnerRegistration />} />
               {/* Add more guest routes here */}
             </Route>
 

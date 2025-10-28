@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { ActionButton } from '@/components/permissions';
 import TableService from '@/services/TableService';
+import { EmailLink, PhoneLink } from '@/components/common/ContactLinks';
 import { FaEye, FaPhone, FaUser, FaEnvelope, FaClock } from 'react-icons/fa';
 
 const LeadsList = ({
@@ -119,14 +120,12 @@ const LeadsList = ({
               >
                 {lead.name}
               </div>
-              <div className="text-sm text-gray-500 flex items-center">
-                <FaPhone className="h-3 w-3 mr-1" />
-                {lead.contactNo}
+              <div className="text-sm">
+                <PhoneLink phone={lead.contactNo} className="text-gray-500" showIcon={true} />
               </div>
               {lead.email && (
-                <div className="text-sm text-gray-500 flex items-center">
-                  <FaEnvelope className="h-3 w-3 mr-1" />
-                  {lead.email}
+                <div className="text-sm">
+                  <EmailLink email={lead.email} className="text-gray-500" showIcon={true} />
                 </div>
               )}
             </div>

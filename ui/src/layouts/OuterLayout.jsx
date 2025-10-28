@@ -1,22 +1,12 @@
 // layouts/OuterLayout.jsx
 import React from "react";
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import LoginImage from "@/assets/images/login-image.svg";
-import { FaUserTie } from "react-icons/fa";
 
 // component imports
 
 
 const OuterLayout = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const handleBecomePartner = () => {
-    // Navigate to partner registration or external partner portal
-    // You can change this to an external URL if needed
-    navigate('/partner-registration');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-gray-100 flex items-center justify-center px-2 lg:px-6 relative overflow-hidden">
       {/* Animated SVG Grid + Dots */}
@@ -33,25 +23,6 @@ const OuterLayout = () => {
           <rect width="100%" height="100%" fill="url(#grid)" />
           <rect width="100%" height="100%" fill="url(#dots)" />
         </svg>
-      </div>
-
-      {/* Top Navigation Bar */}
-      <div className="absolute top-0 left-0 right-0 z-20 p-4">
-        <div className="flex justify-between items-center max-w-[1600px] mx-auto">
-          {/* Logo/Brand */}
-          <div className="text-2xl font-bold text-slate-700">
-            FinLoans
-          </div>
-          
-          {/* Become Partner Button */}
-          <button
-            onClick={handleBecomePartner}
-            className="flex items-center space-x-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-          >
-            <FaUserTie className="text-sm" />
-            <span>Become Partner</span>
-          </button>
-        </div>
       </div>
 
       {/* Floating Shapes */}

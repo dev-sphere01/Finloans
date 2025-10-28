@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useCallingStore from '@/store/callingStore';
 import callingService from '@/services/callingService';
+import { EmailLink, PhoneLink, WebsiteLink } from '@/components/common/ContactLinks';
 import {
   Phone,
   PhoneOff,
@@ -426,13 +427,13 @@ const LeadDetails = () => {
 
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <label className="block text-xs font-medium text-gray-500 mb-1">Contact Number</label>
-                  <p className="text-sm font-medium text-gray-900">{currentLead.contactNo}</p>
+                  <PhoneLink phone={currentLead.contactNo} className="text-sm font-medium" />
                 </div>
 
                 {currentLead.email && (
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <label className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
-                    <p className="text-sm font-medium text-gray-900">{currentLead.email}</p>
+                    <EmailLink email={currentLead.email} className="text-sm font-medium" />
                   </div>
                 )}
 
@@ -740,15 +741,14 @@ const LeadDetails = () => {
                           <p className="text-sm text-blue-700">Visit official website to complete application</p>
                         </div>
                       </div>
-                      <a
-                        href={getSelectedProvider().website}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <WebsiteLink 
+                        url={getSelectedProvider().website}
                         className="flex items-center px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+                        showIcon={false}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Visit Website
-                      </a>
+                      </WebsiteLink>
                     </div>
                   </div>
                 )}
