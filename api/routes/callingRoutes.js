@@ -51,6 +51,13 @@ router.delete('/leads/:id', requireAdmin, validateMongoId('id'), callingControll
 router.post('/leads/bulk-import', requireAdmin, upload.single('file'), callingController.bulkImportLeads);
 
 /**
+ * @route   POST /api/calling/leads/bulk-create
+ * @desc    Bulk create leads from mapped data
+ * @access  Private (Admin only)
+ */
+router.post('/leads/bulk-create', requireAdmin, callingController.bulkCreateLeads);
+
+/**
  * @route   POST /api/calling/leads/assign
  * @desc    Assign leads to staff
  * @access  Private (Admin only)

@@ -48,6 +48,7 @@ import ApplicationsList from "@/pages/masters/applications/ApplicationsList";
 
 // Calling module imports
 import CallingManagement from "@/pages/masters/calling/CallingManagement";
+import BulkUpload from "@/pages/calling/BulkUpload";
 import EmployeeCalling from "@/pages/calling/EmployeeCalling";
 import LeadDetails from "@/pages/calling/LeadDetails";
 
@@ -157,6 +158,7 @@ function App() {
 
                 {/* Calling module routes */}
                 <Route path="/dashboard/calling-management" element={<CallingManagement />} />
+                <Route path="/dashboard/calling-management/bulk-upload" element={<BulkUpload />} />
                 <Route path="/dashboard/my-calls" element={<EmployeeCalling />} />
                 <Route path="/calling/lead/:leadId" element={<LeadDetails />} />
               </Route>

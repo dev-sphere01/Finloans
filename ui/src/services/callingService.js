@@ -78,6 +78,18 @@ const callingService = {
     }
   },
 
+  bulkCreateLeads: async (leadsData) => {
+    try {
+      const response = await API.post('/calling/leads/bulk-create', {
+        leads: leadsData
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error bulk creating leads:', error);
+      throw error;
+    }
+  },
+
   assignLeads: async (leadIds, staffId) => {
     try {
       const response = await API.post('/calling/leads/assign', {

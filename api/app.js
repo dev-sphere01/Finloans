@@ -3,18 +3,25 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
+
 // const autoSwagger = require("express-auto-swagger");
+
 
 // Import config
 const config = require("./config");
 
 const app = express();
+
 // autoSwagger(app);
 
 // Your routes...
 
 app.get("/api/test", (req, res) => {
-    res.json({ message: "Test endpoint" });
+    res.json({ 
+        message: "Test endpoint",
+        baseUrl: config.BASE_URL,
+        nodeStage: config.NODE_STAGE
+    });
 });
 
 
@@ -46,10 +53,35 @@ console.log('CORS Origins:', [config.CORS_ORIGIN, config.CORS_PORT]);
 
 app.use(
   cors({
+
     origin: [config.CORS_ORIGIN, config.CORS_PORT],
+
+    // origin: function (origin, callback) {
+    //   // Allow requests with no origin (like mobile apps or curl requests)
+    //   if (!origin) return callback(null, true);
+      
+    //   const allowedOrigins = [
+    //     config.CORS_ORIGIN, 
+    //     config.CORS_PORT,
+    //     'http://localhost:5173', // Vite default
+    //     'http://localhost:5174', // Alternative Vite port
+    //     'http://localhost:3000', // React default
+    //     'http://localhost:3001'  // Alternative React port
+    //   ].filter(Boolean); // Remove any undefined values
+      
+    //   if (allowedOrigins.indexOf(origin) !== -1) {
+    //     callback(null, true);
+    //   } else {
+    //     console.log('CORS blocked origin:', origin);
+    //     callback(new Error('Not allowed by CORS'));
+    //   }
+    // },
+
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    optionsSuccessStatus: 200,
+    preflightContinue: false
   })
 );
 

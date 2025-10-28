@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useCallingStore from '@/store/callingStore';
 import callingService from '@/services/callingService';
 import TableService from '@/services/TableService';
+import { PhoneLink } from '@/components/common/ContactLinks';
 import { FaPhone, FaEye, FaClock, FaUser } from 'react-icons/fa';
 
 const EmployeeCalling = () => {
@@ -186,9 +187,8 @@ const EmployeeCalling = () => {
               <div className="text-sm font-medium text-gray-900">
                 {lead.name}
               </div>
-              <div className="text-sm text-gray-500 flex items-center">
-                <FaPhone className="h-3 w-3 mr-1" />
-                {lead.contactNo}
+              <div className="text-sm">
+                <PhoneLink phone={lead.contactNo} className="text-gray-500" showIcon={true} />
               </div>
             </div>
           </div>

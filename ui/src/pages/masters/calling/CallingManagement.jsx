@@ -5,7 +5,7 @@ import callingService from '@/services/callingService';
 import { ActionButton } from '@/components/permissions';
 import LeadsList from './components/LeadsList';
 import AddLeadModal from './components/AddLeadModal';
-import BulkImportModal from './components/BulkImportModal';
+
 import AssignLeadsModal from './components/AssignLeadsModal';
 import { FaPlus, FaFileImport, FaUserCheck } from 'react-icons/fa';
 
@@ -25,7 +25,7 @@ const CallingManagement = () => {
 
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
+
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -176,15 +176,7 @@ const CallingManagement = () => {
     }
   };
 
-  const handleBulkImport = async (file) => {
-    try {
-      await callingService.bulkImportLeads(file);
-      setShowImportModal(false);
-      refreshLeads();
-    } catch (error) {
-      console.error('Error importing leads:', error);
-    }
-  };
+
 
   const handleAssignLeads = async (staffId) => {
     try {
@@ -246,9 +238,9 @@ const CallingManagement = () => {
           <ActionButton
             module="calling"
             action="create"
-            label="Bulk Import"
+            label="Bulk Upload"
             icon={<FaFileImport />}
-            onClick={() => setShowImportModal(true)}
+            onClick={() => navigate('/dashboard/calling-management/bulk-upload')}
             size="sm"
           />
 
@@ -302,12 +294,7 @@ const CallingManagement = () => {
         />
       )}
 
-      {showImportModal && (
-        <BulkImportModal
-          onImport={handleBulkImport}
-          onClose={() => setShowImportModal(false)}
-        />
-      )}
+
 
       {showAssignModal && (
         <AssignLeadsModal

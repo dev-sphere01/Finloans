@@ -175,7 +175,7 @@ const ServiceCard = ({
                     <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => onApply(product.id)}
+                        onClick={() => onApply(product.id, product)}
                         className={`w-full bg-gradient-to-r ${product.color} text-white font-semibold py-3 px-4 rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm`}
                     >
                         {buttonText}

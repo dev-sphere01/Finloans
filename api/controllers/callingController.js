@@ -489,6 +489,112 @@ exports.bulkImportLeads = async (req, res) => {
   }
 };
 
+// Bulk create leads from mapped data
+exports.bulkCreateLeads = async (req, res) => {
+  try {
+    const { leads } = req.body;
+
+    if (!leads || !Array.isArray(leads) || leads.length === 0) {
+      return res.status(400).json({ error: 'No leads data provided' });
+    }
+
+    const results = {
+      total: leads.length,
+      success: 0,
+      failed: 0,
+      errors: []
+    };
+
+    for (let i = 0; i < leads.length; i++) {
+      try {
+        const leadData = leads[i];
+
+        // Clean and validate the lead data
+        const cleanLeadData = {
+          name: leadData.name?.trim(),
+          contactNo: String(leadData.contactNo || '').replace(/\D/g, ''),
+          email: leadData.email?.trim(),
+          selectedService: leadData.selectedService?.trim(),
+          serviceSubcategory: leadData.serviceSubcategory?.trim(),
+          notes: leadData.notes?.trim(),
+          source: 'bulk_import',
+          createdBy: req.userId
+        };
+
+        // Validate required fields
+        if (!cleanLeadData.name || !cleanLeadData.contactNo || !cleanLeadData.selectedService) {
+          results.failed++;
+          results.errors.push({
+            row: i + 1,
+            error: 'Missing required fields (Name, Contact Number, Service)'
+          });
+          continue;
+        }
+
+        // Validate contact number format
+        if (!/^[6-9][0-9]{9}$/.test(cleanLeadData.contactNo)) {
+          results.failed++;
+          results.errors.push({
+            row: i + 1,
+            error: 'Invalid contact number format. Must be 10 digits starting with 6-9'
+          });
+          continue;
+        }
+
+        // Check for duplicate
+        const existingLead = await Lead.findOne({
+          contactNo: cleanLeadData.contactNo,
+          isActive: true
+        });
+
+        if (existingLead) {
+          results.failed++;
+          results.errors.push({
+            row: i + 1,
+            error: `Lead with contact number ${cleanLeadData.contactNo} already exists`
+          });
+          continue;
+        }
+
+        const lead = new Lead(cleanLeadData);
+        await lead.save();
+        results.success++;
+
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          row: i + 1,
+          error: error.message
+        });
+      }
+    }
+
+    // Log bulk create
+    await AuditLog.logAction({
+      userId: req.userId,
+      action: 'LEADS_BULK_CREATE',
+      resource: 'leads',
+      details: {
+        totalRows: results.total,
+        successCount: results.success,
+        failedCount: results.failed
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      success: true
+    });
+
+    res.json({
+      message: 'Bulk create completed',
+      results
+    });
+
+  } catch (error) {
+    console.error('Bulk create error:', error);
+    res.status(500).json({ error: 'Failed to create leads' });
+  }
+};
+
 // Assign leads to staff
 exports.assignLeads = async (req, res) => {
   try {

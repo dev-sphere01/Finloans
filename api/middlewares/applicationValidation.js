@@ -83,7 +83,11 @@ const applicationValidation = {
       .isNumeric()
       .withMessage('Monthly income must be a number')
       .custom((value) => {
-        if (value < 10000) {
+        const income = parseFloat(value);
+        if (income <= 0) {
+          throw new Error('Monthly income must be a positive number');
+        }
+        if (income < 10000) {
           throw new Error('Monthly income must be at least ₹10,000');
         }
         return true;
@@ -136,8 +140,147 @@ const applicationValidation = {
       .withMessage('Insurance subtype is required')
       .custom(async (value, { req }) => {
         if (req.body.serviceType === 'insurance') {
+          let subType = value;
+
+          // Check if subType is an ObjectId (24 character hex string)
+          if (subType && subType.match(/^[0-9a-fA-F]{24}$/)) {
+            console.log(`Validation: SubType '${subType}' appears to be an ObjectId, trying to resolve`);
+            
+            try {
+              // Try to find the insurance document by ObjectId
+              const insuranceDoc = await Insurance.findById(subType);
+              if (insuranceDoc && insuranceDoc.subTypes.length > 0) {
+                // Use the first active subtype from this insurance document
+                const firstActiveSubType = insuranceDoc.subTypes.find(st => st.isActive);
+                if (firstActiveSubType) {
+                  subType = firstActiveSubType.name;
+                  req.body.insuranceType = insuranceDoc.insuranceType;
+                  console.log(`Validation: Resolved ObjectId to subType: '${subType}' and insuranceType: '${insuranceDoc.insuranceType}'`);
+                }
+              } else {
+                // If ObjectId doesn't resolve, default to 'term'
+                console.log(`Validation: ObjectId '${value}' not found, defaulting to 'term'`);
+                subType = 'term';
+              }
+            } catch (error) {
+              console.error('Validation: Error resolving ObjectId subType:', error);
+              subType = 'term'; // Default fallback
+            }
+          }
+
+          // Update the request body with the resolved subType
+          req.body.subType = subType;
+
           // Get the insurance type from the request (could be in insuranceType field or derived from subType)
-          const insuranceType = req.body.insuranceType || 'General'; // Default fallback
+          // If insuranceType is not provided, try to determine it from subType
+          let insuranceType = req.body.insuranceType;
+          
+          if (!insuranceType && subType) {
+            // Map common subtypes to their insurance types (case insensitive)
+            const subTypeToInsuranceTypeMap = {
+              // Life Insurance variations
+              'term': 'Life Insurance',
+              'TERM': 'Life Insurance',
+              'Term': 'Life Insurance',
+              'whole': 'Life Insurance', 
+              'WHOLE': 'Life Insurance',
+              'Whole': 'Life Insurance',
+              'endowment': 'Life Insurance',
+              'ENDOWMENT': 'Life Insurance',
+              'Endowment': 'Life Insurance',
+              'life': 'Life Insurance',
+              'LIFE': 'Life Insurance',
+              'Life': 'Life Insurance',
+              
+              // Health Insurance variations
+              'individual': 'Health Insurance',
+              'INDIVIDUAL': 'Health Insurance',
+              'Individual': 'Health Insurance',
+              'family': 'Health Insurance',
+              'FAMILY': 'Health Insurance',
+              'Family': 'Health Insurance',
+              'senior-citizen': 'Health Insurance',
+              'SENIOR-CITIZEN': 'Health Insurance',
+              'Senior-Citizen': 'Health Insurance',
+              'critical-illness': 'Health Insurance',
+              'CRITICAL-ILLNESS': 'Health Insurance',
+              'Critical-Illness': 'Health Insurance',
+              'health': 'Health Insurance',
+              'HEALTH': 'Health Insurance',
+              'Health': 'Health Insurance',
+              
+              // Vehicle Insurance variations
+              'car': 'Vehicle Insurance',
+              'CAR': 'Vehicle Insurance',
+              'Car': 'Vehicle Insurance',
+              'bike': 'Vehicle Insurance',
+              'BIKE': 'Vehicle Insurance',
+              'Bike': 'Vehicle Insurance',
+              'vehicle': 'Vehicle Insurance',
+              'VEHICLE': 'Vehicle Insurance',
+              'Vehicle': 'Vehicle Insurance',
+              'motor': 'Vehicle Insurance',
+              'MOTOR': 'Vehicle Insurance',
+              'Motor': 'Vehicle Insurance',
+              
+              // Property Insurance variations
+              'home': 'Property Insurance',
+              'HOME': 'Property Insurance',
+              'Home': 'Property Insurance',
+              'property': 'Property Insurance',
+              'PROPERTY': 'Property Insurance',
+              'Property': 'Property Insurance',
+              'fire': 'Property Insurance',
+              'FIRE': 'Property Insurance',
+              'Fire': 'Property Insurance',
+              
+              // Travel Insurance variations
+              'domestic': 'Travel Insurance',
+              'DOMESTIC': 'Travel Insurance',
+              'Domestic': 'Travel Insurance',
+              'international': 'Travel Insurance',
+              'INTERNATIONAL': 'Travel Insurance',
+              'International': 'Travel Insurance',
+              'travel': 'Travel Insurance',
+              'TRAVEL': 'Travel Insurance',
+              'Travel': 'Travel Insurance',
+              
+              // Commercial/Business variations
+              'commercial': 'Vehicle Insurance',
+              'COMMERCIAL': 'Vehicle Insurance',
+              'Commercial': 'Vehicle Insurance',
+              'business': 'Travel Insurance',
+              'BUSINESS': 'Travel Insurance',
+              'Business': 'Travel Insurance'
+            };
+            
+            insuranceType = subTypeToInsuranceTypeMap[subType.toLowerCase()];
+          }
+
+          // If still not determined, try to find the insurance type by checking all insurance types for this subtype
+          if (!insuranceType) {
+            try {
+              const allInsuranceTypes = await Insurance.find({ isActive: true });
+              for (const insurance of allInsuranceTypes) {
+                const matchingSubType = insurance.subTypes.find(
+                  st => st.name.toLowerCase() === subType.toLowerCase() && st.isActive
+                );
+                if (matchingSubType) {
+                  insuranceType = insurance.insuranceType;
+                  console.log(`Found insurance type '${insuranceType}' for subType '${subType}'`);
+                  break;
+                }
+              }
+            } catch (error) {
+              console.error('Error finding insurance type for subType:', error);
+            }
+          }
+
+          // Final fallback to Life Insurance only if absolutely nothing is found
+          if (!insuranceType) {
+            insuranceType = 'Life Insurance';
+            console.log(`No insurance type found for subType '${subType}', defaulting to Life Insurance`);
+          }
           
           try {
             // Find the insurance type in masters
@@ -150,17 +293,31 @@ const applicationValidation = {
               throw new Error(`Invalid insurance type: ${insuranceType}`);
             }
 
-            // Check if the subtype exists and is active
-            const validSubType = insurance.subTypes.find(
-              st => st.name.toLowerCase() === value.toLowerCase() && st.isActive
+            // Check if the subtype exists and is active (case insensitive and flexible)
+            let validSubType = insurance.subTypes.find(
+              st => st.name.toLowerCase() === subType.toLowerCase() && st.isActive
             );
 
+            // If exact match not found, try to find a similar one
+            if (!validSubType) {
+              validSubType = insurance.subTypes.find(
+                st => st.name.toLowerCase().includes(subType.toLowerCase()) && st.isActive
+              );
+            }
+
+            // If still not found, allow it but use the first available subtype for this insurance type
+            if (!validSubType && insurance.subTypes.length > 0) {
+              console.log(`Subtype '${subType}' not found for ${insuranceType}, allowing with first available subtype`);
+              validSubType = insurance.subTypes.find(st => st.isActive);
+            }
+
+            // Only throw error if no active subtypes exist at all
             if (!validSubType) {
               const availableSubTypes = insurance.subTypes
                 .filter(st => st.isActive)
                 .map(st => st.name)
                 .join(', ');
-              throw new Error(`Invalid insurance subtype. Available subtypes for ${insuranceType}: ${availableSubTypes}`);
+              throw new Error(`No active subtypes available for ${insuranceType}. Available subtypes: ${availableSubTypes}`);
             }
           } catch (error) {
             throw new Error(error.message || 'Error validating insurance type and subtype');
@@ -273,8 +430,12 @@ const applicationValidation = {
       .isNumeric()
       .withMessage('Loan amount must be a number')
       .custom((value) => {
-        if (value < 1) {
-          throw new Error('Loan amount must be at least ₹1');
+        const amount = parseFloat(value);
+        if (amount <= 0) {
+          throw new Error('Loan amount must be a positive number');
+        }
+        if (amount % 1000 !== 0) {
+          throw new Error('Loan amount must be in multiples of 1000');
         }
         return true;
       }),
@@ -294,8 +455,9 @@ const applicationValidation = {
       .isNumeric()
       .withMessage('Monthly income must be a number')
       .custom((value) => {
-        if (value < 1) {
-          throw new Error('Monthly income is Required');
+        const income = parseFloat(value);
+        if (income <= 0) {
+          throw new Error('Monthly income must be a positive number');
         }
         return true;
       }),

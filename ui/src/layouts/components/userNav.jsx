@@ -36,10 +36,10 @@ export default function Header({ setIsApplyModalOpen }) {
 
     const navItems = [
         { name: "Home", href: "/dashboard", type: "route" },
-        { name: "Services", href: "/dashboard#services", type: "hash-route" },
+        // { name: "Services", href: "/dashboard#services", type: "hash-route" },
         { name: "Check CIBIL", href: "/cibil-check", type: "route" },
-        { name: "About", href: "/about", type: "route" },
-        { name: "Contact", href: "/contact", type: "route" },
+        // { name: "About", href: "/about", type: "route" },
+        // { name: "Contact", href: "/contact", type: "route" },
     ];
 
     const handleLogout = async () => {

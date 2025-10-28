@@ -27,13 +27,151 @@ const applicationController = {
 
       // Additional validation for insurance applications
       if (applicationData.serviceType === 'insurance') {
-        const insuranceType = applicationData.insuranceType || 'General';
-        const subType = applicationData.subType;
+        let subType = applicationData.subType;
+
+        // Check if subType is an ObjectId (24 character hex string)
+        if (subType && subType.match(/^[0-9a-fA-F]{24}$/)) {
+          console.log(`SubType '${subType}' appears to be an ObjectId, trying to find corresponding insurance`);
+
+          try {
+            // Try to find the insurance document by ObjectId
+            const insuranceDoc = await Insurance.findById(subType);
+            if (insuranceDoc && insuranceDoc.subTypes.length > 0) {
+              // Use the first active subtype from this insurance document
+              const firstActiveSubType = insuranceDoc.subTypes.find(st => st.isActive);
+              if (firstActiveSubType) {
+                subType = firstActiveSubType.name;
+                applicationData.insuranceType = insuranceDoc.insuranceType;
+                console.log(`Resolved ObjectId to subType: '${subType}' and insuranceType: '${insuranceDoc.insuranceType}'`);
+              }
+            } else {
+              // If ObjectId doesn't resolve, default to 'term'
+              console.log(`ObjectId '${applicationData.subType}' not found, defaulting to 'term'`);
+              subType = 'term';
+            }
+          } catch (error) {
+            console.error('Error resolving ObjectId subType:', error);
+            subType = 'term'; // Default fallback
+          }
+        }
+
+        // Update the applicationData with the resolved subType
+        applicationData.subType = subType;
+
+        // If insuranceType is not provided, try to determine it from subType
+        let insuranceType = applicationData.insuranceType;
+
+        if (!insuranceType && subType) {
+          // Map common subtypes to their insurance types
+          const subTypeToInsuranceTypeMap = {
+            // Life Insurance variations
+            'term': 'Life Insurance',
+            'TERM': 'Life Insurance',
+            'Term': 'Life Insurance',
+            'whole': 'Life Insurance',
+            'WHOLE': 'Life Insurance',
+            'Whole': 'Life Insurance',
+            'endowment': 'Life Insurance',
+            'ENDOWMENT': 'Life Insurance',
+            'Endowment': 'Life Insurance',
+            'life': 'Life Insurance',
+            'LIFE': 'Life Insurance',
+            'Life': 'Life Insurance',
+
+            // Health Insurance variations
+            'individual': 'Health Insurance',
+            'INDIVIDUAL': 'Health Insurance',
+            'Individual': 'Health Insurance',
+            'family': 'Health Insurance',
+            'FAMILY': 'Health Insurance',
+            'Family': 'Health Insurance',
+            'senior-citizen': 'Health Insurance',
+            'SENIOR-CITIZEN': 'Health Insurance',
+            'Senior-Citizen': 'Health Insurance',
+            'critical-illness': 'Health Insurance',
+            'CRITICAL-ILLNESS': 'Health Insurance',
+            'Critical-Illness': 'Health Insurance',
+            'health': 'Health Insurance',
+            'HEALTH': 'Health Insurance',
+            'Health': 'Health Insurance',
+
+            // Vehicle Insurance variations
+            'car': 'Vehicle Insurance',
+            'CAR': 'Vehicle Insurance',
+            'Car': 'Vehicle Insurance',
+            'bike': 'Vehicle Insurance',
+            'BIKE': 'Vehicle Insurance',
+            'Bike': 'Vehicle Insurance',
+            'vehicle': 'Vehicle Insurance',
+            'VEHICLE': 'Vehicle Insurance',
+            'Vehicle': 'Vehicle Insurance',
+            'motor': 'Vehicle Insurance',
+            'MOTOR': 'Vehicle Insurance',
+            'Motor': 'Vehicle Insurance',
+
+            // Property Insurance variations
+            'home': 'Property Insurance',
+            'HOME': 'Property Insurance',
+            'Home': 'Property Insurance',
+            'property': 'Property Insurance',
+            'PROPERTY': 'Property Insurance',
+            'Property': 'Property Insurance',
+            'fire': 'Property Insurance',
+            'FIRE': 'Property Insurance',
+            'Fire': 'Property Insurance',
+
+            // Travel Insurance variations
+            'domestic': 'Travel Insurance',
+            'DOMESTIC': 'Travel Insurance',
+            'Domestic': 'Travel Insurance',
+            'international': 'Travel Insurance',
+            'INTERNATIONAL': 'Travel Insurance',
+            'International': 'Travel Insurance',
+            'travel': 'Travel Insurance',
+            'TRAVEL': 'Travel Insurance',
+            'Travel': 'Travel Insurance',
+
+            // Commercial/Business variations
+            'commercial': 'Vehicle Insurance', // Default to Vehicle, but could be Property
+            'COMMERCIAL': 'Vehicle Insurance',
+            'Commercial': 'Vehicle Insurance',
+            'business': 'Travel Insurance', // Default to Travel, but could be others
+            'BUSINESS': 'Travel Insurance',
+            'Business': 'Travel Insurance'
+          };
+
+          insuranceType = subTypeToInsuranceTypeMap[subType.toLowerCase()];
+        }
+
+        // If still not determined, try to find the insurance type by checking all insurance types for this subtype
+        if (!insuranceType) {
+          try {
+            const allInsuranceTypes = await Insurance.find({ isActive: true });
+            for (const insurance of allInsuranceTypes) {
+              const matchingSubType = insurance.subTypes.find(
+                st => st.name.toLowerCase() === subType.toLowerCase() && st.isActive
+              );
+              if (matchingSubType) {
+                insuranceType = insurance.insuranceType;
+                console.log(`Found insurance type '${insuranceType}' for subType '${subType}'`);
+                break;
+              }
+            }
+          } catch (error) {
+            console.error('Error finding insurance type for subType:', error);
+          }
+        }
+
+        // Final fallback to Life Insurance only if absolutely nothing is found
+        if (!insuranceType) {
+          insuranceType = 'Life Insurance';
+          console.log(`No insurance type found for subType '${subType}', defaulting to Life Insurance`);
+        }
 
         try {
-          const insurance = await Insurance.findOne({ 
+          const insurance = await Insurance.findOne({
             insuranceType: { $regex: new RegExp(`^${insuranceType}$`, 'i') },
-            isActive: true 
+            isActive: true
           });
 
           if (!insurance) {
@@ -43,9 +181,31 @@ const applicationController = {
             });
           }
 
-          const validSubType = insurance.subTypes.find(
+          let validSubType = insurance.subTypes.find(
             st => st.name.toLowerCase() === subType.toLowerCase() && st.isActive
           );
+
+          // If exact match not found, try to find a similar one or allow any case variation
+          if (!validSubType) {
+            validSubType = insurance.subTypes.find(
+              st => st.name.toLowerCase().includes(subType.toLowerCase()) && st.isActive
+            );
+          }
+
+          // If still not found, create a flexible match for common variations
+          if (!validSubType) {
+            // For common cases like TERM, Term, term - all should map to 'term'
+            const normalizedSubType = subType.toLowerCase();
+            validSubType = insurance.subTypes.find(
+              st => st.name.toLowerCase() === normalizedSubType && st.isActive
+            );
+
+            // If still not found, allow it but normalize to the first available subtype of this insurance type
+            if (!validSubType && insurance.subTypes.length > 0) {
+              console.log(`Subtype '${subType}' not found, using first available subtype for ${insuranceType}`);
+              validSubType = insurance.subTypes.find(st => st.isActive);
+            }
+          }
 
           if (!validSubType) {
             const availableSubTypes = insurance.subTypes
@@ -58,14 +218,77 @@ const applicationController = {
             });
           }
 
-          // Normalize the subType to match the master data
+          // Normalize the subType and insuranceType to match the master data
           applicationData.subType = validSubType.name;
+          applicationData.insuranceType = insurance.insuranceType;
         } catch (error) {
           console.error('Error validating insurance type:', error);
           return res.status(500).json({
             success: false,
             message: 'Error validating insurance type'
           });
+        }
+      }
+
+      // Additional validation for loan applications
+      if (applicationData.serviceType === 'loan') {
+        // Validate loan amount
+        if (applicationData.loanAmount) {
+          const loanAmount = parseFloat(applicationData.loanAmount);
+          
+          // Check if loan amount is positive
+          if (loanAmount <= 0) {
+            return res.status(400).json({
+              success: false,
+              message: 'Loan amount must be a positive number'
+            });
+          }
+          
+          // Check if loan amount is in multiples of 1000
+          if (loanAmount % 1000 !== 0) {
+            return res.status(400).json({
+              success: false,
+              message: 'Loan amount must be in multiples of 1000'
+            });
+          }
+          
+          // Update the applicationData with the validated amount
+          applicationData.loanAmount = loanAmount;
+        }
+
+        // Validate monthly income for loans
+        if (applicationData.monthlyIncome) {
+          const monthlyIncome = parseFloat(applicationData.monthlyIncome);
+          
+          // Check if monthly income is positive
+          if (monthlyIncome <= 0) {
+            return res.status(400).json({
+              success: false,
+              message: 'Monthly income must be a positive number'
+            });
+          }
+          
+          // Update the applicationData with the validated amount
+          applicationData.monthlyIncome = monthlyIncome;
+        }
+      }
+
+      // Additional validation for credit card applications
+      if (applicationData.serviceType === 'credit-card') {
+        // Validate monthly income for credit cards
+        if (applicationData.monthlyIncome) {
+          const monthlyIncome = parseFloat(applicationData.monthlyIncome);
+          
+          // Check if monthly income is positive
+          if (monthlyIncome <= 0) {
+            return res.status(400).json({
+              success: false,
+              message: 'Monthly income must be a positive number'
+            });
+          }
+          
+          // Update the applicationData with the validated amount
+          applicationData.monthlyIncome = monthlyIncome;
         }
       }
 
@@ -92,6 +315,7 @@ const applicationController = {
 
       const existingApplication = await Application.findOne({
         applicantId: req.user._id,
+        panNumber: applicationData.panNumber,
         serviceType: applicationData.serviceType,
         subType: applicationData.subType || { $exists: false },
         submittedAt: { $gte: thirtyDaysAgo },
@@ -436,10 +660,10 @@ const applicationController = {
     try {
       const { loanType } = req.params;
       const Loan = require('../models/Loans');
-      
-      const loan = await Loan.findOne({ 
+
+      const loan = await Loan.findOne({
         loanType: new RegExp(loanType, 'i'),
-        isActive: true 
+        isActive: true
       });
 
       if (!loan) {
@@ -491,7 +715,7 @@ const applicationController = {
       const path = require('path');
       const uploadsDir = path.join(__dirname, '../uploads');
       const relativePath = path.relative(uploadsDir, req.file.path).replace(/\\/g, '/');
-      
+
       res.json({
         success: true,
         message: 'Document uploaded successfully',

@@ -1,7 +1,8 @@
 const CreditCard = require("../models/CreditCards");
 const queryService = require("../services/queryService");
+const config = require("../config");
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:4000';
+const BASE_URL = config.BASE_URL;
 
 // CREATE
 exports.createCreditCard = async (req, res, next) => {

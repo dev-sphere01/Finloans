@@ -29,6 +29,11 @@ const CORS_PORT = isProduction
   ? process.env.CORS_PORT_APP_LIVE
   : process.env.CORS_PORT_APP_LOCAL
 
+// Base URL configuration for file uploads
+const BASE_URL = isProduction
+  ? process.env.BASE_URL_LIVE
+  : process.env.BASE_URL_LOCAL;
+
 // Email configuration (same in all envs)
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
@@ -76,5 +81,6 @@ module.exports = {
 
   COOKIE_EXPIRE,
   CORS_ORIGIN,
-  CORS_PORT
+  CORS_PORT,
+  BASE_URL
 };

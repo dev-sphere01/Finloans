@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { EmailLink } from '@/components/common/ContactLinks';
 import { FaTimes, FaUserCheck } from 'react-icons/fa';
 
 const AssignLeadsModal = ({ staff, selectedCount, onAssign, onClose }) => {
@@ -75,7 +76,7 @@ const AssignLeadsModal = ({ staff, selectedCount, onAssign, onClose }) => {
                 <p><span className="font-medium">Name:</span> {selectedStaffMember.name}</p>
                 <p><span className="font-medium">Role:</span> {selectedStaffMember.role || 'Staff'}</p>
                 {selectedStaffMember.email && (
-                  <p><span className="font-medium">Email:</span> {selectedStaffMember.email}</p>
+                  <p><span className="font-medium">Email:</span> <EmailLink email={selectedStaffMember.email} showIcon={false} /></p>
                 )}
                 {selectedStaffMember.currentLeads !== undefined && (
                   <p><span className="font-medium">Current Leads:</span> {selectedStaffMember.currentLeads}</p>
