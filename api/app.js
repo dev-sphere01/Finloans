@@ -14,7 +14,11 @@ const app = express();
 // Your routes...
 
 app.get("/api/test", (req, res) => {
-    res.json({ message: "Test endpoint" });
+    res.json({ 
+        message: "Test endpoint",
+        baseUrl: config.BASE_URL,
+        nodeStage: config.NODE_STAGE
+    });
 });
 
 

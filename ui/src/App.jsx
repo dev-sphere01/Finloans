@@ -31,6 +31,7 @@ import useAuthStore from "@/store/authStore";
 import Login from "@/pages/auth/Login";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import Register from "@/pages/auth/Register";
+import PartnerRegistration from "@/pages/auth/PartnerRegistration";
 import ChangePassword from "@/pages/auth/ChangePassword";
 
 //authenticated pages imports
@@ -48,6 +49,7 @@ import ApplicationsList from "@/pages/masters/applications/ApplicationsList";
 
 // Calling module imports
 import CallingManagement from "@/pages/masters/calling/CallingManagement";
+import BulkUpload from "@/pages/calling/BulkUpload";
 import EmployeeCalling from "@/pages/calling/EmployeeCalling";
 import LeadDetails from "@/pages/calling/LeadDetails";
 
@@ -106,6 +108,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/change-password" element={<ChangePassword />} />
+              <Route path="/partner-registration" element={<PartnerRegistration />} />
               {/* Add more guest routes here */}
             </Route>
 
@@ -157,6 +160,7 @@ function App() {
 
                 {/* Calling module routes */}
                 <Route path="/dashboard/calling-management" element={<CallingManagement />} />
+                <Route path="/dashboard/calling-management/bulk-upload" element={<BulkUpload />} />
                 <Route path="/dashboard/my-calls" element={<EmployeeCalling />} />
                 <Route path="/calling/lead/:leadId" element={<LeadDetails />} />
               </Route>
