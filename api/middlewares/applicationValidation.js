@@ -136,11 +136,42 @@ const applicationValidation = {
       .withMessage('Insurance subtype is required')
       .custom(async (value, { req }) => {
         if (req.body.serviceType === 'insurance') {
+          let subType = value;
+
+          // Check if subType is an ObjectId (24 character hex string)
+          if (subType && subType.match(/^[0-9a-fA-F]{24}$/)) {
+            console.log(`Validation: SubType '${subType}' appears to be an ObjectId, trying to resolve`);
+            
+            try {
+              // Try to find the insurance document by ObjectId
+              const insuranceDoc = await Insurance.findById(subType);
+              if (insuranceDoc && insuranceDoc.subTypes.length > 0) {
+                // Use the first active subtype from this insurance document
+                const firstActiveSubType = insuranceDoc.subTypes.find(st => st.isActive);
+                if (firstActiveSubType) {
+                  subType = firstActiveSubType.name;
+                  req.body.insuranceType = insuranceDoc.insuranceType;
+                  console.log(`Validation: Resolved ObjectId to subType: '${subType}' and insuranceType: '${insuranceDoc.insuranceType}'`);
+                }
+              } else {
+                // If ObjectId doesn't resolve, default to 'term'
+                console.log(`Validation: ObjectId '${value}' not found, defaulting to 'term'`);
+                subType = 'term';
+              }
+            } catch (error) {
+              console.error('Validation: Error resolving ObjectId subType:', error);
+              subType = 'term'; // Default fallback
+            }
+          }
+
+          // Update the request body with the resolved subType
+          req.body.subType = subType;
+
           // Get the insurance type from the request (could be in insuranceType field or derived from subType)
           // If insuranceType is not provided, try to determine it from subType
           let insuranceType = req.body.insuranceType;
           
-          if (!insuranceType && value) {
+          if (!insuranceType && subType) {
             // Map common subtypes to their insurance types (case insensitive)
             const subTypeToInsuranceTypeMap = {
               // Life Insurance variations
@@ -219,12 +250,32 @@ const applicationValidation = {
               'Business': 'Travel Insurance'
             };
             
-            insuranceType = subTypeToInsuranceTypeMap[value.toLowerCase()];
+            insuranceType = subTypeToInsuranceTypeMap[subType.toLowerCase()];
           }
 
-          // Default to Life Insurance if still not determined
+          // If still not determined, try to find the insurance type by checking all insurance types for this subtype
+          if (!insuranceType) {
+            try {
+              const allInsuranceTypes = await Insurance.find({ isActive: true });
+              for (const insurance of allInsuranceTypes) {
+                const matchingSubType = insurance.subTypes.find(
+                  st => st.name.toLowerCase() === subType.toLowerCase() && st.isActive
+                );
+                if (matchingSubType) {
+                  insuranceType = insurance.insuranceType;
+                  console.log(`Found insurance type '${insuranceType}' for subType '${subType}'`);
+                  break;
+                }
+              }
+            } catch (error) {
+              console.error('Error finding insurance type for subType:', error);
+            }
+          }
+
+          // Final fallback to Life Insurance only if absolutely nothing is found
           if (!insuranceType) {
             insuranceType = 'Life Insurance';
+            console.log(`No insurance type found for subType '${subType}', defaulting to Life Insurance`);
           }
           
           try {
@@ -240,19 +291,19 @@ const applicationValidation = {
 
             // Check if the subtype exists and is active (case insensitive and flexible)
             let validSubType = insurance.subTypes.find(
-              st => st.name.toLowerCase() === value.toLowerCase() && st.isActive
+              st => st.name.toLowerCase() === subType.toLowerCase() && st.isActive
             );
 
             // If exact match not found, try to find a similar one
             if (!validSubType) {
               validSubType = insurance.subTypes.find(
-                st => st.name.toLowerCase().includes(value.toLowerCase()) && st.isActive
+                st => st.name.toLowerCase().includes(subType.toLowerCase()) && st.isActive
               );
             }
 
             // If still not found, allow it but use the first available subtype for this insurance type
             if (!validSubType && insurance.subTypes.length > 0) {
-              console.log(`Subtype '${value}' not found for ${insuranceType}, allowing with first available subtype`);
+              console.log(`Subtype '${subType}' not found for ${insuranceType}, allowing with first available subtype`);
               validSubType = insurance.subTypes.find(st => st.isActive);
             }
 

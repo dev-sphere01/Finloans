@@ -49,7 +49,7 @@ export default function ServicesPage() {
   const navigate = useNavigate();
   const service = serviceConfig[serviceType];
 
-  const handleApplyNow = (applyFor) => {
+  const handleApplyNow = (applyFor, productData = null) => {
     // Create a mapping for service types to route parameters
     const serviceTypeMapping = {
       // Loan mappings
@@ -84,13 +84,36 @@ export default function ServicesPage() {
         }
       });
     } else if (serviceType === 'insurance') {
-      // For insurance, use unified insurance application
-      const insuranceType = serviceTypeMapping[applyFor] || applyFor.replace('-insurance', '');
+      // For insurance, handle the case where applyFor might be an ObjectId
+      let insuranceType, insuranceSubType, serviceName;
+      
+      if (productData && productData.title && productData.subTypes) {
+        // If we have product data, use the insurance type and default to first subtype
+        insuranceType = productData.title.toLowerCase().replace(' insurance', '');
+        insuranceSubType = productData.subTypes.length > 0 ? productData.subTypes[0].name : 'term';
+        serviceName = productData.title;
+      } else if (applyFor && applyFor.match(/^[0-9a-fA-F]{24}$/)) {
+        // If applyFor is an ObjectId, default to life insurance with term subtype
+        insuranceType = 'life';
+        insuranceSubType = 'term';
+        serviceName = 'Life Insurance';
+      } else {
+        // Use the mapping or extract from the applyFor parameter
+        insuranceType = serviceTypeMapping[applyFor] || applyFor.replace('-insurance', '');
+        insuranceSubType = insuranceType === 'life' ? 'term' : 
+                          insuranceType === 'health' ? 'individual' :
+                          insuranceType === 'vehicle' ? 'car' :
+                          insuranceType === 'property' ? 'home' :
+                          insuranceType === 'travel' ? 'domestic' : 'term';
+        serviceName = `${insuranceType.charAt(0).toUpperCase() + insuranceType.slice(1)} Insurance`;
+      }
+      
       navigate(`/apply/insurance/${insuranceType}`, {
         state: {
           serviceType: 'insurance',
-          subType: insuranceType,
-          serviceName: `${insuranceType.charAt(0).toUpperCase() + insuranceType.slice(1)} Insurance`
+          subType: insuranceSubType,
+          insuranceType: productData ? productData.title : serviceName,
+          serviceName: serviceName
         }
       });
     } else {
