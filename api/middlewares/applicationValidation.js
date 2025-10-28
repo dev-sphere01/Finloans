@@ -83,7 +83,11 @@ const applicationValidation = {
       .isNumeric()
       .withMessage('Monthly income must be a number')
       .custom((value) => {
-        if (value < 10000) {
+        const income = parseFloat(value);
+        if (income <= 0) {
+          throw new Error('Monthly income must be a positive number');
+        }
+        if (income < 10000) {
           throw new Error('Monthly income must be at least ₹10,000');
         }
         return true;
@@ -426,8 +430,12 @@ const applicationValidation = {
       .isNumeric()
       .withMessage('Loan amount must be a number')
       .custom((value) => {
-        if (value < 1) {
-          throw new Error('Loan amount must be at least ₹1');
+        const amount = parseFloat(value);
+        if (amount <= 0) {
+          throw new Error('Loan amount must be a positive number');
+        }
+        if (amount % 1000 !== 0) {
+          throw new Error('Loan amount must be in multiples of 1000');
         }
         return true;
       }),
@@ -447,8 +455,9 @@ const applicationValidation = {
       .isNumeric()
       .withMessage('Monthly income must be a number')
       .custom((value) => {
-        if (value < 1) {
-          throw new Error('Monthly income is Required');
+        const income = parseFloat(value);
+        if (income <= 0) {
+          throw new Error('Monthly income must be a positive number');
         }
         return true;
       }),

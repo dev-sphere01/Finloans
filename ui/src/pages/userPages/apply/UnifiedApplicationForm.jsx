@@ -253,13 +253,32 @@ export default function UnifiedApplicationForm({ service }) {
             [field]: field === 'panNumber' ? value.toUpperCase() : value
         }));
 
-        // Clear field error when user starts typing
-        if (errors[field]) {
-            setErrors(prev => ({
-                ...prev,
-                [field]: ''
-            }));
+        // Real-time validation for specific fields
+        let fieldError = '';
+        
+        if (field === 'loanAmount' && value) {
+            const amount = parseFloat(value);
+            if (amount <= 0) {
+                fieldError = 'Loan amount must be a positive number';
+            } else if (amount % 1000 !== 0) {
+                fieldError = 'Loan amount must be in multiples of 1000';
+            }
         }
+        
+        if (field === 'monthlyIncome' && value) {
+            const income = parseFloat(value);
+            if (income <= 0) {
+                fieldError = 'Monthly income must be a positive number';
+            } else if (serviceType === 'credit-card' && income < 10000) {
+                fieldError = 'Monthly income must be at least ₹10,000';
+            }
+        }
+
+        // Update errors
+        setErrors(prev => ({
+            ...prev,
+            [field]: fieldError
+        }));
     };
 
     const validateForm = () => {
@@ -280,7 +299,16 @@ export default function UnifiedApplicationForm({ service }) {
 
         // Service-specific validation
         if (serviceType === 'credit-card') {
-            if (!formData.monthlyIncome) newErrors.monthlyIncome = 'Monthly income is required';
+            if (!formData.monthlyIncome) {
+                newErrors.monthlyIncome = 'Monthly income is required';
+            } else {
+                const monthlyIncome = parseFloat(formData.monthlyIncome);
+                if (monthlyIncome <= 0) {
+                    newErrors.monthlyIncome = 'Monthly income must be a positive number';
+                } else if (monthlyIncome < 10000) {
+                    newErrors.monthlyIncome = 'Monthly income must be at least ₹10,000';
+                }
+            }
             if (!formData.employmentType) newErrors.employmentType = 'Employment type is required';
             if (!formData.companyName.trim()) newErrors.companyName = 'Company name is required';
         }
@@ -313,9 +341,25 @@ export default function UnifiedApplicationForm({ service }) {
         }
 
         if (serviceType === 'loan') {
-            if (!formData.loanAmount) newErrors.loanAmount = 'Loan amount is required';
+            if (!formData.loanAmount) {
+                newErrors.loanAmount = 'Loan amount is required';
+            } else {
+                const loanAmount = parseFloat(formData.loanAmount);
+                if (loanAmount <= 0) {
+                    newErrors.loanAmount = 'Loan amount must be a positive number';
+                } else if (loanAmount % 1000 !== 0) {
+                    newErrors.loanAmount = 'Loan amount must be in multiples of 1000';
+                }
+            }
             if (!formData.loanPurpose.trim()) newErrors.loanPurpose = 'Loan purpose is required';
-            if (!formData.monthlyIncome) newErrors.monthlyIncome = 'Monthly income is required';
+            if (!formData.monthlyIncome) {
+                newErrors.monthlyIncome = 'Monthly income is required';
+            } else {
+                const monthlyIncome = parseFloat(formData.monthlyIncome);
+                if (monthlyIncome <= 0) {
+                    newErrors.monthlyIncome = 'Monthly income must be a positive number';
+                }
+            }
 
             // Check if subType is business (could be from URL params or determined subType)
             const isBusinessLoan = subType === 'business' || 
@@ -588,7 +632,7 @@ export default function UnifiedApplicationForm({ service }) {
 
     // Render field helper function
     const renderField = (fieldName, label, type = 'text', options = {}, span = 1) => {
-        const { placeholder, required = false, icon: Icon, maxLength, min, max, rows } = options;
+        const { placeholder, required = false, icon: Icon, maxLength, min, max, rows, step } = options;
 
         const spanClass = span === 2 ? 'col-span-2' : span === 3 ? 'col-span-3' : span === 4 ? 'col-span-4' : 'col-span-1';
 
@@ -644,6 +688,7 @@ export default function UnifiedApplicationForm({ service }) {
                         maxLength={maxLength}
                         min={min}
                         max={max}
+                        step={step}
                         required={required}
                     />
                 )}
@@ -928,9 +973,10 @@ export default function UnifiedApplicationForm({ service }) {
 
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     {renderField('monthlyIncome', 'Monthly Income (₹)', 'number', {
-                                        placeholder: 'Enter your monthly income',
+                                        placeholder: 'Enter your monthly income (min ₹10,000)',
                                         required: true,
-                                        icon: DollarSign
+                                        icon: DollarSign,
+                                        min: 1
                                     })}
 
                                     {renderField('employmentType', 'Employment Type', 'select', {
@@ -1047,15 +1093,18 @@ export default function UnifiedApplicationForm({ service }) {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {renderField('loanAmount', 'Loan Amount (₹)', 'number', {
-                                        placeholder: 'Enter loan amount',
+                                        placeholder: 'Enter loan amount (in multiples of 1000)',
                                         required: true,
-                                        icon: DollarSign
+                                        icon: DollarSign,
+                                        min: 1000,
+                                        step: 1000
                                     })}
 
                                     {renderField('monthlyIncome', 'Monthly Income (₹)', 'number', {
                                         placeholder: 'Enter your monthly income',
                                         required: true,
-                                        icon: DollarSign
+                                        icon: DollarSign,
+                                        min: 1
                                     })}
                                 </div>
 
