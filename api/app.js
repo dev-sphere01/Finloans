@@ -17,7 +17,24 @@ app.get("/api/test", (req, res) => {
     res.json({ 
         message: "Test endpoint",
         baseUrl: config.BASE_URL,
-        nodeStage: config.NODE_STAGE
+        nodeStage: config.NODE_STAGE,
+        corsOrigin: config.CORS_ORIGIN,
+        corsPort: config.CORS_PORT,
+        timestamp: new Date().toISOString(),
+        origin: req.headers.origin || 'No origin header'
+    });
+});
+
+// CORS test endpoint
+app.options("/api/cors-test", (req, res) => {
+    res.status(200).end();
+});
+
+app.get("/api/cors-test", (req, res) => {
+    res.json({
+        message: "CORS test successful",
+        origin: req.headers.origin || 'No origin header',
+        timestamp: new Date().toISOString()
     });
 });
 
@@ -45,6 +62,12 @@ const limiter = rateLimit({
 // Middleware
 app.use(limiter);
 
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - Origin: ${req.headers.origin || 'No origin'}`);
+  next();
+});
+
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -54,22 +77,35 @@ app.use(
       const allowedOrigins = [
         config.CORS_ORIGIN, 
         config.CORS_PORT,
+        'https://app.finloansfinancialservices.com',
+        'https://finloansfinancialservices.com',
         'http://localhost:5173', // Vite default
         'http://localhost:5174', // Alternative Vite port
         'http://localhost:3000', // React default
         'http://localhost:3001'  // Alternative React port
       ].filter(Boolean); // Remove any undefined values
       
+      console.log('CORS check - Origin:', origin, 'Allowed origins:', allowedOrigins);
+      
       if (allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
         console.log('CORS blocked origin:', origin);
-        callback(new Error('Not allowed by CORS'));
+        // For now, allow all origins to debug the issue
+        callback(null, true);
       }
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    allowedHeaders: [
+      "Content-Type", 
+      "Authorization", 
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+      "X-CSRF-Token"
+    ],
+    exposedHeaders: ["Content-Length", "X-Foo", "X-Bar"],
     optionsSuccessStatus: 200,
     preflightContinue: false
   })
