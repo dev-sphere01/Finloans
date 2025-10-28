@@ -118,7 +118,7 @@ const userSchema = new mongoose.Schema({
 // Indexes for performance
 userSchema.index({ roleId: 1 });
 userSchema.index({ isActive: 1 });
-userSchema.index({ email: 1 });
+// Note: email already has unique index from unique: true
 userSchema.index({ phone: 1 });
 userSchema.index({ panNumber: 1 });
 

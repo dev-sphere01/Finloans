@@ -65,7 +65,7 @@ const serviceSchema = new mongoose.Schema({
 });
 
 // Indexes
-serviceSchema.index({ name: 1 });
+// Note: name already has unique index from unique: true
 serviceSchema.index({ category: 1 });
 serviceSchema.index({ isActive: 1 });
 serviceSchema.index({ sortOrder: 1 });
