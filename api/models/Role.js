@@ -8,7 +8,6 @@ const permissionSchema = new mongoose.Schema({
   },
   actions: [{
     type: String,
-    enum: ['create', 'read', 'update', 'delete', 'manage'],
     required: true
   }]
 }, { _id: false });
@@ -53,17 +52,17 @@ const roleSchema = new mongoose.Schema({
 roleSchema.index({ isActive: 1 });
 
 // Method to check if role has permission
-roleSchema.methods.hasPermission = function(resource, action) {
+roleSchema.methods.hasPermission = function (resource, action) {
   const permission = this.permissions.find(p => p.resource === resource);
   if (!permission) return false;
-  
+
   return permission.actions.includes(action) || permission.actions.includes('manage');
 };
 
 // Method to add permission
-roleSchema.methods.addPermission = function(resource, actions) {
+roleSchema.methods.addPermission = function (resource, actions) {
   const existingPermission = this.permissions.find(p => p.resource === resource);
-  
+
   if (existingPermission) {
     // Merge actions, avoiding duplicates
     const newActions = [...new Set([...existingPermission.actions, ...actions])];
@@ -71,12 +70,12 @@ roleSchema.methods.addPermission = function(resource, actions) {
   } else {
     this.permissions.push({ resource, actions });
   }
-  
+
   return this.save();
 };
 
 // Method to remove permission
-roleSchema.methods.removePermission = function(resource, actions = null) {
+roleSchema.methods.removePermission = function (resource, actions = null) {
   if (actions === null) {
     // Remove entire resource permission
     this.permissions = this.permissions.filter(p => p.resource !== resource);
@@ -90,7 +89,7 @@ roleSchema.methods.removePermission = function(resource, actions = null) {
       }
     }
   }
-  
+
   return this.save();
 };
 

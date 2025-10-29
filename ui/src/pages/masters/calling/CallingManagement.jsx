@@ -227,7 +227,7 @@ const CallingManagement = () => {
           </div>
 
           <ActionButton
-            module="calling"
+            module="calling_admin"
             action="create"
             label="Add Lead"
             icon={<FaPlus />}
@@ -236,8 +236,8 @@ const CallingManagement = () => {
           />
 
           <ActionButton
-            module="calling"
-            action="create"
+            module="calling_admin"
+            action="bulk_import"
             label="Bulk Upload"
             icon={<FaFileImport />}
             onClick={() => navigate('/dashboard/calling-management/bulk-upload')}
@@ -254,8 +254,8 @@ const CallingManagement = () => {
             
             return (
               <ActionButton
-                module="calling"
-                action="update"
+                module="calling_admin"
+                action="assign_leads"
                 label={
                   assignedCount > 0 
                     ? `Assign ${unassignedCount} Lead${unassignedCount !== 1 ? 's' : ''} (${assignedCount} already assigned)`

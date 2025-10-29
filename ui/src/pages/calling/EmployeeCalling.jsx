@@ -5,6 +5,7 @@ import callingService from '@/services/callingService';
 import TableService from '@/services/TableService';
 import { PhoneLink } from '@/components/common/ContactLinks';
 import { FaPhone, FaEye, FaClock, FaUser } from 'react-icons/fa';
+import { ActionButton } from '@/components/permissions';
 
 const EmployeeCalling = () => {
   const navigate = useNavigate();
@@ -239,26 +240,30 @@ const EmployeeCalling = () => {
       header: 'Actions',
       cell: ({ row }) => (
         <div className="flex gap-2">
-          <button
+          <ActionButton
+            module="calling_employee"
+            action="start_call"
+            icon={<FaPhone />}
             onClick={(e) => {
               e.stopPropagation();
               handleStartCall(row.original);
             }}
             className="p-2 bg-green-600 text-white hover:bg-green-700 rounded transition-colors"
             title="Start Call"
-          >
-            <FaPhone className="h-3 w-3" />
-          </button>
-          <button
+            size="sm"
+          />
+          <ActionButton
+            module="calling_employee"
+            action="read"
+            icon={<FaEye />}
             onClick={(e) => {
               e.stopPropagation();
               handleViewDetails(row.original);
             }}
             className="p-2 bg-blue-600 text-white hover:bg-blue-700 rounded transition-colors"
             title="View Details"
-          >
-            <FaEye className="h-3 w-3" />
-          </button>
+            size="sm"
+          />
         </div>
       ),
       enableSorting: false,

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import useCallingStore from '@/store/callingStore';
 import callingService from '@/services/callingService';
 import { EmailLink, PhoneLink, WebsiteLink } from '@/components/common/ContactLinks';
+import { ActionButton } from '@/components/permissions';
 import {
   Phone,
   PhoneOff,
@@ -347,20 +348,24 @@ const LeadDetails = () => {
               )}
 
               {!isCallActive ? (
-                <button
+                <ActionButton
+                  module="calling_employee"
+                  action="start_call"
                   onClick={handleStartCall}
                   className="flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 rounded-lg transition-all shadow-md hover:shadow-lg"
                 >
                   <Phone className="h-4 w-4 mr-2" />
                   Start Call
-                </button>
+                </ActionButton>
               ) : (
                 <div className="flex items-center space-x-3">
                   <div className="flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full border border-green-200">
                     <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
                     <span className="text-sm font-medium">Call Active</span>
                   </div>
-                  <button
+                  <ActionButton
+                    module="calling_employee"
+                    action="end_call"
                     onClick={handleEndCall}
                     disabled={isSaving}
                     className="flex items-center px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 rounded-lg transition-all shadow-md hover:shadow-lg disabled:opacity-50"
@@ -371,7 +376,7 @@ const LeadDetails = () => {
                       <PhoneOff className="h-4 w-4 mr-2" />
                     )}
                     {isSaving ? 'Ending...' : 'End Call'}
-                  </button>
+                  </ActionButton>
                 </div>
               )}
             </div>
@@ -770,7 +775,9 @@ const LeadDetails = () => {
                 {/* Save Button */}
                 {!isCallActive && (
                   <div className="mt-6 flex justify-end">
-                    <button
+                    <ActionButton
+                      module="calling_employee"
+                      action="update_status"
                       onClick={handleSave}
                       disabled={isSaving}
                       className="flex items-center px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 rounded-lg transition-all shadow-md hover:shadow-lg disabled:opacity-50"
@@ -781,7 +788,7 @@ const LeadDetails = () => {
                         <Save className="h-4 w-4 mr-2" />
                       )}
                       {isSaving ? 'Saving...' : 'Save Changes'}
-                    </button>
+                    </ActionButton>
                   </div>
                 )}
               </div>
