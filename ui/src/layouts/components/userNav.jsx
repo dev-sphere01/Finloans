@@ -196,7 +196,7 @@ export default function Header({ setIsApplyModalOpen }) {
                                     {user && (
                                         <div className="hidden md:block text-left">
                                             <p className="text-sm font-medium text-slate-700 truncate max-w-24">
-                                                {user.name || user.email}
+                                                {user.fullName || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username || user.email)}
                                             </p>
                                         </div>
                                     )}
@@ -304,7 +304,7 @@ export default function Header({ setIsApplyModalOpen }) {
                                         </div>
                                         <div>
                                             <p className="text-sm font-medium text-slate-700">
-                                                {user.name || "User"}
+                                                {user.fullName || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username || "User")}
                                             </p>
                                             <p className="text-xs text-slate-500">
                                                 {user.email}

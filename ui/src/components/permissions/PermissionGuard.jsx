@@ -1,6 +1,7 @@
 import React from 'react';
 import { usePermissions } from '@/contexts/PermissionContext';
 import { Navigate } from 'react-router-dom';
+import NoPermission from './NoPermission';
 
 const PermissionGuard = ({ 
   module, 
@@ -12,12 +13,12 @@ const PermissionGuard = ({
 }) => {
   const { hasPermission } = usePermissions();
   
-  let isAllowed = true;
+  let isAllowed = false;
   try {
     isAllowed = hasPermission(module, action);
   } catch (error) {
-    console.warn('Permission check failed, allowing access:', error);
-    isAllowed = true; // Fallback to allow access if permission check fails
+    console.warn('Permission check failed, denying access:', error);
+    isAllowed = false; // Fallback to deny access if permission check fails
   }
   
   if (!isAllowed) {

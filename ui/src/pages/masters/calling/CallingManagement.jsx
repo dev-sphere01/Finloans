@@ -25,8 +25,8 @@ const CallingManagement = () => {
 
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
-
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showUnassignedOnly, setShowUnassignedOnly] = useState(false);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
@@ -109,6 +109,11 @@ const CallingManagement = () => {
           sortBy: params.sorting?.[0]?.id || '',
           sortOrder: params.sorting?.[0]?.desc ? 'desc' : 'asc'
         };
+
+        // Add unassigned filter if active
+        if (showUnassignedOnly) {
+          queryParams.status = 'unassigned';
+        }
 
         // Add column filters
         if (params.columnFilters && Array.isArray(params.columnFilters)) {
@@ -214,6 +219,39 @@ const CallingManagement = () => {
     navigate(`/calling/lead/${lead.id}`);
   };
 
+  const handleUnassignedFilter = async () => {
+    const newFilterState = !showUnassignedOnly;
+    setShowUnassignedOnly(newFilterState);
+
+    // Immediately trigger a refresh with the new filter
+    try {
+      setLoading(true);
+      const queryParams = {
+        page: 1,
+        limit: pagination.pageSize || 10,
+      };
+
+      if (newFilterState) {
+        queryParams.status = 'unassigned';
+      }
+
+      console.log('Unassigned filter query:', queryParams); // Debug log
+
+      const data = await callingService.getLeads(queryParams);
+      setLeads(data.leads || []);
+      setPagination({
+        pageIndex: 0,
+        pageSize: pagination.pageSize || 10,
+        totalItems: data.pagination?.total || data.totalItems || 0,
+        totalPages: data.pagination?.pages || data.totalPages || 0
+      });
+    } catch (error) {
+      console.error('Error applying unassigned filter:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -225,6 +263,18 @@ const CallingManagement = () => {
           <div className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
             {pagination.totalItems} Leads
           </div>
+
+          <ActionButton
+            module="calling_admin"
+            action="read"
+            label={showUnassignedOnly ? "Show All Leads" : "Unassigned Only"}
+            onClick={() => handleUnassignedFilter()}
+            className={`px-3 py-1 text-sm font-medium rounded-full transition-colors ${showUnassignedOnly
+              ? 'bg-green-500 text-white hover:bg-green-600'
+              : 'bg-orange-500 text-white hover:bg-orange-600'
+              }`}
+            size="sm"
+          />
 
           <ActionButton
             module="calling_admin"
@@ -249,15 +299,15 @@ const CallingManagement = () => {
               const lead = leads.find(l => l.id === leadId);
               return lead && (!lead.assignedTo || lead.status === 'unassigned');
             }).length;
-            
+
             const assignedCount = selectedLeads.length - unassignedCount;
-            
+
             return (
               <ActionButton
                 module="calling_admin"
                 action="assign_leads"
                 label={
-                  assignedCount > 0 
+                  assignedCount > 0
                     ? `Assign ${unassignedCount} Lead${unassignedCount !== 1 ? 's' : ''} (${assignedCount} already assigned)`
                     : `Assign ${unassignedCount} Lead${unassignedCount !== 1 ? 's' : ''}`
                 }

@@ -133,10 +133,10 @@ const Navbar = ({ getActiveTabTitle, setSidebarOpen, sidebarOpen }) => {
                             </div>
                             <div className="hidden sm:block">
                                 <p className="text-sm font-medium text-gray-900">
-                                    {user?.name || "Administrator"}
+                                    {user?.fullName || (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || "Administrator")}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                    {user?.role || "Administrator"}
+                                    {user?.roleName || user?.role || "Administrator"}
                                 </p>
                             </div>
                             <motion.i
@@ -159,7 +159,7 @@ const Navbar = ({ getActiveTabTitle, setSidebarOpen, sidebarOpen }) => {
                                     {/* User Info */}
                                     <div className="px-4 py-3 border-b border-gray-100">
                                         <p className="text-sm font-medium text-gray-900">
-                                            {user?.name || "N/A"}
+                                            {user?.fullName || (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || "N/A")}
                                         </p>
                                         <p className="text-xs text-gray-500">
                                             {user?.email || "N/A"}

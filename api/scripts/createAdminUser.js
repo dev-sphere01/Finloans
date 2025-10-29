@@ -19,10 +19,10 @@ const createAdminUser = async () => {
         permissions: [
           { resource: 'users', actions: ['create', 'read', 'update', 'delete', 'manage'] },
           { resource: 'roles', actions: ['create', 'read', 'update', 'delete', 'manage'] },
-          { resource: 'calling', actions: ['create', 'read', 'update', 'delete', 'manage'] },
+          { resource: 'calling_admin', actions: ['read', 'create', 'update', 'delete', 'bulk_import', 'assign_leads', 'manage_staff', 'view_reports', 'manage_queue'] },
           { resource: 'loans', actions: ['create', 'read', 'update', 'delete', 'manage'] },
           { resource: 'insurance', actions: ['create', 'read', 'update', 'delete', 'manage'] },
-          { resource: 'creditcards', actions: ['create', 'read', 'update', 'delete', 'manage'] },
+          { resource: 'credit-cards', actions: ['create', 'read', 'update', 'delete', 'manage'] },
           { resource: 'applications', actions: ['create', 'read', 'update', 'delete', 'manage'] }
         ],
         isActive: true
@@ -61,7 +61,7 @@ const createAdminUser = async () => {
         name: 'staff',
         description: 'Staff member with calling permissions',
         permissions: [
-          { resource: 'calling', actions: ['read', 'update'] }
+          { resource: 'calling_employee', actions: ['read', 'start_call', 'end_call', 'update_status', 'add_notes', 'view_history'] }
         ],
         isActive: true
       });

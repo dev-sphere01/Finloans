@@ -33,11 +33,21 @@ export const PermissionProvider = ({ children }) => {
 
   // Helper function to check if user has specific permission
   const hasPermission = (module, action) => {
-    // For development/testing - if no user or permissions, allow all actions
-    if (!user) return true;
+    // If no user is logged in, deny access
+    if (!user) return false;
     
-    // If user doesn't have role permissions structure, allow all (fallback)
-    if (!user?.role?.permissions) return true;
+    // If user doesn't have role permissions structure, deny access
+    if (!user?.role?.permissions) return false;
+    
+    // Admin users have all permissions by default
+    const roleName = user?.role?.name || user?.roleName;
+    if (roleName && (
+      roleName.toLowerCase().includes('admin') || 
+      roleName.toLowerCase() === 'super admin' ||
+      roleName.toLowerCase() === 'administrator'
+    )) {
+      return true;
+    }
     
     const modulePermissions = permissions[module];
     if (!modulePermissions) return false;
@@ -50,6 +60,11 @@ export const PermissionProvider = ({ children }) => {
     role: user?.role?.name || user?.roleName,
     permissions,
     hasPermission,
+    isAdmin: user?.role?.name && (
+      user.role.name.toLowerCase().includes('admin') || 
+      user.role.name.toLowerCase() === 'super admin' ||
+      user.role.name.toLowerCase() === 'administrator'
+    ),
   };
 
   return (

@@ -110,10 +110,16 @@ API.interceptors.response.use(
       return Promise.reject(error);
     }
     
-    // Handle 401 Unauthorized or 403 Forbidden responses for authenticated endpoints
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      console.warn('Received 401/403 response - token may be expired');
+    // Handle 401 Unauthorized responses for authenticated endpoints (token expired/invalid)
+    if (error.response && error.response.status === 401) {
+      console.warn('Received 401 response - token expired or invalid');
       handleTokenExpiration();
+    }
+    
+    // Handle 403 Forbidden responses (insufficient permissions) - do NOT logout
+    if (error.response && error.response.status === 403) {
+      console.warn('Received 403 response - insufficient permissions');
+      // Don't logout, just let the error propagate to show permission denied message
     }
     
     return Promise.reject(error);
