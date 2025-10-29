@@ -34,6 +34,7 @@ const LeadDetails = () => {
   const [providers, setProviders] = useState([]);
   const [callHistory, setCallHistory] = useState([]);
   const [showCallHistory, setShowCallHistory] = useState(false);
+  const [expandedCalls, setExpandedCalls] = useState(new Set());
   const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
@@ -99,7 +100,9 @@ const LeadDetails = () => {
       setFormData({
         selectedService: lead.selectedService || '',
         serviceSubcategory: lead.serviceSubcategory || '',
-        serviceProvider: lead.serviceProvider || '',
+        serviceProvider: (typeof lead.serviceProvider === 'object' && lead.serviceProvider?.id)
+          ? lead.serviceProvider.id
+          : lead.serviceProvider || '',
         status: lead.status || 'pending',
         remarks: lead.remarks || ''
       });
@@ -171,13 +174,16 @@ const LeadDetails = () => {
       setIsSaving(true);
       setErrors({});
 
-      // Save all form data to backend
+      // Save all form data to backend including call picked status
       const updateData = {
         status: formData.status,
         remarks: formData.remarks,
         selectedService: formData.selectedService,
         serviceSubcategory: formData.serviceSubcategory,
-        serviceProvider: formData.serviceProvider
+        serviceProvider: (typeof formData.serviceProvider === 'object' && formData.serviceProvider?.id)
+          ? formData.serviceProvider.id
+          : formData.serviceProvider,
+        callPicked: callPicked // Include the picked status
       };
 
       console.log('Ending call and saving data:', updateData);
@@ -213,7 +219,9 @@ const LeadDetails = () => {
         remarks: formData.remarks,
         selectedService: formData.selectedService,
         serviceSubcategory: formData.serviceSubcategory,
-        serviceProvider: formData.serviceProvider
+        serviceProvider: (typeof formData.serviceProvider === 'object' && formData.serviceProvider?.id)
+          ? formData.serviceProvider.id
+          : formData.serviceProvider
       };
 
       console.log('Saving lead data:', updateData);
@@ -257,7 +265,9 @@ const LeadDetails = () => {
         remarks: formData.remarks,
         selectedService: formData.selectedService,
         serviceSubcategory: formData.serviceSubcategory,
-        serviceProvider: formData.serviceProvider
+        serviceProvider: (typeof formData.serviceProvider === 'object' && formData.serviceProvider?.id)
+          ? formData.serviceProvider.id
+          : formData.serviceProvider
       };
 
       await callingService.updateLead(leadId, updateData);
@@ -272,6 +282,16 @@ const LeadDetails = () => {
   };
 
   const getSelectedProvider = () => providers.find(p => p.id === formData.serviceProvider);
+
+  const toggleCallExpansion = (callIndex) => {
+    const newExpanded = new Set(expandedCalls);
+    if (newExpanded.has(callIndex)) {
+      newExpanded.delete(callIndex);
+    } else {
+      newExpanded.add(callIndex);
+    }
+    setExpandedCalls(newExpanded);
+  };
 
   const getServiceIcon = (serviceName) => {
     if (serviceName?.toLowerCase().includes('credit')) return CreditCard;
@@ -353,12 +373,11 @@ const LeadDetails = () => {
                 <ActionButton
                   module="calling_employee"
                   action="start_call"
+                  label="Call"
+                  icon={<Phone className="h-4 w-4 mr-2" />}
                   onClick={handleStartCall}
-                  className="flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 rounded-lg transition-all shadow-md hover:shadow-lg"
-                >
-                  <Phone className="h-4 w-4 mr-2" />
-                  Start Call
-                </ActionButton>
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700"
+                />
               ) : (
                 <div className="flex items-center space-x-3">
                   <div className="flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full border border-green-200">
@@ -368,17 +387,12 @@ const LeadDetails = () => {
                   <ActionButton
                     module="calling_employee"
                     action="end_call"
+                    label="Cancel Call"
+                    icon={isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <PhoneOff className="h-4 w-4 mr-2" />}
                     onClick={handleEndCall}
                     disabled={isSaving}
-                    className="flex items-center px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 rounded-lg transition-all shadow-md hover:shadow-lg disabled:opacity-50"
-                  >
-                    {isSaving ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <PhoneOff className="h-4 w-4 mr-2" />
-                    )}
-                    {isSaving ? 'Ending...' : 'End Call'}
-                  </ActionButton>
+                    className="bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 disabled:opacity-50"
+                  />
                 </div>
               )}
             </div>
@@ -544,42 +558,191 @@ const LeadDetails = () => {
                       </div>
 
                       {/* Call History List */}
-                      <div className="space-y-3">
-                        {callHistory.callHistory.map((call, index) => (
-                          <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                            <div className="flex items-center space-x-4">
-                              <div className={`w-3 h-3 rounded-full ${call.picked === true ? 'bg-green-500' :
-                                call.picked === false ? 'bg-red-500' : 'bg-gray-400'
-                                }`}></div>
-                              <div>
-                                <div className="font-medium text-gray-900">
-                                  {new Date(call.callTime).toLocaleString()}
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  {call.picked === true ? 'Call Answered' :
-                                    call.picked === false ? 'Not Answered' : 'Call Attempted'}
-                                  {call.duration > 0 && ` • ${call.duration}s`}
+                      <div className="space-y-4">
+                        <h4 className="text-md font-semibold text-gray-800 mb-3">Call History Details</h4>
+                        {callHistory.callHistory.map((call, index) => {
+                          const isExpanded = expandedCalls.has(index);
+                          return (
+                            <div key={index} className="border border-gray-200 rounded-lg bg-white shadow-sm">
+                              {/* Collapsed Header - Always Visible */}
+                              <div
+                                className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                                onClick={() => toggleCallExpansion(index)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${call.picked === true ? 'bg-green-100' :
+                                      call.picked === false ? 'bg-red-100' : 'bg-gray-100'
+                                      }`}>
+                                      {call.picked === true ? (
+                                        <Phone className="w-4 h-4 text-green-600" />
+                                      ) : call.picked === false ? (
+                                        <PhoneOff className="w-4 h-4 text-red-600" />
+                                      ) : (
+                                        <Clock className="w-4 h-4 text-gray-500" />
+                                      )}
+                                    </div>
+                                    <div>
+                                      <div className="font-semibold text-gray-900 flex items-center">
+                                        Call #{callHistory.callHistory.length - index}
+                                        {call.picked === true && (
+                                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <Phone className="w-3 h-3 mr-1" />
+                                            Picked
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="text-sm text-gray-600">
+                                        {new Date(call.callTime).toLocaleDateString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          year: 'numeric'
+                                        })} at {new Date(call.callTime).toLocaleTimeString('en-US', {
+                                          hour: '2-digit',
+                                          minute: '2-digit'
+                                        })}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center space-x-3">
+                                    {/* Quick Status */}
+                                    <div className="text-right">
+                                      <div className={`text-sm font-medium ${call.picked === true ? 'text-green-600' :
+                                        call.picked === false ? 'text-red-600' : 'text-gray-600'
+                                        }`}>
+                                        {call.picked === true ? 'Answered' :
+                                          call.picked === false ? 'Not Answered' : 'Attempted'}
+                                      </div>
+                                      {call.duration > 0 && (
+                                        <div className="text-xs text-gray-500">
+                                          {Math.floor(call.duration / 60)}m {call.duration % 60}s
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Expand/Collapse Icon */}
+                                    <svg
+                                      className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''
+                                        }`}
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <div className="text-right">
-                              {call.outcome && (
-                                <span className={`px-2 py-1 rounded text-xs font-medium ${call.outcome === 'completed' ? 'bg-green-100 text-green-800' :
-                                  call.outcome === 'rejected' ? 'bg-red-100 text-red-800' :
-                                    call.outcome === 'interested' ? 'bg-blue-100 text-blue-800' :
-                                      'bg-gray-100 text-gray-800'
-                                  }`}>
-                                  {call.outcome.replace('_', ' ').charAt(0).toUpperCase() + call.outcome.replace('_', ' ').slice(1)}
-                                </span>
-                              )}
-                              {call.notes && (
-                                <div className="text-xs text-gray-500 mt-1 max-w-xs truncate">
-                                  {call.notes}
+
+                              {/* Expanded Details - Show on Demand */}
+                              {isExpanded && (
+                                <div className="px-4 pb-4 border-t border-gray-100">
+                                  <div className="pt-4 space-y-4">
+                                    {/* Detailed Time Information */}
+                                    <div className="bg-gray-50 p-3 rounded-lg">
+                                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Call Timeline</div>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                          <span className="font-medium text-gray-700">Started:</span>
+                                          <div className="text-gray-900">
+                                            {new Date(call.callTime).toLocaleDateString('en-US', {
+                                              weekday: 'long',
+                                              year: 'numeric',
+                                              month: 'long',
+                                              day: 'numeric'
+                                            })}
+                                          </div>
+                                          <div className="text-gray-600">
+                                            {new Date(call.callTime).toLocaleTimeString('en-US', {
+                                              hour: '2-digit',
+                                              minute: '2-digit',
+                                              second: '2-digit'
+                                            })}
+                                          </div>
+                                        </div>
+                                        {call.callEndTime && (
+                                          <div>
+                                            <span className="font-medium text-gray-700">Ended:</span>
+                                            <div className="text-gray-600">
+                                              {new Date(call.callEndTime).toLocaleTimeString('en-US', {
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                                second: '2-digit'
+                                              })}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Call Details Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                      <div className="bg-gray-50 p-3 rounded-lg">
+                                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Call Status</div>
+                                        <div className={`text-sm font-semibold ${call.picked === true ? 'text-green-600' :
+                                          call.picked === false ? 'text-red-600' : 'text-gray-600'
+                                          }`}>
+                                          {call.picked === true ? '✓ Call Answered' :
+                                            call.picked === false ? '✗ Not Answered' : '⏳ Call Attempted'}
+                                        </div>
+                                      </div>
+
+                                      <div className="bg-gray-50 p-3 rounded-lg">
+                                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Duration</div>
+                                        <div className="text-sm font-semibold text-gray-900">
+                                          {call.duration > 0 ? (
+                                            <>
+                                              {Math.floor(call.duration / 60)}m {call.duration % 60}s
+                                              <span className="text-xs text-gray-500 ml-1">({call.duration}s total)</span>
+                                            </>
+                                          ) : (
+                                            <span className="text-gray-500">No duration</span>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      <div className="bg-gray-50 p-3 rounded-lg">
+                                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Outcome</div>
+                                        <div>
+                                          {call.outcome ? (
+                                            <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${call.outcome === 'completed' ? 'bg-green-100 text-green-800' :
+                                              call.outcome === 'failed' ? 'bg-red-100 text-red-800' :
+                                                call.outcome === 'interested' ? 'bg-blue-100 text-blue-800' :
+                                                  call.outcome === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                                                    call.outcome === 'follow_up' ? 'bg-purple-100 text-purple-800' :
+                                                      call.outcome === 'not_picked' ? 'bg-red-100 text-red-800' :
+                                                        call.outcome === 'picked' ? 'bg-green-100 text-green-800' :
+                                                          'bg-gray-100 text-gray-800'
+                                              }`}>
+                                              {call.outcome.replace('_', ' ').charAt(0).toUpperCase() + call.outcome.replace('_', ' ').slice(1)}
+                                            </span>
+                                          ) : (
+                                            <span className="text-gray-500 text-sm">No outcome recorded</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Call Notes */}
+                                    {call.notes ? (
+                                      <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg">
+                                        <div className="text-xs font-medium text-blue-700 uppercase tracking-wide mb-1">Call Notes</div>
+                                        <div className="text-sm text-blue-900 leading-relaxed">
+                                          {call.notes}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="bg-gray-50 p-3 rounded-lg text-center">
+                                        <span className="text-xs text-gray-500 italic">No notes recorded for this call</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               )}
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </>
                   ) : (
@@ -601,7 +764,10 @@ const LeadDetails = () => {
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label className="flex items-center cursor-pointer p-4 border-2 border-gray-200 rounded-xl hover:border-green-300 transition-all">
+                  <label className={`flex items-center cursor-pointer p-4 border-2 rounded-xl transition-all ${callPicked === true
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 hover:border-green-300'
+                    }`}>
                     <input
                       type="radio"
                       name="callPicked"
@@ -610,15 +776,28 @@ const LeadDetails = () => {
                       className="sr-only"
                     />
                     <div className={`flex items-center w-full ${callPicked === true ? 'text-green-600' : 'text-gray-400'}`}>
-                      <CheckCircle className="h-6 w-6 mr-3" />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${callPicked === true ? 'bg-green-100' : 'bg-gray-100'
+                        }`}>
+                        <Phone className="h-4 w-4" />
+                      </div>
                       <div>
                         <span className="text-lg font-medium">Call Answered</span>
-                        <p className="text-sm text-gray-500">Customer picked up the call</p>
+                        <p className={`text-sm ${callPicked === true ? 'text-green-700' : 'text-gray-500'}`}>
+                          Customer picked up the call
+                        </p>
                       </div>
+                      {callPicked === true && (
+                        <div className="ml-auto">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                        </div>
+                      )}
                     </div>
                   </label>
 
-                  <label className="flex items-center cursor-pointer p-4 border-2 border-gray-200 rounded-xl hover:border-red-300 transition-all">
+                  <label className={`flex items-center cursor-pointer p-4 border-2 rounded-xl transition-all ${callPicked === false
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-200 hover:border-red-300'
+                    }`}>
                     <input
                       type="radio"
                       name="callPicked"
@@ -627,23 +806,48 @@ const LeadDetails = () => {
                       className="sr-only"
                     />
                     <div className={`flex items-center w-full ${callPicked === false ? 'text-red-600' : 'text-gray-400'}`}>
-                      <XCircle className="h-6 w-6 mr-3" />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${callPicked === false ? 'bg-red-100' : 'bg-gray-100'
+                        }`}>
+                        <PhoneOff className="h-4 w-4" />
+                      </div>
                       <div>
                         <span className="text-lg font-medium">No Answer</span>
-                        <p className="text-sm text-gray-500">Call was not answered</p>
+                        <p className={`text-sm ${callPicked === false ? 'text-red-700' : 'text-gray-500'}`}>
+                          Call was not answered
+                        </p>
                       </div>
+                      {callPicked === false && (
+                        <div className="ml-auto">
+                          <XCircle className="h-5 w-5 text-red-600" />
+                        </div>
+                      )}
                     </div>
                   </label>
                 </div>
 
+                {/* Status Selection Feedback */}
+                {callPicked === true && (
+                  <div className="mt-4 p-4 bg-green-50 border-l-4 border-green-400 rounded-r-lg">
+                    <div className="flex items-center">
+                      <Phone className="h-5 w-5 text-green-600 mr-3" />
+                      <div>
+                        <p className="font-medium text-green-800">Call answered successfully!</p>
+                        <p className="text-sm text-green-700 mt-1">
+                          Great! The customer picked up. You can now proceed with the conversation and update the lead status accordingly.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {callPicked === false && (
                   <div className="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg">
                     <div className="flex items-center">
-                      <Clock className="h-5 w-5 text-yellow-600 mr-3" />
+                      <PhoneOff className="h-5 w-5 text-yellow-600 mr-3" />
                       <div>
                         <p className="font-medium text-yellow-800">Call not answered</p>
                         <p className="text-sm text-yellow-700 mt-1">
-                          This lead will be marked for follow-up. You can try calling again later.
+                          This lead will be marked for follow-up. You can try calling again later or leave notes for the next attempt.
                         </p>
                       </div>
                     </div>
@@ -748,7 +952,7 @@ const LeadDetails = () => {
                           <p className="text-sm text-blue-700">Visit official website to complete application</p>
                         </div>
                       </div>
-                      <WebsiteLink 
+                      <WebsiteLink
                         url={getSelectedProvider().website}
                         className="flex items-center px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
                         showIcon={false}
@@ -780,17 +984,12 @@ const LeadDetails = () => {
                     <ActionButton
                       module="calling_employee"
                       action="update_status"
+                      label="Submit"
+                      icon={isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                       onClick={handleSave}
                       disabled={isSaving}
-                      className="flex items-center px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 rounded-lg transition-all shadow-md hover:shadow-lg disabled:opacity-50"
-                    >
-                      {isSaving ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4 mr-2" />
-                      )}
-                      {isSaving ? 'Submitting...' : 'Submit'}
-                    </ActionButton>
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 disabled:opacity-50"
+                    />
                   </div>
                 )}
               </div>
