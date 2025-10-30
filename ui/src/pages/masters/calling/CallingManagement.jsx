@@ -54,8 +54,19 @@ const CallingManagement = () => {
       ]);
       setStaff(staffData);
       setServices(servicesData);
-      // Load leads with initial pagination - use simple call for first load
-      const data = await callingService.getLeads({ page: 1, limit: 10 });
+      
+      // Prepare initial query parameters
+      const queryParams = { page: 1, limit: 10 };
+      
+      // Check if filter values are passed from navigation (like from Dashboard)
+      if (filterValue?.status) {
+        queryParams.status = filterValue.status;
+        // Clear the location state after using it to prevent reuse on refresh
+        window.history.replaceState({}, document.title);
+      }
+      
+      // Load leads with initial pagination and filters
+      const data = await callingService.getLeads(queryParams);
       setLeads(data.leads || []);
       setPagination({
         pageIndex: 0,
@@ -336,6 +347,7 @@ const CallingManagement = () => {
         pageCount={pagination.totalPages}
         totalItems={pagination.totalItems}
         currentPage={pagination.pageIndex + 1}
+        filterValue={filterValue}
       />
 
       {showAddModal && (

@@ -14,7 +14,8 @@ const LeadsList = ({
   serverPagination,
   pageCount,
   totalItems,
-  currentPage
+  currentPage,
+  filterValue
 }) => {
   const [selectAll, setSelectAll] = useState(false);
 
@@ -152,6 +153,21 @@ const LeadsList = ({
       accessorKey: 'status',
       header: 'Status',
       cell: ({ getValue }) => getStatusBadge(getValue()),
+      filterComponent: ({ value, onChange }) => (
+        <select
+          value={value}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => onChange(e.target.value)}
+          className="px-2 py-1 rounded border border-slate-300 bg-white w-full text-xs"
+        >
+          <option value="">All</option>
+          <option value="unassigned">Unassigned</option>
+          <option value="assigned">Assigned</option>
+          <option value="pending">Pending</option>
+          <option value="completed">Completed</option>
+          <option value="failed">Failed</option>
+        </select>
+      ),
     },
     {
       accessorKey: 'assignedToName',
@@ -204,6 +220,15 @@ const LeadsList = ({
 
 
 
+  // Prepare initial filters from filterValue
+  const initialFilters = useMemo(() => {
+    const filters = [];
+    if (filterValue?.status) {
+      filters.push({ id: 'status', value: filterValue.status });
+    }
+    return filters;
+  }, [filterValue]);
+
   // Always show table, even when no data - let TableService handle empty state
 
   return (
@@ -221,6 +246,7 @@ const LeadsList = ({
         pageCount={pageCount}
         totalItems={totalItems}
         currentPage={currentPage}
+        initialFilters={initialFilters}
       />
     </div>
   );

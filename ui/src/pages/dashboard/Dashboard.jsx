@@ -644,7 +644,7 @@ export default function Dashboard() {
                           <div
                             key={i}
                             className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-center"
-                            onClick={() => navigate(`${detail.url}`,{state:detail.filter})}
+                            onClick={() => navigate(`${detail.url}`,{state: detail.filter ? {status: detail.filter} : null})}
                           >
                             {/* Icon + number same line */}
                             <div className="flex items-center justify-center space-x-2 mb-2">
