@@ -371,7 +371,7 @@ exports.getCurrentUserProfile = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
-      .populate('roleId', 'name description')
+      .populate('roleId', 'name description permissions')
       .select('-password');
 
     if (!user) {

@@ -157,7 +157,12 @@ exports.login = async (req, res) => {
         fullName: user.fullName,
         roleId: user.roleId._id,
         roleName: user.roleId.name,
-        lastLogin: user.lastLogin
+        lastLogin: user.lastLogin,
+        role: {
+          id: user.roleId._id,
+          name: user.roleId.name,
+          permissions: user.roleId.permissions
+        }
       }
     });
 

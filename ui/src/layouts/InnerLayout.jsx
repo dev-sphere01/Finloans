@@ -4,6 +4,7 @@ import { motion as M, AnimatePresence } from "framer-motion";
 // layouts/InnerLayout.jsx
 import { Outlet, useLocation } from "react-router-dom";
 import useAuthStore from '@/store/authStore';
+import { usePermissions } from '@/contexts/PermissionContext';
 
 // components imports
 import Navbar from '@/components/Navbar';
@@ -15,6 +16,7 @@ import { getNavConfig } from "./components/NavConfig";
 
 const InnerLayout = () => {
   const { user, logout } = useAuthStore();
+  const { hasPermission } = usePermissions();
   const location = useLocation();
 
   const [activeTab, setActiveTab] = useState("");
@@ -47,9 +49,8 @@ const InnerLayout = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [sidebarOpen]);
 
-  // Get menu items based on user's role permissions
-  // const menuItems = getNavConfig(user?.rolePermissions || []);
-  const menuItems = getNavConfig(1 || []); // <--- temporary until role based access 
+  // Get menu items based on user's permissions
+  const menuItems = getNavConfig(hasPermission); 
 
   const getActiveTabTitle = () => {
     const item = menuItems.find(

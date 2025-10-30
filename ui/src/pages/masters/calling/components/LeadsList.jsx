@@ -187,7 +187,7 @@ const LeadsList = ({
       header: 'Actions',
       cell: ({ row }) => (
         <ActionButton
-          module="calling"
+          module="calling_admin"
           action="read"
           icon={<FaEye />}
           onClick={(e) => {

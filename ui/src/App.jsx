@@ -51,6 +51,7 @@ import CallingManagement from "@/pages/masters/calling/CallingManagement";
 import BulkUpload from "@/pages/calling/BulkUpload";
 import EmployeeCalling from "@/pages/calling/EmployeeCalling";
 import LeadDetails from "@/pages/calling/LeadDetails";
+import PermissionTester from "@/components/PermissionTester";
 
 import LandingPage from "@/pages/userPages/landingPage/LandingPage";
 import ServicesPage from "@/pages/userPages/services/Servicespage";
@@ -148,6 +149,7 @@ function App() {
                 <Route path="/dashboard/loans" element={<Loans />} />
                 <Route path="/dashboard/credit-cards" element={<CreditCards />} />
                 <Route path="/dashboard/insurance" element={<Insurance />} />
+                <Route path="/dashboard/test-permissions" element={<PermissionTester />} />
                 <Route path="/dashboard/applications" element={<ApplicationsList />} />
                 <Route path="/profile" element={<UserProfile />} />
                 <Route path="/settings" element={<Settings />} />

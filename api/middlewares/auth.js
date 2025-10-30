@@ -59,7 +59,15 @@ const authorize = (resource, action) => {
         return res.status(403).json({ error: 'No role assigned' });
       }
 
-      const hasPermission = req.userRole.hasPermission(resource, action);
+      // Admin users have all permissions by default
+      const roleName = req.userRole.name;
+      const isAdmin = roleName && (
+        roleName.toLowerCase().includes('admin') || 
+        roleName.toLowerCase() === 'super admin' ||
+        roleName.toLowerCase() === 'administrator'
+      );
+
+      const hasPermission = isAdmin || req.userRole.hasPermission(resource, action);
       
       if (!hasPermission) {
         // Log unauthorized access attempt
@@ -99,8 +107,18 @@ const requireAdmin = async (req, res, next) => {
       return res.status(403).json({ error: 'No role assigned' });
     }
 
-    const isAdmin = req.userRole.hasPermission('users', 'manage') || 
-                   req.userRole.hasPermission('system', 'manage');
+    // Check if user has admin role name or explicit admin permissions
+    const roleName = req.userRole.name;
+    const isAdminByName = roleName && (
+      roleName.toLowerCase().includes('admin') || 
+      roleName.toLowerCase() === 'super admin' ||
+      roleName.toLowerCase() === 'administrator'
+    );
+
+    const isAdminByPermission = req.userRole.hasPermission('users', 'manage') || 
+                               req.userRole.hasPermission('system', 'manage');
+    
+    const isAdmin = isAdminByName || isAdminByPermission;
     
     if (!isAdmin) {
       return res.status(403).json({ error: 'Admin privileges required' });

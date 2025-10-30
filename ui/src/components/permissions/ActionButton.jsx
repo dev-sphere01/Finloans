@@ -57,11 +57,12 @@ const ActionButton = ({
         try {
             isAllowed = hasPermission(module, action);
         } catch (error) {
-            console.warn('Permission check failed, allowing action:', error);
-            isAllowed = true; // Fallback to allow action if permission check fails
+            console.warn('Permission check failed, denying action:', error);
+            isAllowed = false; // Fallback to deny action if permission check fails
         }
     }
 
+    // If user doesn't have permission, don't render the button
     if (!isAllowed) return null;
 
     // Size variants - different for icon-only vs text buttons
@@ -98,10 +99,16 @@ const ActionButton = ({
 
     // Get the appropriate icon with conditional margin
     const getIcon = () => {
-        if (icon) return icon;
+        if (icon) {
+            // Clone the icon and add margin class if text is present
+            if (hasText) {
+                return <span className="mr-2">{icon}</span>;
+            }
+            return icon;
+        }
         const IconComponent = defaultIcons[action];
         if (!IconComponent) return null;
-        return <IconComponent className={hasText ? "mr-1" : ""} />;
+        return <IconComponent className={hasText ? "mr-2" : ""} />;
     };
 
     const sizeClasses = getSizeClasses(hasText);

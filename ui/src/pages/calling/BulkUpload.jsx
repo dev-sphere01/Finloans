@@ -223,8 +223,8 @@ Lisa Davis,9876543215,lisa.davis@example.com,Car Loan,New Car Loan,Looking for c
                   </button>
 
                   <ActionButton
-                    module="calling"
-                    action="create"
+                    module="calling_admin"
+                    action="bulk_import"
                     label="Upload"
                     onClick={handleBulkUpload}
                     disabled={isUploading || mappedData.length === 0}

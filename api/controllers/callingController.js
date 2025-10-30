@@ -30,7 +30,16 @@ exports.getLeads = async (req, res) => {
 
         // Handle status filter
         if (filters.status && filters.status !== 'all') {
-          baseFilter.status = filters.status;
+          if (filters.status === 'unassigned') {
+            // For unassigned filter, check both status and assignedTo
+            baseFilter.$or = [
+              { status: 'unassigned' },
+              { assignedTo: { $exists: false } },
+              { assignedTo: null }
+            ];
+          } else {
+            baseFilter.status = filters.status;
+          }
           delete filters.status;
         }
 

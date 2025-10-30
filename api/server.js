@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 
 
 // Display environment information
-console.log(`Environment: ${config.NODE_ENV}`);
+console.log(`Environment: ${config.NODE_STAGE}`);
 
 const startServer = async () => {
     // Connecting to database
