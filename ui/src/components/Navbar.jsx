@@ -99,18 +99,18 @@ const Navbar = ({ getActiveTabTitle, setSidebarOpen, sidebarOpen }) => {
 
 
                     {/* Search */}
-                        <div className="hidden md:flex items-center space-x-2 bg-gray-50 rounded-xl px-4 py-2.5 min-w-[300px] border border-slate-700/20">
+                        {/* <div className="hidden md:flex items-center space-x-2 bg-gray-50 rounded-xl px-4 py-2.5 min-w-[300px] border border-slate-700/20">
                             <i className="fas fa-search text-gray-400"></i>
                             <input
                                 type="text"
                                 placeholder="Search employees, departments..."
                                 className="bg-transparent flex-1 text-sm text-gray-700 placeholder-gray-400 focus:outline-none"
                             />
-                        </div>
+                        </div> */}
                     
 
                     {/* Notifications */}
-                    <motion.button
+                    {/* <motion.button
                         className="relative p-2.5 text-gray-500 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all duration-200"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -119,7 +119,7 @@ const Navbar = ({ getActiveTabTitle, setSidebarOpen, sidebarOpen }) => {
                         <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                             3
                         </span>
-                    </motion.button>
+                    </motion.button> */}
 
                     {/* Profile Dropdown */}
                     <div className="relative" ref={dropdownRef}>

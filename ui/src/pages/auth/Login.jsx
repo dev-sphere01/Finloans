@@ -119,6 +119,7 @@ const Login = () => {
                 required
               />
               <button
+              tabIndex={-1}
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
@@ -134,15 +135,16 @@ const Login = () => {
 
           <div className="flex items-center justify-between">
             <label className="flex items-center text-sm text-gray-700">
-              <input type="checkbox" className="mr-2 h-4 w-4 text-slate-600 border-gray-300 rounded" />
+              <input tabIndex={-1} type="checkbox" className="mr-2 h-4 w-4 text-slate-600 border-gray-300 rounded" />
               Remember me
             </label>
-            <Link to="/forgot-password" className="text-sm text-slate-600 hover:text-slate-500 font-medium">
+            <Link  tabIndex={-1} to="/forgot-password" className="text-sm text-slate-600 hover:text-slate-500 font-medium">
               Forgot password?
             </Link>
           </div>
 
           <button
+          // tabIndex={+3}
             type="submit"
             disabled={isLoading}
             className="w-full bg-gradient-to-r from-slate-500 to-gray-500 hover:from-slate-700 hover:to-gray-700 disabled:from-slate-300 disabled:to-gray-300 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"

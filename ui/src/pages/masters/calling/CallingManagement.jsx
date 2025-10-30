@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate ,useLocation} from 'react-router-dom';
 import useCallingStore from '@/store/callingStore';
 import callingService from '@/services/callingService';
 import { ActionButton } from '@/components/permissions';
@@ -11,6 +11,7 @@ import { FaPlus, FaFileImport, FaUserCheck } from 'react-icons/fa';
 
 const CallingManagement = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     leads,
     isLoading,
@@ -35,7 +36,8 @@ const CallingManagement = () => {
   });
   const isLoadingRef = useRef(false);
   const [isInitialized, setIsInitialized] = useState(false);
-
+  const filterValue = location.state;
+  
   useEffect(() => {
     loadInitialData();
   }, []);

@@ -20,12 +20,16 @@ import {
 import { ActionButton, PermissionGuard } from '@/components/permissions';
 import useAuthStore from '@/store/authStore';
 import dashboardService from '@/services/dashboardService';
+import { useNavigate } from "react-router-dom";
+
 
 export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = useAuthStore();
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -51,7 +55,7 @@ export default function Dashboard() {
   // Calculate totals from real data
   const getApplicationTotals = () => {
     if (!dashboardData?.stats?.applications) return { total: 0, pending: 0, approved: 0, rejected: 0 };
-    
+
     const apps = dashboardData.stats.applications;
     return {
       total: apps.total || 0,
@@ -64,7 +68,7 @@ export default function Dashboard() {
 
   const getUserTotals = () => {
     if (!dashboardData?.stats?.users) return { total: 0, active: 0, locked: 0 };
-    
+
     const users = dashboardData.stats.users;
     return {
       total: users.total || 0,
@@ -75,7 +79,7 @@ export default function Dashboard() {
 
   const getLeadTotals = () => {
     if (!dashboardData?.stats?.leads) return { total: 0, new: 0, converted: 0 };
-    
+
     const leads = dashboardData.stats.leads;
     return {
       total: leads.total || 0,
@@ -123,6 +127,8 @@ export default function Dashboard() {
             bg: "bg-orange-100",
             description: "Awaiting review",
             percentage: appTotals.total ? Math.round((appTotals.pending / appTotals.total) * 100) : 0,
+            url: "/dashboard/calling-management",
+            filter: "pending"
           },
           {
             title: "Under Review",
@@ -334,15 +340,15 @@ export default function Dashboard() {
   const mainGroups = buildMainGroups();
 
 
-const formatNumber = (num) => {
-  if (num >= 1_000_000) {
-    return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
-  } else if (num >= 1_000) {
-    return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
-  } else {
-    return num.toString().padStart(3, "0");
-  }
-};
+  const formatNumber = (num) => {
+    if (num >= 1_000_000) {
+      return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+    } else if (num >= 1_000) {
+      return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+    } else {
+      return num.toString().padStart(3, "0");
+    }
+  };
 
 
   if (loading) {
@@ -366,8 +372,8 @@ const formatNumber = (num) => {
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Dashboard</h2>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
             Retry
@@ -411,7 +417,7 @@ const formatNumber = (num) => {
                 <Activity className="h-4 w-4" />
                 <span className="text-sm font-medium">Live</span>
               </div>
-              
+
               {/* Quick Action Buttons */}
               <div className="flex items-center gap-2">
                 <ActionButton
@@ -554,11 +560,10 @@ const formatNumber = (num) => {
                 <div key={agent._id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                        index === 0 ? 'bg-yellow-500' : 
-                        index === 1 ? 'bg-gray-400' : 
-                        index === 2 ? 'bg-orange-500' : 'bg-blue-500'
-                      }`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${index === 0 ? 'bg-yellow-500' :
+                          index === 1 ? 'bg-gray-400' :
+                            index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                        }`}>
                         {index + 1}
                       </div>
                       <div>
@@ -595,82 +600,83 @@ const formatNumber = (num) => {
         {mainGroups.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             {mainGroups.map((group) => {
-            const IconComponent = group.icon;
+              const IconComponent = group.icon;
 
-            return (
-              <div
-                key={group.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300"
-              >
-                {/* Header */}
-                <div className="p-4 sm:p-6">
-                  <div className="flex items-center space-x-3">
-                    <div
-                      className={`w-10 h-10 rounded-xl bg-gradient-to-r ${group.gradient} flex items-center justify-center shadow-sm`}
-                    >
-                      <IconComponent className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {group.title}
-                      </h3>
-                      <p className="text-sm text-gray-500">{group.subtitle}</p>
-                    </div>
+              return (
+                <div
+                  key={group.id}
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300"
+                >
+                  {/* Header */}
+                  <div className="p-4 sm:p-6">
+                    <div className="flex items-center space-x-3">
+                      <div
+                        className={`w-10 h-10 rounded-xl bg-gradient-to-r ${group.gradient} flex items-center justify-center shadow-sm`}
+                      >
+                        <IconComponent className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {group.title}
+                        </h3>
+                        <p className="text-sm text-gray-500">{group.subtitle}</p>
+                      </div>
 
-                    <div
-                      className={`px-2 mx-2 h-10 rounded-xl text-white text-2xl font-bold bg-gradient-to-r ${group.gradient} flex items-center justify-center shadow-sm`}
-                    >
-                      {formatNumber(
-                        group.details.reduce(
-                          (sum, detail) => sum + (detail.value || 0),
-                          0
-                        )
-                      )}
+                      <div
+                        className={`px-2 mx-2 h-10 rounded-xl text-white text-2xl font-bold bg-gradient-to-r ${group.gradient} flex items-center justify-center shadow-sm`}
+                      >
+                        {formatNumber(
+                          group.details.reduce(
+                            (sum, detail) => sum + (detail.value || 0),
+                            0
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Details (always visible) */}
+                  <div className="border-t border-gray-100 p-4 sm:p-6 pt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {group.details.map((detail, i) => {
+                        const DetailIcon = detail.icon;
+                        return (
+                          <div
+                            key={i}
+                            className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-center"
+                            onClick={() => navigate(`${detail.url}`,{state:detail.filter})}
+                          >
+                            {/* Icon + number same line */}
+                            <div className="flex items-center justify-center space-x-2 mb-2">
+                              <div
+                                className={`w-8 h-8 ${detail.bg} rounded-lg flex items-center justify-center`}
+                              >
+                                <DetailIcon
+                                  className={`h-4 w-4 ${detail.color}`}
+                                />
+                              </div>
+                              <div className="text-xl font-bold text-gray-900">
+                                {detail.value}
+                              </div>
+                            </div>
+                            {/* Title & description */}
+                            <h4 className="font-medium text-gray-900 text-sm">
+                              {detail.title}
+                            </h4>
+                            <p className="text-xs text-gray-500">
+                              {detail.description}
+                            </p>
+                            {/* Percentage */}
+                            <div className="text-xs text-blue-600 font-medium mt-2">
+                              {detail.percentage}% of total
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
-
-                {/* Details (always visible) */}
-                <div className="border-t border-gray-100 p-4 sm:p-6 pt-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {group.details.map((detail, i) => {
-                      const DetailIcon = detail.icon;
-                      return (
-                        <div
-                          key={i}
-                          className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-center"
-                        >
-                          {/* Icon + number same line */}
-                          <div className="flex items-center justify-center space-x-2 mb-2">
-                            <div
-                              className={`w-8 h-8 ${detail.bg} rounded-lg flex items-center justify-center`}
-                            >
-                              <DetailIcon
-                                className={`h-4 w-4 ${detail.color}`}
-                              />
-                            </div>
-                            <div className="text-xl font-bold text-gray-900">
-                              {detail.value}
-                            </div>
-                          </div>
-                          {/* Title & description */}
-                          <h4 className="font-medium text-gray-900 text-sm">
-                            {detail.title}
-                          </h4>
-                          <p className="text-xs text-gray-500">
-                            {detail.description}
-                          </p>
-                          {/* Percentage */}
-                          <div className="text-xs text-blue-600 font-medium mt-2">
-                            {detail.percentage}% of total
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            );
+              );
             })}
           </div>
         ) : (
@@ -678,7 +684,7 @@ const formatNumber = (num) => {
             <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Limited Access</h3>
             <p className="text-gray-600">
-              You don't have permissions to view detailed dashboard sections. 
+              You don't have permissions to view detailed dashboard sections.
               Contact your administrator for access to more features.
             </p>
             <div className="mt-4 text-sm text-gray-500">
