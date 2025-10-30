@@ -51,6 +51,14 @@ const useAuthStore = create((set, get) => ({
     set({ isAuthenticated: true, user: loginResponseData.user });
   },
 
+  // Update user data (for profile updates)
+  updateUser: (userData) => {
+    const currentUser = get().user;
+    const updatedUser = { ...currentUser, ...userData };
+    sessionStorage.setItem('user', JSON.stringify(updatedUser));
+    set({ user: updatedUser });
+  },
+
   // Logout action
   logout: () => {
     sessionStorage.removeItem('authToken');

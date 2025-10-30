@@ -26,7 +26,7 @@ const AddUser = ({ onUserCreated }) => {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const response = await roleService.getRoles()
+        const response = await roleService.getAll()
         setRoles(response.roles || [])
       } catch (err) {
         console.error('Error fetching roles:', err)

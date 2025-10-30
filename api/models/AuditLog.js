@@ -4,7 +4,7 @@ const auditLogSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false // Allow null for anonymous actions like failed logins
   },
   action: {
     type: String,
@@ -17,14 +17,24 @@ const auditLogSchema = new mongoose.Schema({
       'USER_CREATE',
       'USER_UPDATE',
       'USER_DELETE',
+      'USER_LIST',
       'ROLE_CREATE',
       'ROLE_UPDATE',
       'ROLE_DELETE',
+      'ROLE_LIST',
       'PERMISSION_GRANT',
       'PERMISSION_REVOKE',
       'ACCOUNT_LOCK',
       'ACCOUNT_UNLOCK',
-      'FAILED_LOGIN'
+      'FAILED_LOGIN',
+      'APPLICATION_CREATE',
+      'APPLICATION_UPDATE',
+      'APPLICATION_DELETE',
+      'APPLICATION_LIST',
+      'APPLICATION_VIEW',
+      'APPLICATION_STATUS_UPDATE',
+      'APPLICATION_NOTE_ADD',
+      'UNAUTHORIZED_ACCESS'
     ]
   },
   resource: {

@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import useAuthStore from '@/store/authStore'
 import userService from '@/services/userService'
-import roleService from '@/services/roleService'
+
 import notification from '@/services/NotificationService'
 import { FiUser, FiEdit3, FiSave, FiX, FiMail, FiCalendar, FiShield } from 'react-icons/fi'
+
 
 const UserProfile = () => {
     const { user: authUser } = useAuthStore()
     const { success: notifySuccess, error: notifyError } = notification()
 
     const [user, setUser] = useState(null)
-    const [roles, setRoles] = useState([])
+
     const [loading, setLoading] = useState(true)
     const [isEditing, setIsEditing] = useState(false)
     const [saving, setSaving] = useState(false)
@@ -37,8 +38,8 @@ const UserProfile = () => {
                 setError('')
 
                 // Fetch current user data
-                const userResponse = await userService.getUserById(authUser.id)
-                const userData = userResponse.user || userResponse
+                const userResponse = await userService.getProfile()
+                const userData = userResponse.data || userResponse.user || userResponse
 
                 setUser(userData)
                 setFormData({
@@ -50,13 +51,12 @@ const UserProfile = () => {
                     isActive: userData.isActive !== undefined ? userData.isActive : true
                 })
 
-                // Fetch roles for display
-                const rolesResponse = await roleService.getAll()
-                setRoles(rolesResponse.roles || [])
+                // Roles are already populated in the user data, no need to fetch separately
 
             } catch (err) {
                 console.error('Error fetching profile data:', err)
-                setError('Failed to load profile data')
+                const errorMessage = err.response?.data?.message || err.message || 'Failed to load profile data'
+                setError(errorMessage)
                 // Don't call notifyError here to avoid dependency issues
             } finally {
                 setLoading(false)
@@ -137,14 +137,14 @@ const UserProfile = () => {
         setError('')
 
         try {
-            const response = await userService.updateUser(authUser.id, formData)
+            const response = await userService.updateProfile(formData)
 
             if (response.success || response) {
-                // Update local user state
-                const updatedUser = { ...user, ...formData }
+                // Update local user state with the response data
+                const updatedUser = response.data || response.user || { ...user, ...formData }
                 setUser(updatedUser)
                 setIsEditing(false)
-                notifySuccess('Profile updated successfully!')
+                notifySuccess(response.message || 'Profile updated successfully!')
             }
         } catch (err) {
             console.error('Error updating profile:', err)
@@ -170,8 +170,7 @@ const UserProfile = () => {
         if (typeof user.roleId === 'object') {
             return user.roleId.name || 'Unknown Role'
         }
-        const role = roles.find(r => r._id === user.roleId)
-        return role?.name || 'Unknown Role'
+        return 'Unknown Role'
     }
 
     if (loading) {

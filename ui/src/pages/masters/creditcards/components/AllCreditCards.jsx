@@ -3,6 +3,7 @@ import creditCardService from '@/services/creditCardService'
 import TableService from '@/services/TableService'
 import { createColumnHelper } from '@tanstack/react-table'
 import notification from '@/services/NotificationService'
+import { ActionButton } from '@/components/permissions'
 
 const AllCreditCards = ({ onEditCreditCard, onViewCreditCard }) => {
   const { success: notifySuccess, error: notifyError } = notification()
@@ -42,11 +43,23 @@ const AllCreditCards = ({ onEditCreditCard, onViewCreditCard }) => {
     () => [
       columnHelper.accessor('creditCardName', {
         header: 'Card Name',
-        cell: (info) => (
-          <div className="font-medium text-gray-900">
-            {info.getValue()}
-          </div>
-        ),
+        cell: (info) => {
+          const handleClick = () => {
+            if (onViewCreditCard) {
+              onViewCreditCard(info.row.original);
+            } else if (onEditCreditCard) {
+              onEditCreditCard(info.row.original);
+            }
+          };
+          return (
+            <div
+              className={`font-medium ${onViewCreditCard || onEditCreditCard ? 'text-blue-600 hover:underline cursor-pointer' : 'text-gray-900'}`}
+              onClick={handleClick}
+            >
+              {info.getValue()}
+            </div>
+          );
+        },
         enableColumnFilter: true,
       }),
       columnHelper.accessor('cibilRange', {
@@ -68,11 +81,18 @@ const AllCreditCards = ({ onEditCreditCard, onViewCreditCard }) => {
       }),
       columnHelper.accessor('link', {
         header: 'Apply Link',
-        cell: (info) => (
-            <a href={info.getValue()} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                Apply
+        cell: (info) => {
+          const url = info.getValue();
+          if (!url) {
+            return <span className="text-gray-500">N/A</span>;
+          }
+          const fullUrl = !url.startsWith('http://') && !url.startsWith('https://') ? `http://${url}` : url;
+          return (
+            <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+              Apply
             </a>
-        ),
+          );
+        },
         enableColumnFilter: false,
         enableSorting: false,
       }),
@@ -89,28 +109,28 @@ const AllCreditCards = ({ onEditCreditCard, onViewCreditCard }) => {
         id: 'actions',
         header: 'Actions',
         cell: (info) => (
-          <div className="flex items-center gap-2">
-            <button
+          <div className="flex items-center gap-1">
+            <ActionButton
+              module="credit-cards"
+              action="read"
+              label="View"
+              size="sm"
               onClick={() => onViewCreditCard && onViewCreditCard(info.row.original)}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="View Card"
-            >
-              View
-            </button>
-            <button
+            />
+            <ActionButton
+              module="credit-cards"
+              action="update"
+              label="Edit"
+              size="sm"
               onClick={() => onEditCreditCard && onEditCreditCard(info.row.original)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="Edit Card"
-            >
-              Edit
-            </button>
-            <button
+            />
+            <ActionButton
+              module="credit-cards"
+              action="delete"
+              label="Delete"
+              size="sm"
               onClick={() => handleDeleteClick(info.row.original)}
-              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="Delete Card"
-            >
-              Delete
-            </button>
+            />
           </div>
         ),
       }),

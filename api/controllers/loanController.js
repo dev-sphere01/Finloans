@@ -18,11 +18,14 @@ function normalizeLinks(links) {
 // CREATE
 exports.createLoan = async (req, res, next) => {
   try {
-    const { loanType, links } = req.body;
+    const { loanType, subType, links, requiredDocuments, isActive } = req.body;
 
     const loan = await Loan.create({
       loanType,
+      subType: subType || '',
       links: normalizeLinks(links),
+      requiredDocuments: requiredDocuments || [],
+      isActive: isActive !== undefined ? isActive : true,
     });
 
     res.status(201).json(loan);
@@ -34,7 +37,7 @@ exports.createLoan = async (req, res, next) => {
 // READ ALL
 exports.getAllLoans = async (req, res, next) => {
   try {
-    const { data, pagination } = await queryService.query(Loan, req.query, ['loanType']);
+    const { data, pagination } = await queryService.query(Loan, req.query, ['loanType', 'subType']);
     res.json({
       items: data,
       pagination
@@ -58,11 +61,14 @@ exports.getLoanById = async (req, res, next) => {
 // UPDATE
 exports.updateLoan = async (req, res, next) => {
   try {
-    const { loanType, links } = req.body;
+    const { loanType, subType, links, requiredDocuments, isActive } = req.body;
 
     const updateData = {};
     if (loanType !== undefined) updateData.loanType = loanType;
+    if (subType !== undefined) updateData.subType = subType;
     if (links !== undefined) updateData.links = normalizeLinks(links);
+    if (requiredDocuments !== undefined) updateData.requiredDocuments = requiredDocuments;
+    if (isActive !== undefined) updateData.isActive = isActive;
 
     const item = await Loan.findByIdAndUpdate(req.params.id, updateData, {
       new: true,

@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const Role = require('../models/Role');
 const path = require('path');
+const config = require('../config')
+
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const seedDatabase = async () => {
@@ -9,7 +11,7 @@ const seedDatabase = async () => {
     console.log('Starting database seeding...');
 
     // Connect to MongoDB
-    await mongoose.connect(process.env.DB_URI, {
+    await mongoose.connect(config.DB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });

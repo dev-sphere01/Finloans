@@ -4,6 +4,7 @@ import TableService from '@/services/TableService'
 import DeleteConfirmationModal from './DeleteConfirmationModal'
 import { createColumnHelper } from '@tanstack/react-table'
 import notification from '@/services/NotificationService'
+import { ActionButton } from '@/components/permissions'
 
 const AllUsers = ({ onEditUser, onViewUser }) => {
   const { success: notifySuccess, error: notifyError } = notification()
@@ -43,11 +44,23 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
     () => [
       columnHelper.accessor('username', {
         header: 'Username',
-        cell: (info) => (
-          <div className="font-medium text-gray-900">
-            {info.getValue()}
-          </div>
-        ),
+        cell: (info) => {
+          const handleClick = () => {
+            if (onViewUser) {
+              onViewUser(info.row.original);
+            } else if (onEditUser) {
+              onEditUser(info.row.original);
+            }
+          };
+          return (
+            <div
+              className={`font-medium ${onViewUser || onEditUser ? 'text-blue-600 hover:underline cursor-pointer' : 'text-gray-900'}`}
+              onClick={handleClick}
+            >
+              {info.getValue()}
+            </div>
+          );
+        },
         enableColumnFilter: true,
       }),
       columnHelper.accessor('email', {
@@ -104,28 +117,28 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
         id: 'actions',
         header: 'Actions',
         cell: (info) => (
-          <div className="flex items-center gap-2">
-            <button
+          <div className="flex items-center gap-1">
+            <ActionButton
+              module="users"
+              action="read"
+              label="View"
+              size="sm"
               onClick={() => onViewUser && onViewUser(info.row.original)}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="View User"
-            >
-              View
-            </button>
-            <button
+            />
+            <ActionButton
+              module="users"
+              action="update"
+              label="Edit"
+              size="sm"
               onClick={() => onEditUser && onEditUser(info.row.original)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="Edit User"
-            >
-              Edit
-            </button>
-            <button
+            />
+            <ActionButton
+              module="users"
+              action="delete"
+              label="Delete"
+              size="sm"
               onClick={() => handleDeleteClick(info.row.original)}
-              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="Delete User"
-            >
-              Delete
-            </button>
+            />
           </div>
         ),
       }),

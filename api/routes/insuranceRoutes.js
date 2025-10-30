@@ -1,19 +1,45 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
+const insuranceController = require('../controllers/insuranceController');
+const insuranceValidation = require('../middlewares/insuranceValidation');
 
-const {
-  createInsurance,
-  getAllInsurances,
-  getInsuranceById,
-  updateInsurance,
-  deleteInsurance,
-} = require("../controllers/insuranceController");
+// Get all insurance types with subtypes (main endpoint for frontend)
+router.get('/', 
+  insuranceValidation.getInsuranceTypes,
+  insuranceController.getInsurances
+);
 
-// CRUD routes
-router.post("/", createInsurance);
-router.get("/", getAllInsurances);
-router.get("/:id", getInsuranceById);
-router.put("/:id", updateInsurance);
-router.delete("/:id", deleteInsurance);
+// Get specific insurance type by ID
+router.get('/:id', 
+  insuranceController.getInsuranceType
+);
+
+// Create new insurance type
+router.post('/', 
+  insuranceValidation.createInsuranceType,
+  insuranceController.createInsuranceType
+);
+
+// Update insurance type
+router.put('/:id', 
+  insuranceValidation.updateInsuranceType,
+  insuranceController.updateInsuranceType
+);
+
+// Delete insurance type
+router.delete('/:id', 
+  insuranceController.deleteInsuranceType
+);
+
+// Get subtypes for specific insurance type
+router.get('/type/:insuranceType/subtypes', 
+  insuranceController.getSubTypes
+);
+
+// Validate insurance type and subtype combination
+router.get('/validate/type-subtype', 
+  insuranceValidation.validateTypeSubType,
+  insuranceController.validateInsuranceTypeSubType
+);
 
 module.exports = router;

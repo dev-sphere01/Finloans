@@ -1,0 +1,520 @@
+const { body } = require('express-validator');
+const Insurance = require('../models/Insurance');
+
+const applicationValidation = {
+  // Basic validation rules for all applications
+  basicValidation: [
+    body('fullName')
+      .trim()
+      .notEmpty()
+      .withMessage('Full name is required')
+      .isLength({ min: 2, max: 100 })
+      .withMessage('Full name must be between 2 and 100 characters'),
+
+    body('panNumber')
+      .trim()
+      .notEmpty()
+      .withMessage('PAN number is required')
+      .matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)
+      .withMessage('Invalid PAN format (e.g., ABCDE1234F)'),
+
+    body('dateOfBirth')
+      .notEmpty()
+      .withMessage('Date of birth is required')
+      .isISO8601()
+      .withMessage('Invalid date format')
+      .custom((value) => {
+        const birthDate = new Date(value);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+
+        if (age < 18 || age > 70) {
+          throw new Error('Age must be between 18 and 70 years');
+        }
+        return true;
+      }),
+
+    body('mobileNumber')
+      .trim()
+      .notEmpty()
+      .withMessage('Mobile number is required')
+      .matches(/^[6-9][0-9]{9}$/)
+      .withMessage('Invalid mobile number format'),
+
+    body('location')
+      .trim()
+      .notEmpty()
+      .withMessage('Location is required')
+      .isLength({ min: 2, max: 100 })
+      .withMessage('Location must be between 2 and 100 characters'),
+
+    body('aadhaarNumber')
+      .trim()
+      .notEmpty()
+      .withMessage('Aadhaar number is required')
+      .matches(/^[0-9]{12}$/)
+      .withMessage('Invalid Aadhaar format (12 digits required)'),
+
+    body('currentAddress')
+      .trim()
+      .notEmpty()
+      .withMessage('Current address is required')
+      .isLength({ min: 10, max: 500 })
+      .withMessage('Address must be between 10 and 500 characters'),
+
+    body('serviceType')
+      .notEmpty()
+      .withMessage('Service type is required')
+      .isIn(['credit-card', 'insurance', 'loan'])
+      .withMessage('Invalid service type')
+  ],
+
+  // Credit card specific validation
+  creditCardValidation: [
+    body('monthlyIncome')
+      .if(body('serviceType').equals('credit-card'))
+      .notEmpty()
+      .withMessage('Monthly income is required for credit card applications')
+      .isNumeric()
+      .withMessage('Monthly income must be a number')
+      .custom((value) => {
+        const income = parseFloat(value);
+        if (income <= 0) {
+          throw new Error('Monthly income must be a positive number');
+        }
+        if (income < 10000) {
+          throw new Error('Monthly income must be at least ₹10,000');
+        }
+        return true;
+      }),
+
+    body('employmentType')
+      .if(body('serviceType').equals('credit-card'))
+      .notEmpty()
+      .withMessage('Employment type is required for credit card applications')
+      .isIn(['salaried', 'self-employed', 'business', 'freelancer'])
+      .withMessage('Invalid employment type'),
+
+    body('companyName')
+      .if(body('serviceType').equals('credit-card'))
+      .trim()
+      .notEmpty()
+      .withMessage('Company name is required for credit card applications')
+      .isLength({ min: 2, max: 100 })
+      .withMessage('Company name must be between 2 and 100 characters'),
+
+    body('workExperience')
+      .if(body('serviceType').equals('credit-card'))
+      .optional()
+      .isNumeric()
+      .withMessage('Work experience must be a number')
+      .custom((value) => {
+        if (value < 0 || value > 50) {
+          throw new Error('Work experience must be between 0 and 50 years');
+        }
+        return true;
+      }),
+
+    body('creditScore')
+      .optional()
+      .isNumeric()
+      .withMessage('Credit score must be a number')
+      .custom((value) => {
+        if (value && (value < 300 || value > 900)) {
+          throw new Error('Credit score must be between 300 and 900');
+        }
+        return true;
+      })
+  ],
+
+  // Insurance specific validation
+  insuranceValidation: [
+    body('subType')
+      .if(body('serviceType').equals('insurance'))
+      .notEmpty()
+      .withMessage('Insurance subtype is required')
+      .custom(async (value, { req }) => {
+        if (req.body.serviceType === 'insurance') {
+          let subType = value;
+
+          // Check if subType is an ObjectId (24 character hex string)
+          if (subType && subType.match(/^[0-9a-fA-F]{24}$/)) {
+            console.log(`Validation: SubType '${subType}' appears to be an ObjectId, trying to resolve`);
+            
+            try {
+              // Try to find the insurance document by ObjectId
+              const insuranceDoc = await Insurance.findById(subType);
+              if (insuranceDoc && insuranceDoc.subTypes.length > 0) {
+                // Use the first active subtype from this insurance document
+                const firstActiveSubType = insuranceDoc.subTypes.find(st => st.isActive);
+                if (firstActiveSubType) {
+                  subType = firstActiveSubType.name;
+                  req.body.insuranceType = insuranceDoc.insuranceType;
+                  console.log(`Validation: Resolved ObjectId to subType: '${subType}' and insuranceType: '${insuranceDoc.insuranceType}'`);
+                }
+              } else {
+                // If ObjectId doesn't resolve, default to 'term'
+                console.log(`Validation: ObjectId '${value}' not found, defaulting to 'term'`);
+                subType = 'term';
+              }
+            } catch (error) {
+              console.error('Validation: Error resolving ObjectId subType:', error);
+              subType = 'term'; // Default fallback
+            }
+          }
+
+          // Update the request body with the resolved subType
+          req.body.subType = subType;
+
+          // Get the insurance type from the request (could be in insuranceType field or derived from subType)
+          // If insuranceType is not provided, try to determine it from subType
+          let insuranceType = req.body.insuranceType;
+          
+          if (!insuranceType && subType) {
+            // Map common subtypes to their insurance types (case insensitive)
+            const subTypeToInsuranceTypeMap = {
+              // Life Insurance variations
+              'term': 'Life Insurance',
+              'TERM': 'Life Insurance',
+              'Term': 'Life Insurance',
+              'whole': 'Life Insurance', 
+              'WHOLE': 'Life Insurance',
+              'Whole': 'Life Insurance',
+              'endowment': 'Life Insurance',
+              'ENDOWMENT': 'Life Insurance',
+              'Endowment': 'Life Insurance',
+              'life': 'Life Insurance',
+              'LIFE': 'Life Insurance',
+              'Life': 'Life Insurance',
+              
+              // Health Insurance variations
+              'individual': 'Health Insurance',
+              'INDIVIDUAL': 'Health Insurance',
+              'Individual': 'Health Insurance',
+              'family': 'Health Insurance',
+              'FAMILY': 'Health Insurance',
+              'Family': 'Health Insurance',
+              'senior-citizen': 'Health Insurance',
+              'SENIOR-CITIZEN': 'Health Insurance',
+              'Senior-Citizen': 'Health Insurance',
+              'critical-illness': 'Health Insurance',
+              'CRITICAL-ILLNESS': 'Health Insurance',
+              'Critical-Illness': 'Health Insurance',
+              'health': 'Health Insurance',
+              'HEALTH': 'Health Insurance',
+              'Health': 'Health Insurance',
+              
+              // Vehicle Insurance variations
+              'car': 'Vehicle Insurance',
+              'CAR': 'Vehicle Insurance',
+              'Car': 'Vehicle Insurance',
+              'bike': 'Vehicle Insurance',
+              'BIKE': 'Vehicle Insurance',
+              'Bike': 'Vehicle Insurance',
+              'vehicle': 'Vehicle Insurance',
+              'VEHICLE': 'Vehicle Insurance',
+              'Vehicle': 'Vehicle Insurance',
+              'motor': 'Vehicle Insurance',
+              'MOTOR': 'Vehicle Insurance',
+              'Motor': 'Vehicle Insurance',
+              
+              // Property Insurance variations
+              'home': 'Property Insurance',
+              'HOME': 'Property Insurance',
+              'Home': 'Property Insurance',
+              'property': 'Property Insurance',
+              'PROPERTY': 'Property Insurance',
+              'Property': 'Property Insurance',
+              'fire': 'Property Insurance',
+              'FIRE': 'Property Insurance',
+              'Fire': 'Property Insurance',
+              
+              // Travel Insurance variations
+              'domestic': 'Travel Insurance',
+              'DOMESTIC': 'Travel Insurance',
+              'Domestic': 'Travel Insurance',
+              'international': 'Travel Insurance',
+              'INTERNATIONAL': 'Travel Insurance',
+              'International': 'Travel Insurance',
+              'travel': 'Travel Insurance',
+              'TRAVEL': 'Travel Insurance',
+              'Travel': 'Travel Insurance',
+              
+              // Commercial/Business variations
+              'commercial': 'Vehicle Insurance',
+              'COMMERCIAL': 'Vehicle Insurance',
+              'Commercial': 'Vehicle Insurance',
+              'business': 'Travel Insurance',
+              'BUSINESS': 'Travel Insurance',
+              'Business': 'Travel Insurance'
+            };
+            
+            insuranceType = subTypeToInsuranceTypeMap[subType.toLowerCase()];
+          }
+
+          // If still not determined, try to find the insurance type by checking all insurance types for this subtype
+          if (!insuranceType) {
+            try {
+              const allInsuranceTypes = await Insurance.find({ isActive: true });
+              for (const insurance of allInsuranceTypes) {
+                const matchingSubType = insurance.subTypes.find(
+                  st => st.name.toLowerCase() === subType.toLowerCase() && st.isActive
+                );
+                if (matchingSubType) {
+                  insuranceType = insurance.insuranceType;
+                  console.log(`Found insurance type '${insuranceType}' for subType '${subType}'`);
+                  break;
+                }
+              }
+            } catch (error) {
+              console.error('Error finding insurance type for subType:', error);
+            }
+          }
+
+          // Final fallback to Life Insurance only if absolutely nothing is found
+          if (!insuranceType) {
+            insuranceType = 'Life Insurance';
+            console.log(`No insurance type found for subType '${subType}', defaulting to Life Insurance`);
+          }
+          
+          try {
+            // Find the insurance type in masters
+            const insurance = await Insurance.findOne({ 
+              insuranceType: { $regex: new RegExp(`^${insuranceType}$`, 'i') },
+              isActive: true 
+            });
+
+            if (!insurance) {
+              throw new Error(`Invalid insurance type: ${insuranceType}`);
+            }
+
+            // Check if the subtype exists and is active (case insensitive and flexible)
+            let validSubType = insurance.subTypes.find(
+              st => st.name.toLowerCase() === subType.toLowerCase() && st.isActive
+            );
+
+            // If exact match not found, try to find a similar one
+            if (!validSubType) {
+              validSubType = insurance.subTypes.find(
+                st => st.name.toLowerCase().includes(subType.toLowerCase()) && st.isActive
+              );
+            }
+
+            // If still not found, allow it but use the first available subtype for this insurance type
+            if (!validSubType && insurance.subTypes.length > 0) {
+              console.log(`Subtype '${subType}' not found for ${insuranceType}, allowing with first available subtype`);
+              validSubType = insurance.subTypes.find(st => st.isActive);
+            }
+
+            // Only throw error if no active subtypes exist at all
+            if (!validSubType) {
+              const availableSubTypes = insurance.subTypes
+                .filter(st => st.isActive)
+                .map(st => st.name)
+                .join(', ');
+              throw new Error(`No active subtypes available for ${insuranceType}. Available subtypes: ${availableSubTypes}`);
+            }
+          } catch (error) {
+            throw new Error(error.message || 'Error validating insurance type and subtype');
+          }
+        }
+        return true;
+      }),
+
+    body('coverageAmount')
+      .if(body('serviceType').equals('insurance'))
+      .notEmpty()
+      .withMessage('Coverage amount is required for insurance applications')
+      .isNumeric()
+      .withMessage('Coverage amount must be a number')
+      .custom((value) => {
+        if (value < 100000) {
+          throw new Error('Coverage amount must be at least ₹1,00,000');
+        }
+        return true;
+      }),
+
+    body('nomineeDetails')
+      .if(body('serviceType').equals('insurance'))
+      .trim()
+      .notEmpty()
+      .withMessage('Nominee details are required for insurance applications')
+      .isLength({ min: 5, max: 200 })
+      .withMessage('Nominee details must be between 5 and 200 characters'),
+
+    // Vehicle insurance specific
+    body('vehicleNumber')
+      .custom((value, { req }) => {
+        if (req.body.serviceType === 'insurance' && req.body.subType === 'vehicle') {
+          if (!value || value.trim() === '') {
+            throw new Error('Vehicle number is required for vehicle insurance');
+          }
+        }
+        return true;
+      }),
+
+    body('vehicleModel')
+      .custom((value, { req }) => {
+        if (req.body.serviceType === 'insurance' && req.body.subType === 'vehicle') {
+          if (!value || value.trim() === '') {
+            throw new Error('Vehicle model is required for vehicle insurance');
+          }
+        }
+        return true;
+      }),
+
+    body('vehicleYear')
+      .custom((value, { req }) => {
+        if (req.body.serviceType === 'insurance' && req.body.subType === 'vehicle') {
+          if (!value) {
+            throw new Error('Vehicle year is required for vehicle insurance');
+          }
+          if (isNaN(value)) {
+            throw new Error('Vehicle year must be a number');
+          }
+          const currentYear = new Date().getFullYear();
+          if (value < 1990 || value > currentYear) {
+            throw new Error(`Vehicle year must be between 1990 and ${currentYear}`);
+          }
+        }
+        return true;
+      }),
+
+    // Property insurance specific
+    body('propertyType')
+      .custom((value, { req }) => {
+        // Only validate if it's property insurance
+        if (req.body.serviceType === 'insurance' && req.body.subType === 'property') {
+          if (!value || value.trim() === '') {
+            throw new Error('Property type is required for property insurance');
+          }
+          if (!['residential', 'commercial', 'industrial'].includes(value)) {
+            throw new Error('Invalid property type');
+          }
+        }
+        return true;
+      }),
+
+    body('propertyValue')
+      .if((value, { req }) => req.body.serviceType === 'insurance' && req.body.subType === 'property')
+      .notEmpty()
+      .withMessage('Property value is required for property insurance')
+      .isNumeric()
+      .withMessage('Property value must be a number')
+      .custom((value) => {
+        if (value < 500000) {
+          throw new Error('Property value must be at least ₹5,00,000');
+        }
+        return true;
+      })
+  ],
+
+  // Loan specific validation
+  loanValidation: [
+    body('subType')
+      .if(body('serviceType').equals('loan'))
+      .notEmpty()
+      .withMessage('Loan type is required')
+      .isIn(['personal', 'home', 'business', 'education'])
+      .withMessage('Invalid loan type'),
+
+    body('loanAmount')
+      .if(body('serviceType').equals('loan'))
+      .notEmpty()
+      .withMessage('Loan amount is required for loan applications')
+      .isNumeric()
+      .withMessage('Loan amount must be a number')
+      .custom((value) => {
+        const amount = parseFloat(value);
+        if (amount <= 0) {
+          throw new Error('Loan amount must be a positive number');
+        }
+        if (amount % 1000 !== 0) {
+          throw new Error('Loan amount must be in multiples of 1000');
+        }
+        return true;
+      }),
+
+    body('loanPurpose')
+      .if(body('serviceType').equals('loan'))
+      .trim()
+      .notEmpty()
+      .withMessage('Loan purpose is required for loan applications')
+      .isLength({ min: 10, max: 500 })
+      .withMessage('Loan purpose must be between 10 and 500 characters'),
+
+    body('monthlyIncome')
+      .if(body('serviceType').equals('loan'))
+      .notEmpty()
+      .withMessage('Monthly income is required for loan applications')
+      .isNumeric()
+      .withMessage('Monthly income must be a number')
+      .custom((value) => {
+        const income = parseFloat(value);
+        if (income <= 0) {
+          throw new Error('Monthly income must be a positive number');
+        }
+        return true;
+      }),
+
+    // Business loan specific
+    body('businessType')
+      .custom((value, { req }) => {
+        if (req.body.serviceType === 'loan' && req.body.subType === 'business') {
+          if (!value || value.trim() === '') {
+            throw new Error('Business type is required for business loans');
+          }
+        }
+        return true;
+      }),
+
+    body('businessAge')
+      .custom((value, { req }) => {
+        if (req.body.serviceType === 'loan' && req.body.subType === 'business') {
+          if (!value) {
+            throw new Error('Business age is required for business loans');
+          }
+          if (isNaN(value)) {
+            throw new Error('Business age must be a number');
+          }
+          if (value < 1 || value > 100) {
+            throw new Error('Business age must be between 1 and 100 years');
+          }
+        }
+        return true;
+      }),
+
+    body('annualTurnover')
+      .custom((value, { req }) => {
+        if (req.body.serviceType === 'loan' && req.body.subType === 'business') {
+          if (!value) {
+            throw new Error('Annual turnover is required for business loans');
+          }
+          if (isNaN(value)) {
+            throw new Error('Annual turnover must be a number');
+          }
+          if (value < 500000) {
+            throw new Error('Annual turnover must be at least ₹5,00,000');
+          }
+        }
+        return true;
+      })
+  ],
+
+  // Combined validation for application submission
+  validateApplication: function () {
+    return [
+      ...this.basicValidation,
+      ...this.creditCardValidation,
+      ...this.insuranceValidation,
+      ...this.loanValidation
+    ];
+  }
+};
+
+module.exports = applicationValidation;

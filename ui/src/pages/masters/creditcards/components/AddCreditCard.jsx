@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import creditCardService from '@/services/creditCardService';
 import notification from '@/services/NotificationService';
 
-const AddCreditCard = ({ onSave, onCancel, creditCard }) => {
+const AddCreditCard = ({ onSave, onCancel }) => {
   const { success: notifySuccess, error: notifyError } = notification();
   const [form, setForm] = useState({
     creditCardName: '',
@@ -10,27 +10,6 @@ const AddCreditCard = ({ onSave, onCancel, creditCard }) => {
     creditCardPic: null,
     link: ''
   });
-  const [isEditing, setIsEditing] = useState(false);
-
-  useEffect(() => {
-    if (creditCard) {
-      setForm({
-        creditCardName: creditCard.creditCardName,
-        cibilRange: creditCard.cibilRange,
-        creditCardPic: null, // We don't pre-fill the file input
-        link: creditCard.link || ''
-      });
-      setIsEditing(true);
-    } else {
-      setForm({
-        creditCardName: '',
-        cibilRange: '',
-        creditCardPic: null,
-        link: ''
-      });
-      setIsEditing(false);
-    }
-  }, [creditCard]);
 
   const handleChange = e => {
     const { name, value, files } = e.target;
@@ -43,16 +22,11 @@ const AddCreditCard = ({ onSave, onCancel, creditCard }) => {
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      if (isEditing) {
-        await creditCardService.updateCreditCard(creditCard._id, form);
-        notifySuccess('Credit card updated successfully!');
-      } else {
-        await creditCardService.createCreditCard(form);
-        notifySuccess('Credit card created successfully!');
-      }
+      await creditCardService.createCreditCard(form);
+      notifySuccess('Credit card created successfully!');
       onSave();
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.error || (isEditing ? 'Failed to update credit card' : 'Failed to create credit card');
+      const errorMsg = error.response?.data?.message || error.error || 'Failed to create credit card';
       notifyError(errorMsg);
     }
   };
@@ -61,7 +35,7 @@ const AddCreditCard = ({ onSave, onCancel, creditCard }) => {
     <div className="p-6 bg-slate-50 h-full">
       <div className="bg-gray-100 border border-slate-200 shadow-lg rounded-lg p-8 w-full max-w-4xl mx-auto">
         <h2 className="text-2xl font-semibold text-slate-700 mb-6 text-center">
-          {isEditing ? 'Edit Credit Card' : 'Add Credit Card'}
+          Add Credit Card
         </h2>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -129,7 +103,7 @@ const AddCreditCard = ({ onSave, onCancel, creditCard }) => {
               type="submit"
               className="px-8 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-800 transition-colors duration-200 font-medium"
             >
-              {isEditing ? 'Update Credit Card' : 'Submit Credit Card'}
+              Submit Credit Card
             </button>
           </div>
         </form>

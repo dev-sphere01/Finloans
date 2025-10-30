@@ -72,5 +72,32 @@
       "update",
       "delete"
     ]
+  },
+  {
+    "module": "calling_admin",
+    "ModuleDisplayName": "Calling Management",
+    "actions": [
+      "read",
+      "create",
+      "update",
+      "delete",
+      "bulk_import",
+      "assign_leads",
+      "manage_staff",
+      "view_reports",
+      "manage_queue"
+    ]
+  },
+  {
+    "module": "calling_employee",
+    "ModuleDisplayName": "My Calling Queue",
+    "actions": [
+      "read",
+      "start_call",
+      "end_call",
+      "update_status",
+      "add_notes",
+      "view_history"
+    ]
   }
 ]

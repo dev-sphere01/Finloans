@@ -3,6 +3,7 @@ import loanService from '@/services/loanService'
 import TableService from '@/services/TableService'
 import { createColumnHelper } from '@tanstack/react-table'
 import notification from '@/services/NotificationService'
+import { ActionButton } from '@/components/permissions'
 
 const AllLoans = ({ onEditLoan, onViewLoan }) => {
   const { success: notifySuccess, error: notifyError } = notification()
@@ -42,12 +43,75 @@ const AllLoans = ({ onEditLoan, onViewLoan }) => {
     () => [
       columnHelper.accessor('loanType', {
         header: 'Loan Type',
-        cell: (info) => (
-          <div className="font-medium text-gray-900">
-            {info.getValue()}
-          </div>
-        ),
+        cell: (info) => {
+          const handleClick = () => {
+            if (onViewLoan) {
+              onViewLoan(info.row.original);
+            } else if (onEditLoan) {
+              onEditLoan(info.row.original);
+            }
+          };
+          return (
+            <div
+              className={`font-medium ${onViewLoan || onEditLoan ? 'text-blue-600 hover:underline cursor-pointer' : 'text-gray-900'}`}
+              onClick={handleClick}
+            >
+              <div>{info.getValue()}</div>
+              {info.row.original.subType && (
+                <div className="text-sm text-gray-500">{info.row.original.subType}</div>
+              )}
+            </div>
+          );
+        },
         enableColumnFilter: true,
+      }),
+      columnHelper.accessor('requiredDocuments', {
+        header: 'Required Documents',
+        cell: (info) => {
+          const docs = info.getValue() || [];
+          const requiredDocs = docs.filter(doc => doc.isRequired);
+          const optionalDocs = docs.filter(doc => !doc.isRequired);
+          
+          return (
+            <div className="max-w-xs">
+              {requiredDocs.length > 0 && (
+                <div className="mb-2">
+                  <div className="text-xs font-medium text-red-600 mb-1">Required ({requiredDocs.length})</div>
+                  <div className="text-xs text-gray-700">
+                    {requiredDocs.slice(0, 3).map((doc, idx) => (
+                      <div key={idx} className="truncate" title={doc.description || doc.name}>
+                        • {doc.name}
+                      </div>
+                    ))}
+                    {requiredDocs.length > 3 && (
+                      <div className="text-gray-500">... and {requiredDocs.length - 3} more</div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {optionalDocs.length > 0 && (
+                <div>
+                  <div className="text-xs font-medium text-blue-600 mb-1">Optional ({optionalDocs.length})</div>
+                  <div className="text-xs text-gray-700">
+                    {optionalDocs.slice(0, 2).map((doc, idx) => (
+                      <div key={idx} className="truncate" title={doc.description || doc.name}>
+                        • {doc.name}
+                      </div>
+                    ))}
+                    {optionalDocs.length > 2 && (
+                      <div className="text-gray-500">... and {optionalDocs.length - 2} more</div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {docs.length === 0 && (
+                <div className="text-xs text-gray-400">No documents defined</div>
+              )}
+            </div>
+          );
+        },
+        enableColumnFilter: false,
+        enableSorting: false,
       }),
       columnHelper.accessor('links', {
         header: 'Links',
@@ -76,28 +140,26 @@ const AllLoans = ({ onEditLoan, onViewLoan }) => {
         id: 'actions',
         header: 'Actions',
         cell: (info) => (
-          <div className="flex items-center gap-2">
-            <button
+          <div className="flex items-center gap-1">
+            <ActionButton
+              module="loans"
+              action="read"
+              size="sm"
               onClick={() => onViewLoan && onViewLoan(info.row.original)}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="View Loan"
-            >
-              View
-            </button>
-            <button
+            />
+            <ActionButton
+              module="loans"
+              action="update"
+              size="sm"
               onClick={() => onEditLoan && onEditLoan(info.row.original)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="Edit Loan"
-            >
-              Edit
-            </button>
-            <button
+            />
+            <ActionButton
+              module="loans"
+              action="delete"
+              label="Delete"
+              size="sm"
               onClick={() => handleDeleteClick(info.row.original)}
-              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="Delete Loan"
-            >
-              Delete
-            </button>
+            />
           </div>
         ),
       }),
@@ -123,6 +185,8 @@ const AllLoans = ({ onEditLoan, onViewLoan }) => {
       }
 
       const response = await loanService.getLoans(params)
+      console.log('Loans API response:', response); // Debug log
+      console.log('Loans data:', response.items); // Debug log
       setData(response.items || [])
       setTotalItems(response.pagination.total);
       setTotalPages(response.pagination.pages);

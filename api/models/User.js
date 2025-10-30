@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const config = require('../config');
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -34,6 +35,29 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Last name is required'],
     trim: true,
     maxlength: [50, 'Last name cannot exceed 50 characters']
+  },
+  phone: {
+    type: String,
+    trim: true,
+    match: [/^[6-9][0-9]{9}$/, 'Invalid phone number format']
+  },
+  address: {
+    type: String,
+    trim: true
+  },
+  dateOfBirth: {
+    type: Date
+  },
+  panNumber: {
+    type: String,
+    trim: true,
+    uppercase: true,
+    match: [/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format']
+  },
+  aadhaarNumber: {
+    type: String,
+    trim: true,
+    match: [/^[0-9]{12}$/, 'Invalid Aadhaar format']
   },
   roleId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -94,6 +118,9 @@ const userSchema = new mongoose.Schema({
 // Indexes for performance
 userSchema.index({ roleId: 1 });
 userSchema.index({ isActive: 1 });
+// Note: email already has unique index from unique: true
+userSchema.index({ phone: 1 });
+userSchema.index({ panNumber: 1 });
 
 // Virtual for account lock status
 userSchema.virtual('isLocked').get(function() {
@@ -112,7 +139,7 @@ userSchema.pre('save', async function(next) {
   
   try {
     // Hash password with cost of 12
-    const rounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+    const rounds = parseInt(config.BCRYPT_ROUNDS) || 12;
     this.password = await bcrypt.hash(this.password, rounds);
     next();
   } catch (error) {

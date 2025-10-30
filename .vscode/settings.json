@@ -4,5 +4,6 @@
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "typescript.preferences.importModuleSpecifierEnding": "auto",
   "typescript.preferences.includePackageJsonAutoImports": "auto",
-  "kiroAgent.configureMCP": "Disabled"
+  "kiroAgent.configureMCP": "Disabled",
+  "javascript.autoClosingTags": false
 }

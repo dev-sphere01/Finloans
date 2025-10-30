@@ -51,10 +51,11 @@ const TableService = (
       getIsRowExpanded, // Optional: function(row) => boolean
       renderExpandedRow, // Optional: function(row) => JSX
       onStateChange, // New prop to pass state up
+      initialFilters = [], // New prop for initial filters
     }
 ) => {
     const [sorting, setSorting] = useState([]);
-    const [columnFilters, setColumnFilters] = useState([]);
+    const [columnFilters, setColumnFilters] = useState(initialFilters);
     const [columnVisibility, setColumnVisibility] = useState({});
     const [pagination, setPagination] = useState({
       pageIndex: 0,
@@ -63,7 +64,13 @@ const TableService = (
     const [globalFilter, setGlobalFilter] = useState("");
 
     // State for column filter inputs (immediate UI updates)
-    const [columnFilterInputs, setColumnFilterInputs] = useState({});
+    const [columnFilterInputs, setColumnFilterInputs] = useState(() => {
+      const inputs = {};
+      initialFilters.forEach((filter) => {
+        inputs[filter.id] = filter.value;
+      });
+      return inputs;
+    });
 
     // Use debounced values for API calls, not for UI display
     const [debouncedGlobalFilter] = useDebounce(globalFilter, 500); // Corrected usage
@@ -358,22 +365,11 @@ const TableService = (
                       <th key={header.id} className="px-2 py-0.5 bg-gray-100">
                         {header.column.getCanFilter() && (
                           <div className="relative mt-1">
-                            {header.column.id === 'isActive' ? (
-                              <select
-                                value={columnFilterInputs[header.column.id] ?? ""}
-                                onClick={(e) => e.stopPropagation()}
-                                onChange={(e) =>
-                                  handleColumnFilterChange(
-                                    header.column.id,
-                                    e.target.value
-                                  )
-                                }
-                                className="px-2 py-1 rounded border border-slate-300 bg-white w-full text-xs"
-                              >
-                                <option value="">All</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                              </select>
+                            {header.column.columnDef.filterComponent ? (
+                              header.column.columnDef.filterComponent({
+                                value: columnFilterInputs[header.column.id] ?? "",
+                                onChange: (value) => handleColumnFilterChange(header.column.id, value)
+                              })
                             ) : (
                               <input
                                 type="text"
@@ -389,7 +385,7 @@ const TableService = (
                                 className="px-2 py-1 pr-6 rounded border border-slate-300 bg-white w-full text-xs"
                               />
                             )}
-                            {columnFilterInputs[header.column.id] && header.column.id !== 'isActive' && (
+                            {columnFilterInputs[header.column.id] && !header.column.columnDef.filterComponent && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();

@@ -38,10 +38,18 @@ const Login = () => {
           notify.success("Login successful! Welcome back.");
           navigate("/dashboard");
         }
+      } else {
+        // Login failed, show error from API response
+        const errorMessage = response.message || "Login failed. Please check your credentials.";
+        setError(errorMessage);
+        notify.error(errorMessage);
       }
     } catch (error) {
       console.error("Login failed:", error);
-      const errorMessage = error.message || "Login failed. Please try again.";
+      const errorMessage = error.response?.data?.message || 
+                           error.response?.data?.error || 
+                           error.message || 
+                           "Network error. Please check your connection and try again.";
       setError(errorMessage);
       notify.error(errorMessage);
     } finally {
@@ -62,8 +70,14 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2 animate-shake">
+              <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-xs font-bold">!</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Login Failed</p>
+                <p className="text-sm">{error}</p>
+              </div>
             </div>
           )}
           
@@ -76,7 +90,10 @@ const Login = () => {
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (error) setError(""); // Clear error when user starts typing
+                }}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500"
                 placeholder="Enter your username"
                 required
@@ -93,12 +110,16 @@ const Login = () => {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError(""); // Clear error when user starts typing
+                }}
                 className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500"
                 placeholder="Enter your password"
                 required
               />
               <button
+              tabIndex={-1}
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
@@ -114,15 +135,16 @@ const Login = () => {
 
           <div className="flex items-center justify-between">
             <label className="flex items-center text-sm text-gray-700">
-              <input type="checkbox" className="mr-2 h-4 w-4 text-slate-600 border-gray-300 rounded" />
+              <input tabIndex={-1} type="checkbox" className="mr-2 h-4 w-4 text-slate-600 border-gray-300 rounded" />
               Remember me
             </label>
-            <Link to="/forgot-password" className="text-sm text-slate-600 hover:text-slate-500 font-medium">
+            <Link  tabIndex={-1} to="/forgot-password" className="text-sm text-slate-600 hover:text-slate-500 font-medium">
               Forgot password?
             </Link>
           </div>
 
           <button
+          // tabIndex={+3}
             type="submit"
             disabled={isLoading}
             className="w-full bg-gradient-to-r from-slate-500 to-gray-500 hover:from-slate-700 hover:to-gray-700 disabled:from-slate-300 disabled:to-gray-300 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
@@ -160,14 +182,14 @@ const Login = () => {
           </button>
         </div> */}
 
-        {/* <div className="mt-8 text-center">
+        <div className="mt-8 text-center">
           <p className="text-sm text-gray-600">
             Don&apos;t have an account?{" "}
             <Link to="/register" className="text-slate-600 hover:text-slate-500 font-medium">
               Sign up here
             </Link>
           </p>
-        </div> */}
+        </div>
       <div className="text-center mt-6">
         <p className="text-xs text-gray-500">
           © 2025 FinLoans. All rights reserved.

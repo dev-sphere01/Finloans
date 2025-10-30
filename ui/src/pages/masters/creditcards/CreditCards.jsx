@@ -1,53 +1,101 @@
 import React, { useState } from 'react';
 import AllCreditCards from './components/AllCreditCards';
 import AddCreditCard from './components/AddCreditCard';
+import EditCreditCard from './components/EditCreditCard';
+import { ActionButton, PermissionGuard } from '@/components/permissions';
 
 const CreditCards = () => {
-  const [view, setView] = useState('table'); // 'table' or 'form'
-  const [editingCard, setEditingCard] = useState(null);
+  const [activeTab, setActiveTab] = useState('all');
+  const [editingCreditCard, setEditingCreditCard] = useState(null);
 
-  const handleAddClick = () => {
-    setEditingCard(null);
-    setView('form');
+  const tabs = [
+    { id: 'all', label: 'All Credit Cards', icon: '💳' },
+    { id: 'add', label: 'Add Credit Card', icon: '➕' },
+  ];
+
+  const handleEditCreditCard = (creditCard) => {
+    setEditingCreditCard(creditCard);
+    setActiveTab('edit');
   };
 
-  const handleEditClick = (creditCard) => {
-    setEditingCard(creditCard);
-    setView('form');
+  const handleCloseEdit = () => {
+    setEditingCreditCard(null);
+    setActiveTab('all');
   };
 
-  const handleSave = () => {
-    setView('table');
-    setEditingCard(null);
+  const handleCreditCardCreated = () => {
+    setActiveTab('all');
   };
 
-  const handleCancel = () => {
-    setView('table');
-    setEditingCard(null);
+  const handleCreditCardUpdated = () => {
+    setEditingCreditCard(null);
+    setActiveTab('all');
   };
 
   return (
-    <div className="p-6 bg-slate-50 h-full">
-      {view === 'table' ? (
-        <>
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={handleAddClick}
-              className="px-4 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-800 transition-colors duration-200 font-medium"
-            >
-              Add Credit Card
-            </button>
+    <PermissionGuard module="credit-cards" showMessage>
+      <div className="space-y-6">
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between p-4">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab('all')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                  activeTab === 'all'
+                    ? `border-blue-500 text-blue-600`
+                    : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
+                }`}
+              >
+                <span className="mr-2">💳</span>
+                All Credit Cards
+              </button>
+              {editingCreditCard && (
+                <button
+                  onClick={() => setActiveTab('edit')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                    activeTab === 'edit'
+                      ? `border-blue-500 text-blue-600`
+                      : `border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`
+                  }`}
+                >
+                  <span className="mr-2">✏️</span>
+                  Edit Credit Card
+                </button>
+              )}
+            </nav>
+            
+            <div className="flex items-center gap-2">
+              <ActionButton
+                module="credit-cards"
+                action="create"
+                label="Add Credit Card"
+                onClick={() => setActiveTab('add')}
+                className={activeTab === 'add' ? 'bg-green-600' : ''}
+              />
+            </div>
           </div>
-          <AllCreditCards onEditCreditCard={handleEditClick} />
-        </>
-      ) : (
-        <AddCreditCard
-          onSave={handleSave}
-          onCancel={handleCancel}
-          creditCard={editingCard}
-        />
-      )}
-    </div>
+        </div>
+
+        <div className="mt-6">
+          {activeTab === 'all' && (
+            <AllCreditCards
+              onEditCreditCard={handleEditCreditCard}
+              onViewCreditCard={handleEditCreditCard} // Use edit handler for view for now
+            />
+          )}
+          {activeTab === 'add' && (
+            <AddCreditCard onSave={handleCreditCardCreated} onCancel={handleCloseEdit} />
+          )}
+          {activeTab === 'edit' && editingCreditCard && (
+            <EditCreditCard
+              creditCard={editingCreditCard}
+              onSave={handleCreditCardUpdated}
+              onCancel={handleCloseEdit}
+            />
+          )}
+        </div>
+      </div>
+    </PermissionGuard>
   );
 };
 

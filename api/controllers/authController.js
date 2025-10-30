@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const Role = require('../models/Role');
 const AuditLog = require('../models/AuditLog');
+const config = require('../config')
 
 // Generate JWT token
 const generateToken = (user) => {
@@ -14,8 +15,8 @@ const generateToken = (user) => {
     isAutoGenPass: user.isAutoGenPass
   };
 
-  return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '8h',
+  return jwt.sign(payload, config .JWT_SECRET, {
+    expiresIn: config .JWT_EXPIRES_IN || '8h',
     issuer: 'auth-system',
     audience: 'auth-system-users'
   });
@@ -156,7 +157,12 @@ exports.login = async (req, res) => {
         fullName: user.fullName,
         roleId: user.roleId._id,
         roleName: user.roleId.name,
-        lastLogin: user.lastLogin
+        lastLogin: user.lastLogin,
+        role: {
+          id: user.roleId._id,
+          name: user.roleId.name,
+          permissions: user.roleId.permissions
+        }
       }
     });
 
@@ -174,6 +180,131 @@ exports.login = async (req, res) => {
     });
 
     res.status(500).json({ error: 'Login failed. Please try again.' });
+  }
+};
+
+// Public registration endpoint (automatically assigns "user" role)
+exports.register = async (req, res) => {
+  try {
+    const { firstName, lastName, email, phone, password } = req.body;
+    const ipAddress = req.ip;
+    const userAgent = req.get('User-Agent');
+
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      $or: [
+        { email: email },
+        { username: email } // Using email as username
+      ]
+    });
+
+    if (existingUser) {
+      await AuditLog.logAction({
+        userId: null,
+        action: 'FAILED_REGISTRATION',
+        details: { email, reason: 'User already exists' },
+        ipAddress,
+        userAgent,
+        success: false,
+        errorMessage: 'User already exists'
+      });
+
+      return res.status(409).json({
+        success: false,
+        message: 'User with this email already exists'
+      });
+    }
+
+    // Get default user role
+    const userRole = await Role.findOne({ name: 'user', isActive: true });
+    if (!userRole) {
+      return res.status(500).json({
+        success: false,
+        message: 'Default user role not found. Please contact administrator.'
+      });
+    }
+
+    // Create new user
+    const newUser = new User({
+      firstName,
+      lastName,
+      username: email, // Using email as username
+      email,
+      phone,
+      password, // Will be hashed by the pre-save middleware
+      roleId: userRole._id,
+      isActive: true,
+      isAutoGenPass: false,
+      createdBy: null // Self-registration
+    });
+
+    await newUser.save();
+
+    // Populate role for token generation
+    await newUser.populate('roleId');
+
+    // Generate token
+    const token = generateToken(newUser);
+
+    // Log successful registration
+    await AuditLog.logAction({
+      userId: newUser._id,
+      action: 'USER_REGISTER',
+      details: { email, firstName, lastName },
+      ipAddress,
+      userAgent,
+      success: true
+    });
+
+    // Return response in the same format as login
+    res.status(201).json({
+      token,
+      isAutoGenPass: newUser.isAutoGenPass,
+      user: {
+        id: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        fullName: newUser.fullName,
+        phone: newUser.phone,
+        roleId: newUser.roleId._id,
+        roleName: newUser.roleId.name,
+        lastLogin: null // New user, no last login yet
+      }
+    });
+
+  } catch (error) {
+    console.error('Registration error:', error);
+    
+    await AuditLog.logAction({
+      userId: null,
+      action: 'FAILED_REGISTRATION',
+      details: { email: req.body.email, error: error.message },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      success: false,
+      errorMessage: 'Server error during registration'
+    });
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => ({
+        field: err.path,
+        message: err.message
+      }));
+      
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Registration failed. Please try again.'
+    });
   }
 };
 
@@ -305,7 +436,7 @@ exports.forgotPassword = async (req, res) => {
 
     // In development, return the temporary password
     // In production, this should be sent via email
-    if (process.env.NODE_ENV === 'development') {
+    if (config.NODE_STAGE === 'development') {
       res.json({ 
         message: 'Password has been reset successfully.',
         tempPassword: tempPassword // Remove this in production

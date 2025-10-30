@@ -6,22 +6,29 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "seed": "node services/seeder.js"
+    "deploy": "node deploy.js",
+    "seed": "node services/seeder.js",
+    "seed:calling": "node scripts/seedCallingData.js",
+    "create:admin": "node scripts/createAdminUser.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",
     "express-validator": "^7.2.1",
+    "fast-glob": "^3.3.3",
     "finloans": "file:..",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.0",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.6",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "ssh2-sftp-client": "^12.0.1",
+    "xlsx": "^0.18.5"
   }
 }

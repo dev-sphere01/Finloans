@@ -3,6 +3,7 @@ import insuranceService from '@/services/insuranceService'
 import TableService from '@/services/TableService'
 import { createColumnHelper } from '@tanstack/react-table'
 import notification from '@/services/NotificationService'
+import { ActionButton } from '@/components/permissions'
 
 const AllInsurances = ({ onEditInsurance, onViewInsurance }) => {
   const { success: notifySuccess, error: notifyError } = notification()
@@ -42,24 +43,177 @@ const AllInsurances = ({ onEditInsurance, onViewInsurance }) => {
     () => [
       columnHelper.accessor('insuranceType', {
         header: 'Insurance Type',
+        cell: (info) => {
+          const handleClick = () => {
+            if (onViewInsurance) {
+              onViewInsurance(info.row.original);
+            } else if (onEditInsurance) {
+              onEditInsurance(info.row.original);
+            }
+          };
+          const insurance = info.row.original;
+          return (
+            <div className="space-y-1 min-w-48">
+              <div
+                className={`font-medium text-sm ${onViewInsurance || onEditInsurance ? 'text-blue-600 hover:underline cursor-pointer' : 'text-gray-900'}`}
+                onClick={handleClick}
+              >
+                {info.getValue()}
+              </div>
+              {insurance.description && (
+                <div className="text-xs text-gray-500 line-clamp-3 max-w-48">
+                  {insurance.description}
+                </div>
+              )}
+              {!insurance.description && (
+                <div className="text-xs text-gray-400">No description</div>
+              )}
+            </div>
+          );
+        },
+        enableColumnFilter: true,
+      }),
+      columnHelper.accessor('subTypes', {
+        header: 'Sub Types',
+        cell: (info) => {
+          const subTypes = info.getValue() || [];
+          const activeSubTypes = subTypes.filter(st => st.isActive);
+          const inactiveSubTypes = subTypes.filter(st => !st.isActive);
+          
+          return (
+            <div className="space-y-2 min-w-48">
+              <div className="text-sm">
+                <span className="font-medium text-gray-700">
+                  {activeSubTypes.length} active
+                </span>
+                {inactiveSubTypes.length > 0 && (
+                  <span className="text-gray-500 ml-2">
+                    ({inactiveSubTypes.length} inactive)
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {activeSubTypes.map((subType, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                    title={subType.description || subType.name}
+                  >
+                    {subType.name}
+                  </span>
+                ))}
+                {inactiveSubTypes.map((subType, index) => (
+                  <span
+                    key={`inactive-${index}`}
+                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
+                    title={`${subType.description || subType.name} (Inactive)`}
+                  >
+                    {subType.name}
+                  </span>
+                ))}
+              </div>
+              {subTypes.length === 0 && (
+                <span className="text-xs text-gray-400">No subtypes</span>
+              )}
+            </div>
+          );
+        },
+        enableColumnFilter: false,
+        enableSorting: false,
+      }),
+      columnHelper.accessor('isActive', {
+        header: 'Status',
         cell: (info) => (
-          <div className="font-medium text-gray-900">
-            {info.getValue()}
-          </div>
+          <span
+            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+              info.getValue()
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            }`}
+          >
+            {info.getValue() ? 'Active' : 'Inactive'}
+          </span>
         ),
         enableColumnFilter: true,
+        filterFn: 'equals',
+      }),
+      columnHelper.accessor('icon', {
+        header: 'Icon',
+        cell: (info) => (
+          <div className="text-sm text-gray-600 text-center">
+            {info.getValue() ? (
+              <span className="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs">
+                {info.getValue()}
+              </span>
+            ) : (
+              <span className="text-gray-400 text-xs">No icon</span>
+            )}
+          </div>
+        ),
+        enableColumnFilter: false,
+      }),
+      columnHelper.accessor('color', {
+        header: 'Color',
+        cell: (info) => (
+          <div className="text-sm text-gray-600">
+            {info.getValue() ? (
+              <div className="flex items-center gap-2">
+                <div className={`w-4 h-4 rounded bg-gradient-to-r ${info.getValue()}`}></div>
+                <span className="text-xs text-gray-500 truncate max-w-20" title={info.getValue()}>
+                  {info.getValue().split(' ')[0]}...
+                </span>
+              </div>
+            ) : (
+              <span className="text-gray-400 text-xs">No color</span>
+            )}
+          </div>
+        ),
+        enableColumnFilter: false,
+      }),
+      columnHelper.accessor('displayOrder', {
+        header: 'Order',
+        cell: (info) => (
+          <div className="text-sm text-gray-600 text-center">
+            {info.getValue() || 0}
+          </div>
+        ),
+        enableColumnFilter: false,
       }),
       columnHelper.accessor('links', {
         header: 'Links',
-        cell: (info) => (
-          <div className="flex flex-col gap-1">
-            {info.getValue().map((link, index) => (
-              <a key={index} href={link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                {link}
-              </a>
-            ))}
-          </div>
-        ),
+        cell: (info) => {
+          const links = info.getValue() || [];
+          return (
+            <div className="space-y-1 min-w-32">
+              {links.length > 0 ? (
+                <>
+                  <div className="text-sm font-medium text-gray-700">
+                    {links.length} link{links.length !== 1 ? 's' : ''}
+                  </div>
+                  {links.slice(0, 1).map((link, index) => (
+                    <a
+                      key={index}
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-xs text-blue-500 hover:underline truncate max-w-32"
+                      title={link}
+                    >
+                      {link.length > 30 ? `${link.substring(0, 30)}...` : link}
+                    </a>
+                  ))}
+                  {links.length > 1 && (
+                    <div className="text-xs text-gray-500" title={`Total ${links.length} links`}>
+                      +{links.length - 1} more
+                    </div>
+                  )}
+                </>
+              ) : (
+                <span className="text-xs text-gray-400">No links</span>
+              )}
+            </div>
+          );
+        },
         enableColumnFilter: false,
         enableSorting: false,
       }),
@@ -76,28 +230,28 @@ const AllInsurances = ({ onEditInsurance, onViewInsurance }) => {
         id: 'actions',
         header: 'Actions',
         cell: (info) => (
-          <div className="flex items-center gap-2">
-            <button
+          <div className="flex items-center gap-1">
+            <ActionButton
+              module="insurance"
+              action="read"
+              label="View"
+              size="sm"
               onClick={() => onViewInsurance && onViewInsurance(info.row.original)}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="View Insurance"
-            >
-              View
-            </button>
-            <button
+            />
+            <ActionButton
+              module="insurance"
+              action="update"
+              label="Edit"
+              size="sm"
               onClick={() => onEditInsurance && onEditInsurance(info.row.original)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="Edit Insurance"
-            >
-              Edit
-            </button>
-            <button
+            />
+            <ActionButton
+              module="insurance"
+              action="delete"
+              label="Delete"
+              size="sm"
               onClick={() => handleDeleteClick(info.row.original)}
-              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm transition-colors"
-              title="Delete Insurance"
-            >
-              Delete
-            </button>
+            />
           </div>
         ),
       }),
@@ -124,8 +278,8 @@ const AllInsurances = ({ onEditInsurance, onViewInsurance }) => {
 
       const response = await insuranceService.getInsurances(params)
       setData(response.items || [])
-      setTotalItems(response.pagination.total);
-      setTotalPages(response.pagination.pages);
+      setTotalItems(response.pagination?.totalItems || 0);
+      setTotalPages(response.pagination?.totalPages || 0);
 
     } catch (err) {
       console.error('Error fetching insurances:', err)
