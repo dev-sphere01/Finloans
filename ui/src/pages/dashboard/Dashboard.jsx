@@ -131,13 +131,15 @@ export default function Dashboard() {
             filter: "pending"
           },
           {
-            title: "Under Review",
+            title: "Assigned",
             value: appTotals.underReview,
             icon: Activity,
             color: "text-blue-600",
             bg: "bg-blue-100",
             description: "Being processed",
             percentage: appTotals.total ? Math.round((appTotals.underReview / appTotals.total) * 100) : 0,
+            url: "/dashboard/calling-management",
+            filter: "assigned"
           },
           {
             title: "Approved",
@@ -147,6 +149,8 @@ export default function Dashboard() {
             bg: "bg-green-100",
             description: "Successfully approved",
             percentage: appTotals.total ? Math.round((appTotals.approved / appTotals.total) * 100) : 0,
+            url: "/dashboard/calling-management",
+            filter: "approved"
           },
           {
             title: "Rejected",
@@ -156,6 +160,8 @@ export default function Dashboard() {
             bg: "bg-red-100",
             description: "Not approved",
             percentage: appTotals.total ? Math.round((appTotals.rejected / appTotals.total) * 100) : 0,
+            url: "/dashboard/calling-management",
+            filter: "rejected"
           },
         ],
       });

@@ -44,13 +44,21 @@ const LeadsList = ({
       unassigned: 'bg-gray-100 text-gray-800',
       assigned: 'bg-blue-100 text-blue-800',
       pending: 'bg-yellow-100 text-yellow-800',
+      'under-review': 'bg-blue-100 text-blue-800',
+      approved: 'bg-green-100 text-green-800',
+      rejected: 'bg-red-100 text-red-800',
       completed: 'bg-green-100 text-green-800',
       failed: 'bg-red-100 text-red-800'
     };
 
+    const formatStatusText = (status) => {
+      if (status === 'under-review') return 'Under Review';
+      return status?.charAt(0).toUpperCase() + status?.slice(1) || 'Unassigned';
+    };
+
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[status] || statusStyles.unassigned}`}>
-        {status?.charAt(0).toUpperCase() + status?.slice(1) || 'Unassigned'}
+        {formatStatusText(status)}
       </span>
     );
   };
@@ -164,6 +172,9 @@ const LeadsList = ({
           <option value="unassigned">Unassigned</option>
           <option value="assigned">Assigned</option>
           <option value="pending">Pending</option>
+          <option value="under-review">Under Review</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
           <option value="completed">Completed</option>
           <option value="failed">Failed</option>
         </select>
