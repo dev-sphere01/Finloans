@@ -507,6 +507,8 @@ exports.bulkCreateLeads = async (req, res) => {
       return res.status(400).json({ error: 'No leads data provided' });
     }
 
+    console.log(`Processing bulk create for ${leads.length} leads`);
+
     const results = {
       total: leads.length,
       success: 0,
@@ -514,69 +516,134 @@ exports.bulkCreateLeads = async (req, res) => {
       errors: []
     };
 
-    for (let i = 0; i < leads.length; i++) {
-      try {
-        const leadData = leads[i];
+    // Process in batches to handle large datasets efficiently
+    const BATCH_SIZE = 100;
+    const totalBatches = Math.ceil(leads.length / BATCH_SIZE);
 
-        // Clean and validate the lead data
-        const cleanLeadData = {
-          name: leadData.name?.trim(),
-          contactNo: String(leadData.contactNo || '').replace(/\D/g, ''),
-          email: leadData.email?.trim(),
-          selectedService: leadData.selectedService?.trim(),
-          serviceSubcategory: leadData.serviceSubcategory?.trim(),
-          notes: leadData.notes?.trim(),
-          source: 'bulk_import',
-          createdBy: req.userId
-        };
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const startIndex = batchIndex * BATCH_SIZE;
+      const endIndex = Math.min(startIndex + BATCH_SIZE, leads.length);
+      const batch = leads.slice(startIndex, endIndex);
 
-        // Validate required fields
-        if (!cleanLeadData.name || !cleanLeadData.contactNo || !cleanLeadData.selectedService) {
+      console.log(`Processing batch ${batchIndex + 1}/${totalBatches} (${batch.length} leads)`);
+
+      // Prepare batch data for validation
+      const validLeads = [];
+      const contactNumbers = [];
+
+      for (let i = 0; i < batch.length; i++) {
+        const globalIndex = startIndex + i;
+        const leadData = batch[i];
+
+        try {
+          // Clean and validate the lead data
+          const cleanLeadData = {
+            name: leadData.name?.trim(),
+            contactNo: String(leadData.contactNo || '').replace(/\D/g, ''),
+            email: leadData.email?.trim(),
+            selectedService: leadData.selectedService?.trim(),
+            serviceSubcategory: leadData.serviceSubcategory?.trim(),
+            notes: leadData.notes?.trim(),
+            source: 'bulk_import',
+            createdBy: req.userId
+          };
+
+          // Validate required fields
+          if (!cleanLeadData.name || !cleanLeadData.contactNo || !cleanLeadData.selectedService) {
+            results.failed++;
+            results.errors.push({
+              row: globalIndex + 1,
+              error: 'Missing required fields (Name, Contact Number, Service)'
+            });
+            continue;
+          }
+
+          // Validate contact number format
+          if (!/^[6-9][0-9]{9}$/.test(cleanLeadData.contactNo)) {
+            results.failed++;
+            results.errors.push({
+              row: globalIndex + 1,
+              error: 'Invalid contact number format. Must be 10 digits starting with 6-9'
+            });
+            continue;
+          }
+
+          validLeads.push({
+            data: cleanLeadData,
+            originalIndex: globalIndex
+          });
+          contactNumbers.push(cleanLeadData.contactNo);
+
+        } catch (error) {
           results.failed++;
           results.errors.push({
-            row: i + 1,
-            error: 'Missing required fields (Name, Contact Number, Service)'
+            row: globalIndex + 1,
+            error: error.message
           });
-          continue;
         }
+      }
 
-        // Validate contact number format
-        if (!/^[6-9][0-9]{9}$/.test(cleanLeadData.contactNo)) {
+      if (validLeads.length === 0) {
+        continue; // Skip this batch if no valid leads
+      }
+
+      // Batch check for existing leads to improve performance
+      const existingLeads = await Lead.find({
+        contactNo: { $in: contactNumbers },
+        isActive: true
+      }).select('contactNo');
+
+      const existingContactNumbers = new Set(existingLeads.map(lead => lead.contactNo));
+
+      // Filter out duplicates and prepare for bulk insert
+      const leadsToInsert = [];
+
+      for (const validLead of validLeads) {
+        if (existingContactNumbers.has(validLead.data.contactNo)) {
           results.failed++;
           results.errors.push({
-            row: i + 1,
-            error: 'Invalid contact number format. Must be 10 digits starting with 6-9'
+            row: validLead.originalIndex + 1,
+            error: `Lead with contact number ${validLead.data.contactNo} already exists`
           });
-          continue;
+        } else {
+          leadsToInsert.push(validLead.data);
         }
+      }
 
-        // Check for duplicate
-        const existingLead = await Lead.findOne({
-          contactNo: cleanLeadData.contactNo,
-          isActive: true
-        });
-
-        // if (existingLead) {
-        //   results.failed++;
-        //   results.errors.push({
-        //     row: i + 1,
-        //     error: `Lead with contact number ${cleanLeadData.contactNo} already exists`
-        //   });
-        //   continue;
-        // }
-
-        const lead = new Lead(cleanLeadData);
-        await lead.save();
-        results.success++;
-
-      } catch (error) {
-        results.failed++;
-        results.errors.push({
-          row: i + 1,
-          error: error.message
-        });
+      // Bulk insert valid leads
+      if (leadsToInsert.length > 0) {
+        try {
+          await Lead.insertMany(leadsToInsert, { ordered: false });
+          results.success += leadsToInsert.length;
+          console.log(`Batch ${batchIndex + 1}: Successfully inserted ${leadsToInsert.length} leads`);
+        } catch (error) {
+          console.error(`Batch ${batchIndex + 1} insert error:`, error);
+          
+          // Handle individual errors in bulk insert
+          if (error.writeErrors) {
+            error.writeErrors.forEach((writeError, index) => {
+              results.failed++;
+              results.success = Math.max(0, results.success - 1);
+              results.errors.push({
+                row: validLeads[index]?.originalIndex + 1 || 'Unknown',
+                error: writeError.errmsg || 'Database insert error'
+              });
+            });
+          } else {
+            // If bulk insert fails completely, mark all as failed
+            results.failed += leadsToInsert.length;
+            leadsToInsert.forEach((_, index) => {
+              results.errors.push({
+                row: validLeads[index]?.originalIndex + 1 || 'Unknown',
+                error: error.message || 'Database insert error'
+              });
+            });
+          }
+        }
       }
     }
+
+    console.log(`Bulk create completed: ${results.success} success, ${results.failed} failed`);
 
     // Log bulk create
     await AuditLog.logAction({
@@ -586,7 +653,9 @@ exports.bulkCreateLeads = async (req, res) => {
       details: {
         totalRows: results.total,
         successCount: results.success,
-        failedCount: results.failed
+        failedCount: results.failed,
+        batchSize: BATCH_SIZE,
+        totalBatches: totalBatches
       },
       ipAddress: req.ip,
       userAgent: req.get('User-Agent'),
@@ -600,7 +669,10 @@ exports.bulkCreateLeads = async (req, res) => {
 
   } catch (error) {
     console.error('Bulk create error:', error);
-    res.status(500).json({ error: 'Failed to create leads' });
+    res.status(500).json({ 
+      error: 'Failed to create leads',
+      details: error.message 
+    });
   }
 };
 

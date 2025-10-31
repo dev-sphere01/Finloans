@@ -112,7 +112,7 @@ preflightContinue: false
 );
 
 app.use(bodyParser.json({ limit: "1024mb" }));
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: true, limit: "1024mb", parameterLimit: 10000000 }));
 app.use(cookieParser());
 
 // Routes

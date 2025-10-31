@@ -80,10 +80,73 @@ const callingService = {
 
   bulkCreateLeads: async (leadsData) => {
     try {
-      const response = await API.post('/calling/leads/bulk-create', {
-        leads: leadsData
-      });
-      return response.data;
+      // For large datasets, split into chunks to avoid request size limits
+      const CHUNK_SIZE = 1000; // Process 1000 leads at a time
+      
+      if (leadsData.length <= CHUNK_SIZE) {
+        // Small dataset, send all at once
+        const response = await API.post('/calling/leads/bulk-create', {
+          leads: leadsData
+        });
+        return response.data;
+      }
+
+      // Large dataset, process in chunks
+      console.log(`Processing ${leadsData.length} leads in chunks of ${CHUNK_SIZE}`);
+      
+      const totalChunks = Math.ceil(leadsData.length / CHUNK_SIZE);
+      const combinedResults = {
+        total: leadsData.length,
+        success: 0,
+        failed: 0,
+        errors: []
+      };
+
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, leadsData.length);
+        const chunk = leadsData.slice(start, end);
+
+        console.log(`Processing chunk ${i + 1}/${totalChunks} (${chunk.length} leads)`);
+
+        try {
+          const response = await API.post('/calling/leads/bulk-create', {
+            leads: chunk
+          });
+
+          const chunkResults = response.data.results;
+          combinedResults.success += chunkResults.success;
+          combinedResults.failed += chunkResults.failed;
+          
+          // Adjust row numbers for errors to reflect original positions
+          if (chunkResults.errors) {
+            chunkResults.errors.forEach(error => {
+              combinedResults.errors.push({
+                ...error,
+                row: error.row + start // Adjust row number to original position
+              });
+            });
+          }
+
+        } catch (chunkError) {
+          console.error(`Error processing chunk ${i + 1}:`, chunkError);
+          
+          // Mark all leads in this chunk as failed
+          combinedResults.failed += chunk.length;
+          chunk.forEach((_, index) => {
+            combinedResults.errors.push({
+              row: start + index + 1,
+              error: chunkError.response?.data?.error || chunkError.message || 'Network error'
+            });
+          });
+        }
+      }
+
+      return {
+        message: 'Bulk create completed',
+        results: combinedResults
+      };
+
     } catch (error) {
       console.error('Error bulk creating leads:', error);
       throw error;

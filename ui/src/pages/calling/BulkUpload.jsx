@@ -99,7 +99,13 @@ Lisa Davis,9876543215,lisa.davis@example.com,Car Loan,New Car Loan,Looking for c
     setError('');
 
     try {
-      // Create a new API endpoint for bulk create with mapped data
+      console.log(`Starting bulk upload of ${mappedData.length} leads`);
+      
+      // Show progress for large uploads
+      if (mappedData.length > 1000) {
+        console.log('Large dataset detected, processing in chunks...');
+      }
+
       const response = await callingService.bulkCreateLeads(mappedData);
 
       setUploadResults(response.results || response);
@@ -107,6 +113,8 @@ Lisa Davis,9876543215,lisa.davis@example.com,Car Loan,New Car Loan,Looking for c
       // Show success message
       if (response.results) {
         const { success, failed, total } = response.results;
+        console.log(`Upload completed: ${success}/${total} successful, ${failed} failed`);
+        
         // if (success > 0) {
         //   // Auto-redirect after successful upload
         //   setTimeout(() => {
@@ -116,7 +124,7 @@ Lisa Davis,9876543215,lisa.davis@example.com,Car Loan,New Car Loan,Looking for c
       }
     } catch (error) {
       console.error('Bulk upload error:', error);
-      setError(error.response?.data?.error || 'Failed to upload leads. Please try again.');
+      setError(error.response?.data?.error || error.message || 'Failed to upload leads. Please try again.');
     } finally {
       setIsUploading(false);
     }
