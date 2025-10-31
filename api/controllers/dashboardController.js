@@ -1,7 +1,6 @@
 const User = require('../models/User');
 const Application = require('../models/Application');
 const Lead = require('../models/Lead');
-const Role = require('../models/Role');
 const AuditLog = require('../models/AuditLog');
 
 const dashboardController = {
@@ -9,8 +8,7 @@ const dashboardController = {
   getDashboardData: async (req, res) => {
     try {
       const userId = req.user._id;
-      const userRole = req.user.roleId;
-      
+
       // Get user with populated role and permissions
       const user = await User.findById(userId).populate({
         path: 'roleId',
@@ -38,19 +36,19 @@ const dashboardController = {
       };
 
       // Check permissions and gather data accordingly
-      const hasUserPermission = permissions.some(p => 
+      const hasUserPermission = permissions.some(p =>
         p.resource === 'users' && (p.actions.includes('read') || p.actions.includes('manage'))
       );
-      
-      const hasApplicationPermission = permissions.some(p => 
+
+      const hasApplicationPermission = permissions.some(p =>
         p.resource === 'applications' || p.resource === 'dashboard'
       );
-      
-      const hasLeadsPermission = permissions.some(p => 
+
+      const hasLeadsPermission = permissions.some(p =>
         p.resource === 'leads' || p.resource === 'calling'
       );
 
-      const hasReportsPermission = permissions.some(p => 
+      const hasReportsPermission = permissions.some(p =>
         p.resource === 'reports' && (p.actions.includes('read') || p.actions.includes('manage'))
       );
 
@@ -275,7 +273,8 @@ const dashboardController = {
               $group: {
                 _id: null,
                 totalTodayCalls: { $sum: '$callCount' },
-                totalTodayPicked: { $sum: '$pickedCount' }
+                totalTodayPicked: { $sum: '$pickedCount' },
+                totalLeadsContactedToday: { $sum: 1 }
               }
             }
           ]);
@@ -349,11 +348,21 @@ const dashboardController = {
             select: 'firstName lastName'
           });
 
+          // Calculate "Not Called" leads - leads that are assigned but haven't been called
+          const notCalledCount = await Lead.countDocuments({
+            assignedTo: { $exists: true, $ne: null },
+            $or: [
+              { callHistory: { $exists: false } },
+              { callHistory: { $size: 0 } }
+            ]
+          });
+
           const formattedLeadStats = {
             byStatus: {},
             byService: {},
             byPriority: {},
             total: 0,
+            notCalled: notCalledCount,
             recent: recentLeads,
             callStats: callStats[0] || {
               totalLeadsWithCalls: 0,
@@ -365,7 +374,8 @@ const dashboardController = {
             },
             todayStats: todayCallStats[0] || {
               totalTodayCalls: 0,
-              totalTodayPicked: 0
+              totalTodayPicked: 0,
+              totalLeadsContactedToday: 0
             },
             agentPerformance: populatedAgentPerformance
           };
@@ -408,6 +418,35 @@ const dashboardController = {
           dashboardData.allowedSections.push('leads');
         } catch (error) {
           console.log('Lead model not available or error fetching leads:', error.message);
+          console.error('Full error:', error);
+
+          // If user has leads permission and leads section not added due to error, add empty leads data
+          if (hasLeadsPermission && !dashboardData.allowedSections.includes('leads')) {
+            dashboardData.stats.leads = {
+              byStatus: {},
+              byService: {},
+              byPriority: {},
+              total: 0,
+              recent: [],
+              callStats: {
+                totalLeadsWithCalls: 0,
+                totalCalls: 0,
+                totalPickedCalls: 0,
+                totalNotPickedCalls: 0,
+                totalCallDuration: 0,
+                avgCallsPerLead: 0,
+                successRate: 0
+              },
+              todayStats: {
+                totalTodayCalls: 0,
+                totalTodayPicked: 0,
+                totalLeadsContactedToday: 0,
+                successRate: 0
+              },
+              agentPerformance: []
+            };
+            dashboardData.allowedSections.push('leads');
+          }
         }
       }
 
@@ -456,6 +495,17 @@ const dashboardController = {
         }
       }
 
+      // Debug logging
+      console.log('Final dashboard data:', {
+        userRole: user.roleId.name,
+        allowedSections: dashboardData.allowedSections,
+        hasStats: {
+          users: !!dashboardData.stats.users,
+          applications: !!dashboardData.stats.applications,
+          leads: !!dashboardData.stats.leads
+        }
+      });
+
       res.json({
         success: true,
         data: dashboardData
@@ -475,7 +525,7 @@ const dashboardController = {
     try {
       const userId = req.user._id;
       const user = await User.findById(userId).populate('roleId');
-      
+
       if (!user || !user.roleId) {
         return res.status(403).json({
           success: false,
@@ -487,10 +537,10 @@ const dashboardController = {
       const quickStats = {};
 
       // Applications count
-      const hasApplicationPermission = permissions.some(p => 
+      const hasApplicationPermission = permissions.some(p =>
         p.resource === 'applications' || p.resource === 'dashboard'
       );
-      
+
       if (hasApplicationPermission) {
         const appCount = await Application.countDocuments();
         const pendingCount = await Application.countDocuments({ status: 'pending' });
@@ -498,10 +548,10 @@ const dashboardController = {
       }
 
       // Users count (Admin/Manager only)
-      const hasUserPermission = permissions.some(p => 
+      const hasUserPermission = permissions.some(p =>
         p.resource === 'users' && (p.actions.includes('read') || p.actions.includes('manage'))
       );
-      
+
       if (hasUserPermission) {
         const userCount = await User.countDocuments({ isActive: true });
         quickStats.users = { active: userCount };
@@ -517,6 +567,528 @@ const dashboardController = {
       res.status(500).json({
         success: false,
         message: 'Internal server error while fetching quick stats'
+      });
+    }
+  },
+
+  // Get user statistics separately
+  getUserStats: async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const user = await User.findById(userId).populate('roleId');
+
+      if (!user || !user.roleId) {
+        return res.status(403).json({
+          success: false,
+          message: 'User role not found'
+        });
+      }
+
+      const permissions = user.roleId.permissions || [];
+      const hasUserPermission = permissions.some(p =>
+        p.resource === 'users' && (p.actions.includes('read') || p.actions.includes('manage'))
+      );
+
+      if (!hasUserPermission) {
+        return res.status(403).json({
+          success: false,
+          message: 'Insufficient permissions to view user statistics'
+        });
+      }
+
+      const userStats = await User.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalUsers: { $sum: 1 },
+            activeUsers: { $sum: { $cond: ['$isActive', 1, 0] } },
+            lockedUsers: { $sum: { $cond: ['$isLocked', 1, 0] } }
+          }
+        }
+      ]);
+
+      const recentUsers = await User.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select('firstName lastName email createdAt isActive')
+        .populate('roleId', 'name');
+
+      res.json({
+        success: true,
+        data: {
+          total: userStats[0]?.totalUsers || 0,
+          active: userStats[0]?.activeUsers || 0,
+          locked: userStats[0]?.lockedUsers || 0,
+          recent: recentUsers
+        }
+      });
+
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error while fetching user statistics'
+      });
+    }
+  },
+
+  // Get application statistics separately
+  getApplicationStats: async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const user = await User.findById(userId).populate('roleId');
+
+      if (!user || !user.roleId) {
+        return res.status(403).json({
+          success: false,
+          message: 'User role not found'
+        });
+      }
+
+      const permissions = user.roleId.permissions || [];
+      const hasApplicationPermission = permissions.some(p =>
+        p.resource === 'applications' || p.resource === 'dashboard'
+      );
+
+      if (!hasApplicationPermission) {
+        return res.status(403).json({
+          success: false,
+          message: 'Insufficient permissions to view application statistics'
+        });
+      }
+
+      const applicationStats = await Application.aggregate([
+        {
+          $group: {
+            _id: {
+              serviceType: '$serviceType',
+              status: '$status'
+            },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $group: {
+            _id: '$_id.serviceType',
+            statuses: {
+              $push: {
+                status: '$_id.status',
+                count: '$count'
+              }
+            },
+            total: { $sum: '$count' }
+          }
+        }
+      ]);
+
+      const statusTotals = await Application.aggregate([
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      const recentApplications = await Application.find()
+        .sort({ submittedAt: -1 })
+        .limit(10)
+        .select('applicationId serviceType subType status submittedAt fullName');
+
+      const formattedStats = {
+        byServiceType: {},
+        byStatus: {},
+        total: 0,
+        recent: recentApplications
+      };
+
+      applicationStats.forEach(service => {
+        formattedStats.byServiceType[service._id] = {
+          total: service.total,
+          statuses: {}
+        };
+        service.statuses.forEach(status => {
+          formattedStats.byServiceType[service._id].statuses[status.status] = status.count;
+        });
+        formattedStats.total += service.total;
+      });
+
+      statusTotals.forEach(status => {
+        formattedStats.byStatus[status._id] = status.count;
+      });
+
+      res.json({
+        success: true,
+        data: formattedStats
+      });
+
+    } catch (error) {
+      console.error('Error fetching application stats:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error while fetching application statistics'
+      });
+    }
+  },
+
+  // Get lead statistics separately
+  getLeadStats: async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const user = await User.findById(userId).populate('roleId');
+
+      if (!user || !user.roleId) {
+        return res.status(403).json({
+          success: false,
+          message: 'User role not found'
+        });
+      }
+
+      const permissions = user.roleId.permissions || [];
+      const hasLeadsPermission = permissions.some(p =>
+        p.resource === 'leads' || p.resource === 'calling' || p.resource === 'calling_admin' || p.resource === 'calling_employee'
+      );
+
+      if (!hasLeadsPermission) {
+        return res.status(403).json({
+          success: false,
+          message: 'Insufficient permissions to view lead statistics'
+        });
+      }
+
+      // Basic lead stats by status
+      const leadStats = await Lead.aggregate([
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      // Lead stats by service type
+      const leadsByService = await Lead.aggregate([
+        {
+          $group: {
+            _id: '$selectedService',
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      // Lead stats by priority
+      const leadsByPriority = await Lead.aggregate([
+        {
+          $group: {
+            _id: '$priority',
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      // Call statistics
+      const callStats = await Lead.aggregate([
+        {
+          $match: {
+            'callHistory': { $exists: true, $ne: [] }
+          }
+        },
+        {
+          $project: {
+            totalCalls: { $size: '$callHistory' },
+            pickedCalls: {
+              $size: {
+                $filter: {
+                  input: '$callHistory',
+                  cond: { $eq: ['$$this.picked', true] }
+                }
+              }
+            },
+            notPickedCalls: {
+              $size: {
+                $filter: {
+                  input: '$callHistory',
+                  cond: { $eq: ['$$this.picked', false] }
+                }
+              }
+            },
+            totalDuration: {
+              $sum: '$callHistory.duration'
+            }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalLeadsWithCalls: { $sum: 1 },
+            totalCalls: { $sum: '$totalCalls' },
+            totalPickedCalls: { $sum: '$pickedCalls' },
+            totalNotPickedCalls: { $sum: '$notPickedCalls' },
+            totalCallDuration: { $sum: '$totalDuration' },
+            avgCallsPerLead: { $avg: '$totalCalls' }
+          }
+        }
+      ]);
+
+      // Today's call activity
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const todayCallStats = await Lead.aggregate([
+        {
+          $match: {
+            'callHistory.callTime': {
+              $gte: today,
+              $lt: tomorrow
+            }
+          }
+        },
+        {
+          $project: {
+            todayCalls: {
+              $filter: {
+                input: '$callHistory',
+                cond: {
+                  $and: [
+                    { $gte: ['$$this.callTime', today] },
+                    { $lt: ['$$this.callTime', tomorrow] }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          $project: {
+            callCount: { $size: '$todayCalls' },
+            pickedCount: {
+              $size: {
+                $filter: {
+                  input: '$todayCalls',
+                  cond: { $eq: ['$$this.picked', true] }
+                }
+              }
+            }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalTodayCalls: { $sum: '$callCount' },
+            totalTodayPicked: { $sum: '$pickedCount' },
+            totalLeadsContactedToday: { $sum: 1 }
+          }
+        }
+      ]);
+
+      // Recent leads
+      const recentLeads = await Lead.find()
+        .sort({ updatedAt: -1 })
+        .limit(10)
+        .select('name contactNo email selectedService status priority createdAt updatedAt callHistory')
+        .populate('assignedTo', 'firstName lastName');
+
+      // Top performing agents
+      const agentPerformance = await Lead.aggregate([
+        {
+          $match: {
+            assignedTo: { $exists: true },
+            'callHistory': { $exists: true, $ne: [] }
+          }
+        },
+        {
+          $project: {
+            assignedTo: 1,
+            totalCalls: { $size: '$callHistory' },
+            successfulCalls: {
+              $size: {
+                $filter: {
+                  input: '$callHistory',
+                  cond: { $eq: ['$$this.picked', true] }
+                }
+              }
+            }
+          }
+        },
+        {
+          $group: {
+            _id: '$assignedTo',
+            totalCalls: { $sum: '$totalCalls' },
+            successfulCalls: { $sum: '$successfulCalls' },
+            leadsHandled: { $sum: 1 }
+          }
+        },
+        {
+          $match: {
+            totalCalls: { $gte: 5 }
+          }
+        },
+        {
+          $project: {
+            totalCalls: 1,
+            successfulCalls: 1,
+            leadsHandled: 1,
+            successRate: {
+              $multiply: [
+                { $divide: ['$successfulCalls', '$totalCalls'] },
+                100
+              ]
+            }
+          }
+        },
+        {
+          $sort: { successRate: -1 }
+        },
+        {
+          $limit: 5
+        }
+      ]);
+
+      const populatedAgentPerformance = await Lead.populate(agentPerformance, {
+        path: '_id',
+        select: 'firstName lastName'
+      });
+
+      // Calculate "Not Called" leads - leads that are assigned but haven't been called
+      const notCalledCount = await Lead.countDocuments({
+        assignedTo: { $exists: true, $ne: null },
+        $or: [
+          { callHistory: { $exists: false } },
+          { callHistory: { $size: 0 } }
+        ]
+      });
+
+      const formattedLeadStats = {
+        byStatus: {},
+        byService: {},
+        byPriority: {},
+        total: 0,
+        notCalled: notCalledCount,
+        recent: recentLeads,
+        callStats: callStats[0] || {
+          totalLeadsWithCalls: 0,
+          totalCalls: 0,
+          totalPickedCalls: 0,
+          totalNotPickedCalls: 0,
+          totalCallDuration: 0,
+          avgCallsPerLead: 0
+        },
+        todayStats: todayCallStats[0] || {
+          totalTodayCalls: 0,
+          totalTodayPicked: 0,
+          totalLeadsContactedToday: 0
+        },
+        agentPerformance: populatedAgentPerformance
+      };
+
+      // Format status stats
+      leadStats.forEach(status => {
+        formattedLeadStats.byStatus[status._id] = status.count;
+        formattedLeadStats.total += status.count;
+      });
+
+      // Format service stats
+      leadsByService.forEach(service => {
+        formattedLeadStats.byService[service._id] = service.count;
+      });
+
+      // Format priority stats
+      leadsByPriority.forEach(priority => {
+        formattedLeadStats.byPriority[priority._id] = priority.count;
+      });
+
+      // Calculate success rates
+      if (formattedLeadStats.callStats.totalCalls > 0) {
+        formattedLeadStats.callStats.successRate = (
+          (formattedLeadStats.callStats.totalPickedCalls / formattedLeadStats.callStats.totalCalls) * 100
+        ).toFixed(1);
+      } else {
+        formattedLeadStats.callStats.successRate = 0;
+      }
+
+      if (formattedLeadStats.todayStats.totalTodayCalls > 0) {
+        formattedLeadStats.todayStats.successRate = (
+          (formattedLeadStats.todayStats.totalTodayPicked / formattedLeadStats.todayStats.totalTodayCalls) * 100
+        ).toFixed(1);
+      } else {
+        formattedLeadStats.todayStats.successRate = 0;
+      }
+
+      res.json({
+        success: true,
+        data: formattedLeadStats
+      });
+
+    } catch (error) {
+      console.error('Error fetching lead stats:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error while fetching lead statistics'
+      });
+    }
+  },
+
+  // Get audit statistics separately
+  getAuditStats: async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const user = await User.findById(userId).populate('roleId');
+
+      if (!user || !user.roleId) {
+        return res.status(403).json({
+          success: false,
+          message: 'User role not found'
+        });
+      }
+
+      const permissions = user.roleId.permissions || [];
+      const hasReportsPermission = permissions.some(p =>
+        p.resource === 'reports' && (p.actions.includes('read') || p.actions.includes('manage'))
+      );
+
+      if (!hasReportsPermission) {
+        return res.status(403).json({
+          success: false,
+          message: 'Insufficient permissions to view audit statistics'
+        });
+      }
+
+      const auditStats = await AuditLog.aggregate([
+        {
+          $match: {
+            timestamp: {
+              $gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
+            }
+          }
+        },
+        {
+          $group: {
+            _id: '$action',
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      const recentAudits = await AuditLog.find()
+        .sort({ timestamp: -1 })
+        .limit(10)
+        .populate('userId', 'firstName lastName');
+
+      res.json({
+        success: true,
+        data: {
+          last24Hours: auditStats,
+          recent: recentAudits
+        }
+      });
+
+    } catch (error) {
+      console.error('Error fetching audit stats:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error while fetching audit statistics'
       });
     }
   }

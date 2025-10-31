@@ -24,6 +24,46 @@ router.get('/quick-stats',
 );
 
 /**
+ * @route   GET /api/dashboard/users
+ * @desc    Get user statistics
+ * @access  Private (requires authentication and user permissions)
+ */
+router.get('/users', 
+  auth.authenticateToken,
+  dashboardController.getUserStats
+);
+
+/**
+ * @route   GET /api/dashboard/applications
+ * @desc    Get application statistics
+ * @access  Private (requires authentication and application permissions)
+ */
+router.get('/applications', 
+  auth.authenticateToken,
+  dashboardController.getApplicationStats
+);
+
+/**
+ * @route   GET /api/dashboard/leads
+ * @desc    Get lead statistics
+ * @access  Private (requires authentication and lead permissions)
+ */
+router.get('/leads', 
+  auth.authenticateToken,
+  dashboardController.getLeadStats
+);
+
+/**
+ * @route   GET /api/dashboard/audit
+ * @desc    Get audit statistics
+ * @access  Private (requires authentication and audit permissions)
+ */
+router.get('/audit', 
+  auth.authenticateToken,
+  dashboardController.getAuditStats
+);
+
+/**
  * @route   GET /api/dashboard/test
  * @desc    Test endpoint to verify dashboard API is working
  * @access  Public

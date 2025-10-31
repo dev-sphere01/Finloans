@@ -3,41 +3,80 @@ import {
   Phone,
   PhoneOff,
   Clock,
-  CreditCard,
-  Building,
   Shield,
   AlertTriangle,
   TrendingUp,
   Users,
   Activity,
   Target,
-  DollarSign,
   CheckCircle,
   FileText,
   UserCheck,
   PhoneCall,
 } from "lucide-react";
-import { ActionButton, PermissionGuard } from '@/components/permissions';
-import useAuthStore from '@/store/authStore';
+import { ActionButton } from '@/components/permissions';
 import dashboardService from '@/services/dashboardService';
 import { useNavigate } from "react-router-dom";
 
 
 export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
+  const [userStats, setUserStats] = useState(null);
+  const [applicationStats, setApplicationStats] = useState(null);
+  const [leadStats, setLeadStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user } = useAuthStore();
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchAllDashboardData = async () => {
       try {
         setLoading(true);
-        const response = await dashboardService.getDashboardData();
-        if (response.success) {
-          setDashboardData(response.data);
+
+        // Fetch main dashboard data first to get permissions
+        const mainResponse = await dashboardService.getDashboardData();
+        if (mainResponse.success) {
+          setDashboardData(mainResponse.data);
+
+          // Fetch individual sections based on permissions
+          const allowedSections = mainResponse.data.allowedSections || [];
+
+          // Fetch user stats if allowed
+          if (allowedSections.includes('users')) {
+            try {
+              const userResponse = await dashboardService.getUserStats();
+              if (userResponse.success) {
+                setUserStats(userResponse.data);
+              }
+            } catch (err) {
+              console.warn('Failed to fetch user stats:', err);
+            }
+          }
+
+          // Fetch application stats if allowed
+          if (allowedSections.includes('applications')) {
+            try {
+              const appResponse = await dashboardService.getApplicationStats();
+              if (appResponse.success) {
+                setApplicationStats(appResponse.data);
+              }
+            } catch (err) {
+              console.warn('Failed to fetch application stats:', err);
+            }
+          }
+
+          // Always try to fetch lead stats (check permissions on server)
+          try {
+            const leadResponse = await dashboardService.getLeadStats();
+            if (leadResponse.success) {
+              setLeadStats(leadResponse.data);
+            }
+          } catch (err) {
+            console.warn('Failed to fetch lead stats:', err);
+          }
+
+          // Audit stats are handled by the main dashboard data
         } else {
           setError('Failed to fetch dashboard data');
         }
@@ -49,14 +88,16 @@ export default function Dashboard() {
       }
     };
 
-    fetchDashboardData();
+    fetchAllDashboardData();
   }, []);
 
   // Calculate totals from real data
   const getApplicationTotals = () => {
-    if (!dashboardData?.stats?.applications) return { total: 0, pending: 0, approved: 0, rejected: 0 };
+    if (!applicationStats && !dashboardData?.stats?.applications) {
+      return { total: 0, pending: 0, approved: 0, rejected: 0 };
+    }
 
-    const apps = dashboardData.stats.applications;
+    const apps = applicationStats || dashboardData.stats.applications;
     return {
       total: apps.total || 0,
       pending: apps.byStatus?.pending || 0,
@@ -67,9 +108,11 @@ export default function Dashboard() {
   };
 
   const getUserTotals = () => {
-    if (!dashboardData?.stats?.users) return { total: 0, active: 0, locked: 0 };
+    if (!userStats && !dashboardData?.stats?.users) {
+      return { total: 0, active: 0, locked: 0 };
+    }
 
-    const users = dashboardData.stats.users;
+    const users = userStats || dashboardData.stats.users;
     return {
       total: users.total || 0,
       active: users.active || 0,
@@ -78,9 +121,22 @@ export default function Dashboard() {
   };
 
   const getLeadTotals = () => {
-    if (!dashboardData?.stats?.leads) return { total: 0, new: 0, converted: 0 };
+    if (!leadStats && !dashboardData?.stats?.leads) {
+      return {
+        total: 0,
+        pending: 0,
+        assigned: 0,
+        called: 0,
+        interested: 0,
+        completed: 0,
+        failed: 0,
+        callStats: {},
+        todayStats: {},
+        agentPerformance: []
+      };
+    }
 
-    const leads = dashboardData.stats.leads;
+    const leads = leadStats || dashboardData.stats.leads;
     return {
       total: leads.total || 0,
       pending: leads.byStatus?.pending || 0,
@@ -89,6 +145,13 @@ export default function Dashboard() {
       interested: leads.byStatus?.interested || 0,
       completed: leads.byStatus?.completed || 0,
       failed: leads.byStatus?.failed || 0,
+      unassigned: leads.byStatus?.unassigned || 0,
+      not_picked: leads.byStatus?.not_picked || 0,
+      picked: leads.byStatus?.picked || 0,
+      in_progress: leads.byStatus?.in_progress || 0,
+      applied: leads.byStatus?.applied || 0,
+      follow_up: leads.byStatus?.follow_up || 0,
+      notCalled: leads.notCalled || 0,
       callStats: leads.callStats || {},
       todayStats: leads.todayStats || {},
       agentPerformance: leads.agentPerformance || []
@@ -105,11 +168,7 @@ export default function Dashboard() {
     const allowedSections = dashboardData?.allowedSections || [];
 
     // Applications section
-    if (allowedSections.includes('applications')) {
-      const appStats = dashboardData.stats.applications;
-      const creditCards = appStats?.byServiceType?.['credit-card']?.total || 0;
-      const loans = appStats?.byServiceType?.loan?.total || 0;
-      const insurance = appStats?.byServiceType?.insurance?.total || 0;
+    if (allowedSections.includes('applications') || applicationStats) {
 
       groups.push({
         id: "applications",
@@ -120,45 +179,45 @@ export default function Dashboard() {
         bgColor: "bg-blue-50",
         details: [
           {
-            title: "Pending",
+            title: "Pending Applications",
             value: appTotals.pending,
             icon: Clock,
             color: "text-orange-600",
             bg: "bg-orange-100",
-            description: "Awaiting review",
+            description: "Applications waiting for review",
             percentage: appTotals.total ? Math.round((appTotals.pending / appTotals.total) * 100) : 0,
             url: "/dashboard/calling-management",
             filter: "pending"
           },
           {
-            title: "Assigned",
+            title: "Under Review",
             value: appTotals.underReview,
             icon: Activity,
             color: "text-blue-600",
             bg: "bg-blue-100",
-            description: "Being processed",
+            description: "Applications being processed",
             percentage: appTotals.total ? Math.round((appTotals.underReview / appTotals.total) * 100) : 0,
             url: "/dashboard/calling-management",
             filter: "assigned"
           },
           {
-            title: "Approved",
+            title: "Approved Applications",
             value: appTotals.approved,
             icon: CheckCircle,
             color: "text-green-600",
             bg: "bg-green-100",
-            description: "Successfully approved",
+            description: "Applications successfully approved",
             percentage: appTotals.total ? Math.round((appTotals.approved / appTotals.total) * 100) : 0,
             url: "/dashboard/calling-management",
             filter: "approved"
           },
           {
-            title: "Rejected",
+            title: "Rejected Applications",
             value: appTotals.rejected,
             icon: AlertTriangle,
             color: "text-red-600",
             bg: "bg-red-100",
-            description: "Not approved",
+            description: "Applications that were declined",
             percentage: appTotals.total ? Math.round((appTotals.rejected / appTotals.total) * 100) : 0,
             url: "/dashboard/calling-management",
             filter: "rejected"
@@ -166,50 +225,11 @@ export default function Dashboard() {
         ],
       });
 
-      // Service types breakdown
-      if (creditCards || loans || insurance) {
-        groups.push({
-          id: "services",
-          title: "Service Types",
-          subtitle: "Application breakdown",
-          icon: Building,
-          gradient: "from-emerald-500 to-green-500",
-          bgColor: "bg-emerald-50",
-          details: [
-            {
-              title: "Credit Cards",
-              value: creditCards,
-              icon: CreditCard,
-              color: "text-purple-600",
-              bg: "bg-purple-100",
-              description: "Credit applications",
-              percentage: appTotals.total ? Math.round((creditCards / appTotals.total) * 100) : 0,
-            },
-            {
-              title: "Loans",
-              value: loans,
-              icon: Building,
-              color: "text-indigo-600",
-              bg: "bg-indigo-100",
-              description: "Loan applications",
-              percentage: appTotals.total ? Math.round((loans / appTotals.total) * 100) : 0,
-            },
-            {
-              title: "Insurance",
-              value: insurance,
-              icon: Shield,
-              color: "text-teal-600",
-              bg: "bg-teal-100",
-              description: "Insurance policies",
-              percentage: appTotals.total ? Math.round((insurance / appTotals.total) * 100) : 0,
-            },
-          ],
-        });
-      }
+
     }
 
     // Users section (Admin/Manager only)
-    if (allowedSections.includes('users')) {
+    if (allowedSections.includes('users') || userStats) {
       groups.push({
         id: "users",
         title: "User Management",
@@ -219,29 +239,29 @@ export default function Dashboard() {
         bgColor: "bg-purple-50",
         details: [
           {
-            title: "Active Users",
+            title: "Active System Users",
             value: userTotals.active,
             icon: UserCheck,
             color: "text-green-600",
             bg: "bg-green-100",
-            description: "Active accounts",
+            description: "Users with active accounts",
             percentage: userTotals.total ? Math.round((userTotals.active / userTotals.total) * 100) : 0,
           },
           {
-            title: "Locked Users",
+            title: "Locked User Accounts",
             value: userTotals.locked,
             icon: AlertTriangle,
             color: "text-red-600",
             bg: "bg-red-100",
-            description: "Locked accounts",
+            description: "Users with locked accounts",
             percentage: userTotals.total ? Math.round((userTotals.locked / userTotals.total) * 100) : 0,
           },
         ],
       });
     }
 
-    // Leads section
-    if (allowedSections.includes('leads')) {
+    // Leads section - always show if we have lead stats
+    if (allowedSections.includes('leads') || leadStats) {
       groups.push({
         id: "leads",
         title: "Lead Management",
@@ -251,40 +271,40 @@ export default function Dashboard() {
         bgColor: "bg-cyan-50",
         details: [
           {
-            title: "Pending",
-            value: leadTotals.pending,
+            title: "Unassigned Leads",
+            value: leadTotals.unassigned,
             icon: Clock,
             color: "text-orange-600",
             bg: "bg-orange-100",
-            description: "Awaiting action",
-            percentage: leadTotals.total ? Math.round((leadTotals.pending / leadTotals.total) * 100) : 0,
+            description: "Leads not assigned to any agent",
+            percentage: leadTotals.total ? Math.round((leadTotals.unassigned / leadTotals.total) * 100) : 0,
           },
           {
-            title: "Called",
-            value: leadTotals.called,
-            icon: PhoneCall,
+            title: "Assigned Leads",
+            value: leadTotals.assigned,
+            icon: UserCheck,
             color: "text-blue-600",
             bg: "bg-blue-100",
-            description: "Contact attempted",
-            percentage: leadTotals.total ? Math.round((leadTotals.called / leadTotals.total) * 100) : 0,
+            description: "Total leads assigned to agents",
+            percentage: leadTotals.total ? Math.round((leadTotals.assigned / leadTotals.total) * 100) : 0,
           },
           {
-            title: "Interested",
-            value: leadTotals.interested,
-            icon: Target,
-            color: "text-purple-600",
-            bg: "bg-purple-100",
-            description: "Showing interest",
-            percentage: leadTotals.total ? Math.round((leadTotals.interested / leadTotals.total) * 100) : 0,
-          },
-          {
-            title: "Completed",
-            value: leadTotals.completed,
-            icon: CheckCircle,
+            title: "Called Leads",
+            value: leadTotals.callStats.totalLeadsWithCalls || 0,
+            icon: PhoneCall,
             color: "text-green-600",
             bg: "bg-green-100",
-            description: "Successfully closed",
-            percentage: leadTotals.total ? Math.round((leadTotals.completed / leadTotals.total) * 100) : 0,
+            description: "Leads that have been contacted",
+            percentage: leadTotals.total ? Math.round(((leadTotals.callStats.totalLeadsWithCalls || 0) / leadTotals.total) * 100) : 0,
+          },
+          {
+            title: "Not Called Yet",
+            value: Math.max(0, leadTotals.assigned - (leadTotals.callStats.totalLeadsWithCalls || 0)),
+            icon: AlertTriangle,
+            color: "text-red-600",
+            bg: "bg-red-100",
+            description: "Assigned leads not yet contacted",
+            percentage: leadTotals.total ? Math.round((Math.max(0, leadTotals.assigned - (leadTotals.callStats.totalLeadsWithCalls || 0)) / leadTotals.total) * 100) : 0,
           },
         ],
       });
@@ -298,41 +318,42 @@ export default function Dashboard() {
           icon: Phone,
           gradient: "from-green-500 to-emerald-500",
           bgColor: "bg-green-50",
+          totalValue: leadTotals.callStats.totalCalls,
           details: [
             {
-              title: "Total Calls",
+              title: "Total Calls Made",
               value: leadTotals.callStats.totalCalls,
               icon: Phone,
               color: "text-blue-600",
               bg: "bg-blue-100",
-              description: "All calls made",
+              description: `to ${leadTotals.callStats.totalLeadsWithCalls || 0} leads`,
               percentage: 100,
             },
             {
-              title: "Answered",
+              title: "Calls Answered",
               value: leadTotals.callStats.totalPickedCalls,
               icon: CheckCircle,
               color: "text-green-600",
               bg: "bg-green-100",
-              description: `${leadTotals.callStats.successRate}% success rate`,
+              description: `${leadTotals.callStats.successRate}% answer rate`,
               percentage: leadTotals.callStats.totalCalls ? Math.round((leadTotals.callStats.totalPickedCalls / leadTotals.callStats.totalCalls) * 100) : 0,
             },
             {
-              title: "Not Answered",
+              title: "Calls Not Answered",
               value: leadTotals.callStats.totalNotPickedCalls,
               icon: PhoneOff,
               color: "text-red-600",
               bg: "bg-red-100",
-              description: "Missed calls",
+              description: "Unanswered or busy calls",
               percentage: leadTotals.callStats.totalCalls ? Math.round((leadTotals.callStats.totalNotPickedCalls / leadTotals.callStats.totalCalls) * 100) : 0,
             },
             {
-              title: "Avg Duration",
+              title: "Average Call Time",
               value: leadTotals.callStats.totalCalls ? Math.round(leadTotals.callStats.totalCallDuration / leadTotals.callStats.totalCalls) : 0,
               icon: Clock,
               color: "text-purple-600",
               bg: "bg-purple-100",
-              description: "Seconds per call",
+              description: "Average seconds per call",
               percentage: leadTotals.callStats.avgCallsPerLead ? Math.round(leadTotals.callStats.avgCallsPerLead * 10) : 0,
             },
           ],
@@ -469,7 +490,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs sm:text-sm text-gray-600 font-medium">
-                      Approval Rate
+                      Application Approval Rate
                     </p>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">
                       {appTotals.total ? ((appTotals.approved / appTotals.total) * 100).toFixed(1) : 0}%
@@ -488,7 +509,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs sm:text-sm text-gray-600 font-medium">
-                    Active Users
+                    Active System Users
                   </p>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">
                     {userTotals.active}
@@ -501,7 +522,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {dashboardData.allowedSections.includes('leads') && (
+          {(dashboardData.allowedSections.includes('leads') || leadStats) && (
             <>
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between">
@@ -523,7 +544,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs sm:text-sm text-gray-600 font-medium">
-                      Call Success Rate
+                      Call Answer Rate
                     </p>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">
                       {leadTotals.callStats.successRate || 0}%
@@ -539,10 +560,13 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs sm:text-sm text-gray-600 font-medium">
-                      Today's Calls
+                      Calls Made Today
                     </p>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">
                       {leadTotals.todayStats.totalTodayCalls || 0}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      to {leadTotals.todayStats.totalLeadsContactedToday || 0} leads
                     </p>
                   </div>
                   <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -554,12 +578,13 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Agent Performance Section */}
-        {dashboardData.allowedSections.includes('leads') && leadTotals.agentPerformance.length > 0 && (
+        {/* Agent Performance Section - Commented out for now as not needed */}
+        {/* 
+        {(dashboardData.allowedSections.includes('leads') || leadStats) && leadTotals.agentPerformance.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <Target className="h-5 w-5 mr-2 text-blue-600" />
-              Top Performing Agents
+              Top Performing Telecallers (by Call Answer Rate)
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {leadTotals.agentPerformance.slice(0, 6).map((agent, index) => (
@@ -567,8 +592,8 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${index === 0 ? 'bg-yellow-500' :
-                          index === 1 ? 'bg-gray-400' :
-                            index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                        index === 1 ? 'bg-gray-400' :
+                          index === 2 ? 'bg-orange-500' : 'bg-blue-500'
                         }`}>
                         {index + 1}
                       </div>
@@ -601,6 +626,7 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+        */}
 
         {/* Detailed Groups */}
         {mainGroups.length > 0 ? (
@@ -632,10 +658,12 @@ export default function Dashboard() {
                         className={`px-2 mx-2 h-10 rounded-xl text-white text-2xl font-bold bg-gradient-to-r ${group.gradient} flex items-center justify-center shadow-sm`}
                       >
                         {formatNumber(
-                          group.details.reduce(
-                            (sum, detail) => sum + (detail.value || 0),
-                            0
-                          )
+                          group.totalValue !== undefined
+                            ? group.totalValue
+                            : group.details.reduce(
+                              (sum, detail) => sum + (detail.value || 0),
+                              0
+                            )
                         )}
                       </div>
                     </div>
@@ -650,7 +678,7 @@ export default function Dashboard() {
                           <div
                             key={i}
                             className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-center"
-                            onClick={() => navigate(`${detail.url}`,{state: detail.filter ? {status: detail.filter} : null})}
+                            onClick={() => navigate(`${detail.url}`, { state: detail.filter ? { status: detail.filter } : null })}
                           >
                             {/* Icon + number same line */}
                             <div className="flex items-center justify-center space-x-2 mb-2">
