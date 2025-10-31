@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
     FileText,
     Eye,
@@ -19,6 +20,7 @@ import * as XLSX from 'xlsx';
 import { ActionButton, PermissionGuard } from '@/components/permissions';
 
 export default function ApplicationsList() {
+    const location = useLocation();
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -26,6 +28,7 @@ export default function ApplicationsList() {
     const [showDetails, setShowDetails] = useState(false);
     const isMountedRef = useRef(true);
     const isInitialLoadRef = useRef(true);
+    const filterValue = location.state;
 
     // Pagination state for server-side pagination
     const [pagination, setPagination] = useState({
@@ -49,6 +52,13 @@ export default function ApplicationsList() {
                 sortOrder: tableState?.sorting?.[0]?.desc ? 'desc' : 'asc',
                 ...(tableState?.globalFilter && { search: tableState.globalFilter }),
             };
+
+            // Add dashboard filter if present (only on initial load)
+            if (isInitialLoadRef.current && filterValue?.status) {
+                params.status = filterValue.status;
+                // Clear the location state after using it to prevent reuse on refresh
+                window.history.replaceState({}, document.title);
+            }
 
             // Add column filters
             if (tableState?.columnFilters) {

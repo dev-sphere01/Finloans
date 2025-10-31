@@ -190,7 +190,7 @@ export default function Dashboard() {
             bg: "bg-orange-100",
             description: "Applications waiting for review",
             percentage: appTotals.total ? Math.round((appTotals.pending / appTotals.total) * 100) : 0,
-            url: "/dashboard/calling-management",
+            url: "/dashboard/applications",
             filter: "pending"
           },
           {
@@ -201,8 +201,8 @@ export default function Dashboard() {
             bg: "bg-blue-100",
             description: "Applications being processed",
             percentage: appTotals.total ? Math.round((appTotals.underReview / appTotals.total) * 100) : 0,
-            url: "/dashboard/calling-management",
-            filter: "assigned"
+            url: "/dashboard/applications",
+            filter: "under-review"
           },
           {
             title: "Approved Applications",
@@ -212,7 +212,7 @@ export default function Dashboard() {
             bg: "bg-green-100",
             description: "Applications successfully approved",
             percentage: appTotals.total ? Math.round((appTotals.approved / appTotals.total) * 100) : 0,
-            url: "/dashboard/calling-management",
+            url: "/dashboard/applications",
             filter: "approved"
           },
           {
@@ -223,7 +223,7 @@ export default function Dashboard() {
             bg: "bg-red-100",
             description: "Applications that were declined",
             percentage: appTotals.total ? Math.round((appTotals.rejected / appTotals.total) * 100) : 0,
-            url: "/dashboard/calling-management",
+            url: "/dashboard/applications",
             filter: "rejected"
           },
         ],
@@ -252,6 +252,8 @@ export default function Dashboard() {
             bg: "bg-orange-100",
             description: "Leads not assigned to any agent",
             percentage: leadTotals.total ? Math.round((leadTotals.unassigned / leadTotals.total) * 100) : 0,
+            url: "/dashboard/calling-management",
+            filter: "unassigned"
           },
           {
             title: "Assigned Leads",
@@ -261,6 +263,8 @@ export default function Dashboard() {
             bg: "bg-blue-100",
             description: "Total leads assigned to agents",
             percentage: leadTotals.total ? Math.round((leadTotals.assigned / leadTotals.total) * 100) : 0,
+            url: "/dashboard/calling-management",
+            filter: "assigned"
           },
           {
             title: "Called Leads",
@@ -270,6 +274,8 @@ export default function Dashboard() {
             bg: "bg-green-100",
             description: "Leads that have been contacted",
             percentage: leadTotals.total ? Math.round(((leadTotals.callStats.totalLeadsWithCalls || 0) / leadTotals.total) * 100) : 0,
+            url: "/dashboard/calling-management",
+            filter: "called"
           },
           {
             title: "Not Called Yet",
@@ -279,6 +285,8 @@ export default function Dashboard() {
             bg: "bg-red-100",
             description: "Assigned leads not yet contacted",
             percentage: leadTotals.total ? Math.round((Math.max(0, leadTotals.assigned - (leadTotals.callStats.totalLeadsWithCalls || 0)) / leadTotals.total) * 100) : 0,
+            url: "/dashboard/calling-management",
+            filter: "not-called"
           },
         ],
       });
@@ -301,7 +309,7 @@ export default function Dashboard() {
               color: "text-blue-600",
               bg: "bg-blue-100",
               description: `to ${leadTotals.callStats.totalLeadsWithCalls || 0} leads`,
-              percentage: 100,
+              percentage: 100
             },
             {
               title: "Calls Answered",
@@ -310,7 +318,7 @@ export default function Dashboard() {
               color: "text-green-600",
               bg: "bg-green-100",
               description: `${leadTotals.callStats.successRate}% answer rate`,
-              percentage: leadTotals.callStats.totalCalls ? Math.round((leadTotals.callStats.totalPickedCalls / leadTotals.callStats.totalCalls) * 100) : 0,
+              percentage: leadTotals.callStats.totalCalls ? Math.round((leadTotals.callStats.totalPickedCalls / leadTotals.callStats.totalCalls) * 100) : 0
             },
             {
               title: "Calls Not Answered",
@@ -319,16 +327,7 @@ export default function Dashboard() {
               color: "text-red-600",
               bg: "bg-red-100",
               description: "Unanswered or busy calls",
-              percentage: leadTotals.callStats.totalCalls ? Math.round((leadTotals.callStats.totalNotPickedCalls / leadTotals.callStats.totalCalls) * 100) : 0,
-            },
-            {
-              title: "Average Call Time",
-              value: leadTotals.callStats.totalCalls ? Math.round(leadTotals.callStats.totalCallDuration / leadTotals.callStats.totalCalls) : 0,
-              icon: Clock,
-              color: "text-purple-600",
-              bg: "bg-purple-100",
-              description: "Average seconds per call",
-              percentage: leadTotals.callStats.avgCallsPerLead ? Math.round(leadTotals.callStats.avgCallsPerLead * 10) : 0,
+              percentage: leadTotals.callStats.totalCalls ? Math.round((leadTotals.callStats.totalNotPickedCalls / leadTotals.callStats.totalCalls) * 100) : 0
             },
           ],
         });
@@ -353,6 +352,8 @@ export default function Dashboard() {
             bg: "bg-green-100",
             description: "Users with active accounts",
             percentage: userTotals.total ? Math.round((userTotals.active / userTotals.total) * 100) : 0,
+            url: "/dashboard/users",
+            filter: "active"
           },
           {
             title: "Inactive Users",
@@ -362,6 +363,8 @@ export default function Dashboard() {
             bg: "bg-gray-100",
             description: "Users with inactive accounts",
             percentage: userTotals.total ? Math.round((userTotals.inactive / userTotals.total) * 100) : 0,
+            url: "/dashboard/users",
+            filter: "inactive"
           },
         ],
       });
@@ -683,8 +686,13 @@ export default function Dashboard() {
                         return (
                           <div
                             key={i}
-                            className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-center"
-                            onClick={() => navigate(`${detail.url}`, { state: detail.filter ? { status: detail.filter } : null })}
+                            className={`p-4 bg-gray-50 rounded-lg transition-colors text-center ${detail.url ? 'hover:bg-gray-100 cursor-pointer' : ''}`}
+                            onClick={() => {
+                              if (detail.url) {
+                                navigate(detail.url, { state: detail.filter ? { status: detail.filter } : null });
+                              }
+                            }}
+                            style={{ cursor: detail.url ? 'pointer' : 'default' }}
                           >
                             {/* Icon + number same line */}
                             <div className="flex items-center justify-center space-x-2 mb-2">

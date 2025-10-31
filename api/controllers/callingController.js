@@ -157,6 +157,42 @@ exports.getLeads = async (req, res) => {
           delete filters.dateRange;
         }
 
+        // Handle dashboard-specific filters
+        
+        // Filter for assigned but not called leads
+        if (filters.assignedButNotCalled === 'true') {
+          baseFilter.assignedTo = { $exists: true, $ne: null };
+          baseFilter.$or = [
+            { callHistory: { $exists: false } },
+            { callHistory: { $size: 0 } }
+          ];
+          delete filters.assignedButNotCalled;
+        }
+
+        // Filter for leads with call history
+        if (filters.hasCallHistory === 'true') {
+          baseFilter.callHistory = { $exists: true, $ne: [] };
+          delete filters.hasCallHistory;
+        }
+
+        // Filter for leads with answered calls
+        if (filters.callAnswered === 'true') {
+          baseFilter['callHistory.picked'] = true;
+          delete filters.callAnswered;
+        }
+
+        // Filter for leads with unanswered calls
+        if (filters.callNotAnswered === 'true') {
+          baseFilter['callHistory.picked'] = false;
+          delete filters.callNotAnswered;
+        }
+
+        // Filter for leads with call duration data
+        if (filters.hasCallDuration === 'true') {
+          baseFilter['callHistory.duration'] = { $exists: true, $gt: 0 };
+          delete filters.hasCallDuration;
+        }
+
         console.log('Final baseFilter:', baseFilter);
         return baseFilter;
       }

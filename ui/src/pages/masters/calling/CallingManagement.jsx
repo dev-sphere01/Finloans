@@ -60,7 +60,44 @@ const CallingManagement = () => {
       
       // Check if filter values are passed from navigation (like from Dashboard)
       if (filterValue?.status) {
-        queryParams.status = filterValue.status;
+        const filterStatus = filterValue.status;
+        
+        // Handle different dashboard filter types
+        switch (filterStatus) {
+          case 'unassigned':
+            queryParams.status = 'unassigned';
+            break;
+          case 'assigned':
+            queryParams.status = 'assigned';
+            break;
+          case 'called':
+            queryParams.status = 'called';
+            break;
+          case 'not-called':
+            // Filter for leads that are assigned but not called
+            queryParams.assignedButNotCalled = true;
+            break;
+          case 'all-calls':
+            // Filter for leads that have call history
+            queryParams.hasCallHistory = true;
+            break;
+          case 'answered':
+            // Filter for leads with answered calls
+            queryParams.callAnswered = true;
+            break;
+          case 'not-answered':
+            // Filter for leads with unanswered calls
+            queryParams.callNotAnswered = true;
+            break;
+          case 'call-duration':
+            // Filter for leads with call duration data
+            queryParams.hasCallDuration = true;
+            break;
+          default:
+            // For any other status, use it directly
+            queryParams.status = filterStatus;
+        }
+        
         // Clear the location state after using it to prevent reuse on refresh
         window.history.replaceState({}, document.title);
       }

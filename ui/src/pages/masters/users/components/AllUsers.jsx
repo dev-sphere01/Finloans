@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import userService from '@/services/userService'
 import TableService from '@/services/TableService'
 import DeleteConfirmationModal from './DeleteConfirmationModal'
@@ -7,12 +8,15 @@ import notification from '@/services/NotificationService'
 import { ActionButton } from '@/components/permissions'
 
 const AllUsers = ({ onEditUser, onViewUser }) => {
+  const location = useLocation()
   const { success: notifySuccess, error: notifyError } = notification()
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [deletingUser, setDeletingUser] = useState(null)
   const tableRef = useRef(null)
+  const filterValue = location.state
+  const isInitialLoadRef = useRef(true)
 
   const [tableState, setTableState] = useState({
     pagination: { pageIndex: 0, pageSize: 10 },
@@ -157,6 +161,18 @@ const AllUsers = ({ onEditUser, onViewUser }) => {
         sortBy: currentSortBy,
         sortOrder: currentSortOrder,
         ...currentColumnFilters
+      }
+
+      // Add dashboard filter if present (only on initial load)
+      if (isInitialLoadRef.current && filterValue?.status) {
+        if (filterValue.status === 'active') {
+          params.isActive = true
+        } else if (filterValue.status === 'inactive') {
+          params.isActive = false
+        }
+        // Clear the location state after using it to prevent reuse on refresh
+        window.history.replaceState({}, document.title)
+        isInitialLoadRef.current = false
       }
 
       if (currentSearchTerm.trim()) {
