@@ -556,14 +556,14 @@ exports.bulkCreateLeads = async (req, res) => {
           isActive: true
         });
 
-        if (existingLead) {
-          results.failed++;
-          results.errors.push({
-            row: i + 1,
-            error: `Lead with contact number ${cleanLeadData.contactNo} already exists`
-          });
-          continue;
-        }
+        // if (existingLead) {
+        //   results.failed++;
+        //   results.errors.push({
+        //     row: i + 1,
+        //     error: `Lead with contact number ${cleanLeadData.contactNo} already exists`
+        //   });
+        //   continue;
+        // }
 
         const lead = new Lead(cleanLeadData);
         await lead.save();

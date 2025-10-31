@@ -107,12 +107,12 @@ Lisa Davis,9876543215,lisa.davis@example.com,Car Loan,New Car Loan,Looking for c
       // Show success message
       if (response.results) {
         const { success, failed, total } = response.results;
-        if (success > 0) {
-          // Auto-redirect after successful upload
-          setTimeout(() => {
-            navigate('/dashboard/calling-management');
-          }, 3000);
-        }
+        // if (success > 0) {
+        //   // Auto-redirect after successful upload
+        //   setTimeout(() => {
+        //     navigate('/dashboard/calling-management');
+        //   }, 3000);
+        // }
       }
     } catch (error) {
       console.error('Bulk upload error:', error);
@@ -307,7 +307,7 @@ Lisa Davis,9876543215,lisa.davis@example.com,Car Loan,New Car Loan,Looking for c
                     <div className="flex items-center">
                       <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
                       <span className="text-sm text-green-700">
-                        Upload completed successfully! Redirecting to Calling Management...
+                        Upload completed successfully!
                       </span>
                     </div>
                   </div>
