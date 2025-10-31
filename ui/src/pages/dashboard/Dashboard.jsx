@@ -109,14 +109,18 @@ export default function Dashboard() {
 
   const getUserTotals = () => {
     if (!userStats && !dashboardData?.stats?.users) {
-      return { total: 0, active: 0, locked: 0 };
+      return { total: 0, active: 0, inactive: 0 };
     }
 
     const users = userStats || dashboardData.stats.users;
+    const total = users.total || 0;
+    const active = users.active || 0;
+    const inactive = total - active;
+
     return {
-      total: users.total || 0,
-      active: users.active || 0,
-      locked: users.locked || 0
+      total,
+      active,
+      inactive
     };
   };
 
@@ -228,37 +232,7 @@ export default function Dashboard() {
 
     }
 
-    // Users section (Admin/Manager only)
-    if (allowedSections.includes('users') || userStats) {
-      groups.push({
-        id: "users",
-        title: "User Management",
-        subtitle: "System users",
-        icon: Users,
-        gradient: "from-purple-500 to-pink-500",
-        bgColor: "bg-purple-50",
-        details: [
-          {
-            title: "Active System Users",
-            value: userTotals.active,
-            icon: UserCheck,
-            color: "text-green-600",
-            bg: "bg-green-100",
-            description: "Users with active accounts",
-            percentage: userTotals.total ? Math.round((userTotals.active / userTotals.total) * 100) : 0,
-          },
-          {
-            title: "Locked User Accounts",
-            value: userTotals.locked,
-            icon: AlertTriangle,
-            color: "text-red-600",
-            bg: "bg-red-100",
-            description: "Users with locked accounts",
-            percentage: userTotals.total ? Math.round((userTotals.locked / userTotals.total) * 100) : 0,
-          },
-        ],
-      });
-    }
+
 
     // Leads section - always show if we have lead stats
     if (allowedSections.includes('leads') || leadStats) {
@@ -359,6 +333,38 @@ export default function Dashboard() {
           ],
         });
       }
+    }
+
+    // Users section (Admin/Manager only) - moved to last position
+    if (allowedSections.includes('users') || userStats) {
+      groups.push({
+        id: "users",
+        title: "User Management",
+        subtitle: "System users",
+        icon: Users,
+        gradient: "from-purple-500 to-pink-500",
+        bgColor: "bg-purple-50",
+        details: [
+          {
+            title: "Active Users",
+            value: userTotals.active,
+            icon: UserCheck,
+            color: "text-green-600",
+            bg: "bg-green-100",
+            description: "Users with active accounts",
+            percentage: userTotals.total ? Math.round((userTotals.active / userTotals.total) * 100) : 0,
+          },
+          {
+            title: "Inactive Users",
+            value: userTotals.inactive,
+            icon: Users,
+            color: "text-gray-600",
+            bg: "bg-gray-100",
+            description: "Users with inactive accounts",
+            percentage: userTotals.total ? Math.round((userTotals.inactive / userTotals.total) * 100) : 0,
+          },
+        ],
+      });
     }
 
     return groups;
