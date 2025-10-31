@@ -283,7 +283,7 @@ exports.updateLead = async (req, res) => {
 
     // Validate status if status is being updated (no transition restrictions)
     if (updates.status && !Lead.AVAILABLE_STATUSES.includes(updates.status)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: `Invalid status: '${updates.status}'`,
         availableStatuses: Lead.AVAILABLE_STATUSES
       });
@@ -291,7 +291,7 @@ exports.updateLead = async (req, res) => {
 
     // Clean up updates - handle empty strings for ObjectId fields
     const cleanUpdates = { ...updates };
-    
+
     // Convert empty strings to null for ObjectId fields
     if (cleanUpdates.serviceProvider === '') {
       cleanUpdates.serviceProvider = null;
@@ -303,7 +303,7 @@ exports.updateLead = async (req, res) => {
     // Update lead fields
     Object.assign(lead, cleanUpdates);
     lead.updatedBy = req.userId;
-    
+
     console.log('Saving lead with status:', lead.status);
     await lead.save();
 
@@ -344,18 +344,18 @@ exports.updateLead = async (req, res) => {
 
   } catch (error) {
     console.error('Update lead error:', error);
-    
+
     // Handle validation errors specifically
     if (error.name === 'ValidationError') {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: error.message,
         validationErrors: error.errors
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: 'Failed to update lead',
-      details: error.message 
+      details: error.message
     });
   }
 };
@@ -587,28 +587,8 @@ exports.bulkCreateLeads = async (req, res) => {
         continue; // Skip this batch if no valid leads
       }
 
-      // Batch check for existing leads to improve performance
-      const existingLeads = await Lead.find({
-        contactNo: { $in: contactNumbers },
-        isActive: true
-      }).select('contactNo');
-
-      const existingContactNumbers = new Set(existingLeads.map(lead => lead.contactNo));
-
-      // Filter out duplicates and prepare for bulk insert
-      const leadsToInsert = [];
-
-      for (const validLead of validLeads) {
-        if (existingContactNumbers.has(validLead.data.contactNo)) {
-          results.failed++;
-          results.errors.push({
-            row: validLead.originalIndex + 1,
-            error: `Lead with contact number ${validLead.data.contactNo} already exists`
-          });
-        } else {
-          leadsToInsert.push(validLead.data);
-        }
-      }
+      // Allow duplicates - prepare all valid leads for bulk insert
+      const leadsToInsert = validLeads.map(validLead => validLead.data);
 
       // Bulk insert valid leads
       if (leadsToInsert.length > 0) {
@@ -618,7 +598,7 @@ exports.bulkCreateLeads = async (req, res) => {
           console.log(`Batch ${batchIndex + 1}: Successfully inserted ${leadsToInsert.length} leads`);
         } catch (error) {
           console.error(`Batch ${batchIndex + 1} insert error:`, error);
-          
+
           // Handle individual errors in bulk insert
           if (error.writeErrors) {
             error.writeErrors.forEach((writeError, index) => {
@@ -669,9 +649,9 @@ exports.bulkCreateLeads = async (req, res) => {
 
   } catch (error) {
     console.error('Bulk create error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to create leads',
-      details: error.message 
+      details: error.message
     });
   }
 };
@@ -701,7 +681,7 @@ exports.assignLeads = async (req, res) => {
       isActive: true
     }).select('_id name assignedTo status');
 
-    const alreadyAssignedLeads = existingLeads.filter(lead => 
+    const alreadyAssignedLeads = existingLeads.filter(lead =>
       lead.assignedTo && lead.status !== 'unassigned'
     );
 
@@ -710,7 +690,7 @@ exports.assignLeads = async (req, res) => {
       .map(lead => lead._id);
 
     if (unassignedLeadIds.length === 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'All selected leads are already assigned to staff members',
         alreadyAssignedCount: alreadyAssignedLeads.length,
         assignedLeads: alreadyAssignedLeads.map(lead => ({
@@ -723,9 +703,9 @@ exports.assignLeads = async (req, res) => {
 
     // Update only unassigned leads
     const result = await Lead.updateMany(
-      { 
+      {
         _id: { $in: unassignedLeadIds },
-        isActive: true 
+        isActive: true
       },
       {
         $set: {
@@ -887,17 +867,17 @@ exports.endCall = async (req, res) => {
   } catch (error) {
     console.error('End call error:', error);
     console.error('Error stack:', error.stack);
-    
+
     // Handle validation errors specifically
     if (error.message && error.message.includes('Invalid status')) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: error.message,
         currentStatus: lead?.status,
         availableStatuses: Lead.AVAILABLE_STATUSES
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: 'Failed to end call',
       details: error.message,
       leadFound: !!lead,
@@ -1031,10 +1011,10 @@ exports.getLeadStatusTransitions = async (req, res) => {
 exports.getLeadCallHistory = async (req, res) => {
   try {
     console.log('Getting call history for lead:', req.params.id);
-    
+
     const lead = await Lead.findById(req.params.id)
       .populate('callHistory.calledBy', 'firstName lastName email');
-    
+
     if (!lead) {
       console.log('Lead not found');
       return res.status(404).json({ error: 'Lead not found' });
